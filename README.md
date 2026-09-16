@@ -5,7 +5,7 @@
 * This is **a sample project for Software Engineering (SE) students**.<br>
   Example usages:
   * as a starting point of a course project (as opposed to writing everything from scratch)
-  * as a case study
+  * as a case study :)
 * The project simulates an ongoing software project for a desktop application (called _AddressBook_) used for managing contact details.
   * It is **written in an object-oriented programming (OOP) style** and provides a **reasonably well-written** codebase of about 6 KLoC. It is **larger** than what students typically write in beginner-level software-engineering modules, without being overwhelming.
   * It comes with a **reasonable level of user and developer documentation**.
