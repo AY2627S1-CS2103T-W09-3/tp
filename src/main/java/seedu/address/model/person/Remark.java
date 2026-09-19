@@ -36,7 +36,7 @@ public class Remark {
             return false;
         }
 
-        return value.equals(otherRemark.value);
+        return remark.equals(otherRemark.remark);
     }
 
     @Override
