@@ -8,7 +8,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class Remark {
 
-    public final String value;
+    public final String remark;
 
     /**
      * Constructs an {@code Remark}.
@@ -17,12 +17,12 @@ public class Remark {
      */
     public Remark(String remark) {
         requireNonNull(remark);
-        value = remark;
+        this.remark = remark;
     }
 
     @Override
     public String toString() {
-        return value;
+        return remark;
     }
 
     @Override
@@ -41,6 +41,6 @@ public class Remark {
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return remark.hashCode();
     }
 }
