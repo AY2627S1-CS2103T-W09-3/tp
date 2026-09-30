@@ -38,15 +38,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Data
 
-### Jean Doe
+### Hor Xiang Neng
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/rubyherp.png" width="200px">
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](http://github.com/rubyherp)]
 
 * Role: Developer
-* Responsibilities: Dev Ops + Threading
+* Responsibilities: Scheduling and Tracking
 
 ### James Doe
 
