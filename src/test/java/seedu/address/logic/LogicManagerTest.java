@@ -76,15 +76,15 @@ public class LogicManagerTest {
         model.addPerson(AMY);
         Person editedPerson = new PersonBuilder(AMY).withRemark("Likes swimming.").build();
         CommandResult result = logic.execute("remark 1 r/Likes swimming.");
-        assertEquals(String.format(RemarkCommand.MESSAGE_EDIT_REMARK_SUCCESS,
-                editedPerson.getName(), editedPerson.getRemark()), result.getFeedbackToUser());
+        assertEquals(String.format(RemarkCommand.MESSAGE_ADD_REMARK_SUCCESS, Messages.format(editedPerson)),
+                result.getFeedbackToUser());
         assertEquals(editedPerson, model.getFilteredPersonList().get(0));
 
         JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
         assertEquals(editedPerson, storage.readAddressBook().get().getPersonList().get(0));
 
         result = logic.execute("remark 1 r/");
-        assertEquals(String.format(RemarkCommand.MESSAGE_DELETE_REMARK_SUCCESS, AMY.getName()),
+        assertEquals(String.format(RemarkCommand.MESSAGE_DELETE_REMARK_SUCCESS, Messages.format(AMY)),
                 result.getFeedbackToUser());
         assertEquals(AMY, model.getFilteredPersonList().get(0));
         assertEquals(AMY, storage.readAddressBook().get().getPersonList().get(0));
