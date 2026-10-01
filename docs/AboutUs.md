@@ -37,6 +37,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Code quality
 
+### Edward Hew
+
+<img src="images/edwardheww.png" width="200px">
+
+[[github](http://github.com/edwardheww)]
+
+* Role: Developer
+* Responsibilities: Testing
 ### Chew Jia You
 
 <img src="images/jiayouchew.png" width="200px">
