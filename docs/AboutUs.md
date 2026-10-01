@@ -40,9 +40,9 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ### Chew Jia You
 
-<img src="images/jiayoucheww.png" width="200px">
+<img src="images/jiayouchew.png" width="200px">
 
-[[github](http://github.com/jiayoucheww)]
+[[github](http://github.com/jiayouchew)]
 
 * Role: Developer
 * Responsibilities: Integration
