@@ -9,34 +9,23 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ## Project team
 
-### John Doe
+### Fyn Chua Yu En
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/ffynch.png" width="200px">
 
-[[homepage](http://www.comp.nus.edu.sg/~damithch)]
-[[github](https://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
-
-* Role: Project Advisor
-
-### Jane Doe
-
-<img src="images/johndoe.png" width="200px">
-
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
-
-* Role: Team Lead
-* Responsibilities: UI
-
-### Johnny Doe
-
-<img src="images/johndoe.png" width="200px">
-
-[[github](http://github.com/johndoe)] [[portfolio](team/johndoe.md)]
+[[github](https://github.com/ffynch)]
 
 * Role: Developer
-* Responsibilities: Data
+* Responsibilities: Deliverables and deadlines
+
+### Jaren Yap
+
+<img src="images/jarenyap.png" width="200px">
+
+[[github](https://github.com/jarenyap)]
+
+* Role: Developer
+* Responsibilities: Code quality
 
 ### Hor Xiang Neng
 
@@ -47,12 +36,20 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Scheduling and Tracking
 
-### James Doe
+### Edward Hew
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/edwardheww.png" width="200px">
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](http://github.com/edwardheww)]
 
 * Role: Developer
-* Responsibilities: UI
+* Responsibilities: Testing
+
+### Chew Jia You
+
+<img src="images/jiayouchew.png" width="200px">
+
+[[github](http://github.com/jiayouchew)]
+
+* Role: Developer
+* Responsibilities: Integration
