@@ -30,8 +30,7 @@ public class RemarkCommandTest {
         expectedModel.setPerson(original, editedPerson);
 
         RemarkCommand command = new RemarkCommand(INDEX_FIRST_PERSON, editedPerson.getRemark());
-        String expectedMessage = String.format(RemarkCommand.MESSAGE_EDIT_REMARK_SUCCESS,
-                editedPerson.getName(), editedPerson.getRemark());
+        String expectedMessage = String.format(RemarkCommand.MESSAGE_ADD_REMARK_SUCCESS, Messages.format(editedPerson));
 
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
     }
@@ -44,7 +43,8 @@ public class RemarkCommandTest {
         expectedModel.setPerson(original, editedPerson);
 
         RemarkCommand command = new RemarkCommand(INDEX_FIRST_PERSON, new Remark(""));
-        String expectedMessage = String.format(RemarkCommand.MESSAGE_DELETE_REMARK_SUCCESS, editedPerson.getName());
+        String expectedMessage = String.format(RemarkCommand.MESSAGE_DELETE_REMARK_SUCCESS,
+                Messages.format(editedPerson));
 
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
     }
@@ -58,8 +58,7 @@ public class RemarkCommandTest {
         expectedModel.setPerson(original, editedPerson);
 
         RemarkCommand command = new RemarkCommand(INDEX_FIRST_PERSON, editedPerson.getRemark());
-        String expectedMessage = String.format(RemarkCommand.MESSAGE_EDIT_REMARK_SUCCESS,
-                editedPerson.getName(), editedPerson.getRemark());
+        String expectedMessage = String.format(RemarkCommand.MESSAGE_ADD_REMARK_SUCCESS, Messages.format(editedPerson));
 
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
     }
