@@ -28,14 +28,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Deliverables and deadlines
 
-### Johnny Doe
+### Jaren Yap
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/jarenyap.png" width="200px">
 
-[[github](http://github.com/johndoe)] [[portfolio](team/johndoe.md)]
+[[github](https://github.com/jarenyap)]
 
 * Role: Developer
-* Responsibilities: Data
+* Responsibilities: Code quality
 
 ### Chew Jia You
 
