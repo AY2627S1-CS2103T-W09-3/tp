@@ -287,7 +287,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | property agent | view a selected client's full details | quickly understand the client's information and requirements |
 | `* * *` | property agent | edit a client's contact details | keep the client's record accurate when their details change |
 | `* * *` | property agent | delete a wrongly created contact | remove records that should not exist |
-| `* * *` | property agent | find clients using part of their name | retrieve a record when I remember only part of the client's name |
+| `* * *` | property agent | find a client using one or more whole words from the client's name | locate the client's details without going through the entire list |
 | `* * *` | property agent | find a client using their phone number or email address | identify an incoming caller or message quickly |
 | `* * *` | property agent | record whether a client is a buyer, seller, or both | understand my relationship with the client at a glance |
 | `* * *` | property agent | record a client's address | retain the client's important contact information |
