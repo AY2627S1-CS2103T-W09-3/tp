@@ -3,13 +3,29 @@
 
 ![Ui](docs/images/Ui.png)
 
-* This is **a sample project for Software Engineering (SE) students**.<br>
-  Example usages:
-  * as a starting point of a course project (as opposed to writing everything from scratch)
-  * as a case study
-* The project simulates an ongoing software project for a desktop application (called _AddressBook_) used for managing contact details.
-  * It is **written in an object-oriented programming (OOP) style** and provides a **reasonably well-written** codebase of about 6 KLoC. It is **larger** than what students typically write in beginner-level software-engineering modules, without being overwhelming.
-  * It comes with a **reasonable level of user and developer documentation**.
-* It is named `AddressBook Level 3` (`AB3` for short) because it was initially created as a part of a series of `AddressBook` projects (`Level 1`, `Level 2`, `Level 3` ...).
-* For the detailed documentation of this project, see the **[Address Book Product Website](https://se-education.org/addressbook-level3)**.
-* This project is a **part of the se-education.org** initiative. If you would like to contribute code to this project, see [se-education.org](https://se-education.org/#contributing-to-se-edu) for more info.
+# EstateBookUltraProMax
+
+EstateBookUltraProMax is a desktop contact book for property agents who manage
+many buyers and sellers at once. Every action is a short command typed into the
+command box, and the result appears in the GUI.
+
+Each contact stores the client's details along with the budget, the preferred
+areas and property type, the viewing status and the next follow-up date. Property
+and viewing details are kept as context for the contact.
+
+Records are stored in one file that can be opened and edited by hand. There is no
+server and no database.
+
+* Mark a client as a buyer, a seller, or both.
+* Find someone by part of a name, or list everyone.
+* If you can type fast, EstateBookUltraProMax can get your client management
+  tasks done faster than a mouse-driven app.
+
+Useful links:
+* [Product Website](https://ay2627s1-cs2103t-w09-3.github.io/tp/)
+* [User Guide](https://ay2627s1-cs2103t-w09-3.github.io/tp/UserGuide.html)
+* [Developer Guide](https://ay2627s1-cs2103t-w09-3.github.io/tp/DeveloperGuide.html)
+
+Acknowledgements:
+* This project is based on the AddressBook-Level3 project created by the
+  [SE-EDU initiative](https://se-education.org).
