@@ -316,16 +316,26 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+1. **Usability:** A user with an above average typing speed for English text should be able to accomplish most tasks using the _Command Line Interface (CLI)_ and command _aliases_ than navigating with mouse-driven GUI.
+2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed. 
+3. **Performance:** The system should be able to hold up to <ins>100</ins> active client records without any noticeable sluggishness in performance during typical usage (e.g., searching, filtering).
+4. **Data Reliability:** The application must ensure that all data-changing actions are saved safely so that the latest changes are retained upon exiting.
+5. **Fault Tolerance:** The application must gracefully handle invalid inputs (e.g., invalid client references, missing roles, or conflicting duplicate details) by displaying clear error messages, instead of crashing.
 
-*{More to be added}*
 
 ### Glossary
 
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+| Term                             | Definition                                                                                                                                                                         |
+|:---------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **CLI (Command Line Interface)** | A text-based user interface where the agent interacts with the application by typing commands, optimised for speed and keyboard-driven workflows.                                  |
+| **Mainstream OS**                | Standard desktop and laptop operating systems, specifically Windows, Linus, Unix, or macOS.                                                                                        |
+| **Client Role**                  | The classification of a client's relationship with the agent. A client can be classified as a `Buyer`, a `Seller`, or `Both`.                                                      |
+| **Viewing**                      | A scheduled appointment for a client to visit a property. It contains a status (e.g., `pending`, `completed`).                                                                     |
+| **Tag**                          | A custom, meaningful label assigned to a client to group them according to specific attributes relevant to the agent's work.                                                       |
+| **Alias**                        | A shortened, memorable version of a standard CLI command used to reduce typing overhead for fast-typing agents.                                                                    |
+| **Duplicate Contact**            | A client record that shares identical identifying fields (such as phone number or email) with another record, which the system can detect to prevent fragmented information.       |
+| **Property Preferences**         | A collective term for a buyer's specific real estate requirements, including their budget range, preferred locations, property type, and minimum bedroom requirements.             |
+| **Sample Data**                  | A set of realistic, pre-loaded dummy client records provided to help new agents explore and learn the application's features safely before clearing it to start their actual work. |
 
 --------------------------------------------------------------------------------------------------------------------
 
