@@ -335,32 +335,187 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+For all use cases below, the **System** is **EstateBookUltraProMax** and the **Actor** is a **property agent**, referred to as the **Agent**.
 
-**Use case: Delete a person**
+**MSS** stands for **Main Success Scenario**.
+
+#### UC01: Register and classify a new client
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1. Agent requests to add a client, providing the client's name, phone number, email address, address, and any optional tags.
+2. EstateBookUltraProMax adds the client and displays the recorded details.
+3. Agent requests to assign the new client a role of buyer, seller, or both.
+4. EstateBookUltraProMax assigns the role and displays the client's updated role.
 
-    Use case ends.
+   Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. Required details are missing or one or more supplied values are invalid.
+  * 1a1. EstateBookUltraProMax displays an error describing the invalid or missing details without adding the client.
+
+  Use case resumes at step 1.
+
+* 1b. The supplied name, phone number, or email address matches an existing client's.
+  * 1b1. EstateBookUltraProMax identifies the conflicting field and rejects the addition.
+
+  Use case resumes at step 1.
+
+* 3a. The specified client reference is invalid.
+  * 3a1. EstateBookUltraProMax displays an error without assigning a role.
+
+  Use case resumes at step 3.
+
+* 3b. The role is missing or is not buyer, seller, or both.
+  * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles.
+
+  Use case resumes at step 3.
+
+#### UC02: Update a client's contact details
+
+**MSS**
+
+1. Agent requests to find a client using one or more whole words from the client's name.
+2. EstateBookUltraProMax displays a list of matching clients.
+3. Agent identifies a client from the displayed results and requests changes to the client's contact details.
+4. EstateBookUltraProMax updates the specified details and displays the updated client.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No search keyword is supplied.
+  * 1a1. EstateBookUltraProMax displays an error indicating that a search keyword is required.
+
+  Use case resumes at step 1.
+
+* 2a. No clients match the search keywords.
 
   Use case ends.
 
-* 3a. The given index is invalid.
+* 3a. The specified client reference is invalid.
+  * 3a1. EstateBookUltraProMax displays an error without updating the client.
 
-    * 3a1. AddressBook shows an error message.
+  Use case resumes at step 3.
 
-      Use case resumes at step 2.
+* 3b. No changes are supplied, or one or more supplied values are invalid.
+  * 3b1. EstateBookUltraProMax displays an error without updating the client's details.
 
-*{More to be added}*
+  Use case resumes at step 3.
+
+* 3c. The updated name, phone number, or email address would match another client's details.
+  * 3c1. EstateBookUltraProMax displays an error identifying the conflict and rejects the update.
+
+  Use case resumes at step 3.
+
+#### UC03: Change a client's role
+
+**MSS**
+
+1. Agent requests to list all clients.
+2. EstateBookUltraProMax displays the clients and their assigned roles.
+3. Agent identifies a client from the displayed list and requests to change the client's role to buyer, seller, or both.
+4. EstateBookUltraProMax updates the client's role and displays the updated client.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The client list is empty.
+
+  Use case ends.
+
+* 3a. The specified client reference is invalid.
+  * 3a1. EstateBookUltraProMax displays an error without updating the client's role.
+
+  Use case resumes at step 3.
+
+* 3b. The role is missing or is not buyer, seller, or both.
+  * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles without updating the client's role.
+
+  Use case resumes at step 3.
+
+#### UC04: Delete a client
+
+**MSS**
+
+1. Agent requests to list all clients.
+2. EstateBookUltraProMax displays the client list.
+3. Agent requests to delete a specific client from the displayed list.
+4. EstateBookUltraProMax deletes the client, identifies the deleted client, and displays the updated list.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The client list is empty.
+
+  Use case ends.
+
+* 3a. The specified client reference is missing or invalid.
+  * 3a1. EstateBookUltraProMax displays an error without deleting any client.
+
+  Use case resumes at step 3.
+
+#### UC05: Record a client's viewing outcome
+
+**MSS**
+
+1. Agent requests to view a client's viewing records.
+2. EstateBookUltraProMax displays the client's viewing records and their statuses.
+3. Agent identifies a viewing and provides the client's feedback and an updated viewing status.
+4. EstateBookUltraProMax records the feedback and status and displays the updated viewing record.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The specified client does not exist.
+  * 1a1. EstateBookUltraProMax displays an error without displaying any viewing records.
+
+  Use case resumes at step 1.
+
+* 2a. The client has no recorded viewings.
+
+  Use case ends.
+
+* 3a. The specified viewing does not exist among the client's viewing records.
+  * 3a1. EstateBookUltraProMax displays an error without changing any viewing records.
+
+  Use case resumes at step 3.
+
+* 3b. The supplied viewing status is invalid.
+  * 3b1. EstateBookUltraProMax displays an error indicating the permitted statuses without changing the viewing records.
+
+  Use case resumes at step 3.
+
+#### UC06: Update a client's follow-up plan
+
+**MSS**
+
+1. Agent requests to list clients whose follow-ups are due or overdue.
+2. EstateBookUltraProMax displays the matching clients and their recorded follow-up details.
+3. Agent identifies a client and provides an updated next action and follow-up date.
+4. EstateBookUltraProMax records the updated follow-up plan and displays the updated details.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No clients have follow-ups that are due or overdue.
+
+  Use case ends.
+
+* 3a. The specified client reference is invalid.
+  * 3a1. EstateBookUltraProMax displays an error without changing any follow-up plan.
+
+  Use case resumes at step 3.
+
+* 3b. The next action is missing or the follow-up date is invalid.
+  * 3b1. EstateBookUltraProMax displays an error describing the missing or invalid details without changing the follow-up plan.
+
+  Use case resumes at step 3.
 
 ### Non-Functional Requirements
 
