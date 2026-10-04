@@ -261,29 +261,77 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
-* prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
-* is reasonably comfortable using CLI apps
+* is a property agent who manages multiple buyers and sellers simultaneously
+* needs to retrieve client information quickly while handling calls, viewings, travel, and follow-ups
+* needs to record clients' contact details, budgets, property preferences, viewing information, and follow-up status
+* works primarily on a desktop or laptop
+* prefers typing and keyboard-driven workflows over navigating with a mouse
+* is comfortable using a Command Line Interface (CLI)
+* may use their device where clients or colleagues can see the screen and therefore needs to protect sensitive client information
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: EstateBookUltraProMax gives property agents fast, CLI-optimised access to buyer and seller
+contacts, budgets, property preferences, viewing information, and follow-up statuses. It removes the friction of
+managing clients through spreadsheets by allowing records to be added, updated, and retrieved quickly using
+keyboard-driven commands.
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
-| -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
-| `* * *`  | new user                                   | see usage instructions         | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person               |                                                                        |
-| `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
-
-*{More to be added}*
+| Priority | As a …​ | I want to …​ | So that I can…​ |
+| -------- | ------- | ------------ | --------------- |
+| `* * *` | property agent | add a buyer contact with essential contact details | record a new buyer lead before I forget it |
+| `* * *` | property agent | add a seller contact with essential contact details | record a new seller lead before I forget it |
+| `* * *` | property agent | view all recorded contacts | see the clients currently under my care |
+| `* * *` | property agent | view a selected client's full details | quickly understand the client's information and requirements |
+| `* * *` | property agent | edit a client's contact details | keep the client's record accurate when their details change |
+| `* * *` | property agent | delete a wrongly created contact | remove records that should not exist |
+| `* * *` | property agent | find a client using one or more whole words from the client's name | locate the client's details without going through the entire list |
+| `* * *` | property agent | find a client using their phone number or email address | identify an incoming caller or message quickly |
+| `* * *` | property agent | record whether a client is a buyer, seller, or both | understand my relationship with the client at a glance |
+| `* * *` | property agent | record a client's address | retain the client's important contact information |
+| `* * *` | property agent | record a buyer's budget range | avoid proposing properties outside the buyer's means |
+| `* * *` | property agent | record a buyer's preferred locations | shortlist properties in areas acceptable to the buyer |
+| `* * *` | property agent | record a buyer's preferred property type | exclude unsuitable property categories |
+| `* * *` | property agent | record a buyer's minimum bedroom requirement | avoid recommending properties that are too small |
+| `* * *` | property agent | record notes about a client | retain important context that does not fit into the standard fields |
+| `* * *` | property agent | tag contacts using meaningful labels | group clients according to attributes relevant to my work |
+| `* * *` | property agent | record a viewing appointment for a client | remember the client's upcoming property viewing |
+| `* * *` | property agent | view a client's viewing status | quickly determine whether a viewing has been scheduled |
+| `* * *` | property agent | update a viewing's status | keep the client's viewing information current |
+| `* * *` | property agent | exit the application safely | ensure that my latest changes are retained |
+| `* *` | new property agent | view realistic sample clients | understand what information the application can manage |
+| `* *` | new property agent | view concise help within the application | learn the available commands without leaving my workflow |
+| `* *` | user ready to begin | clear all sample or experimental data | start with a clean client list |
+| `* *` | property agent | filter contacts by buyer or seller role | focus on the relevant side of my client pipeline |
+| `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
+| `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
+| `* *` | property agent | view a client's upcoming viewings | prepare for the client's next appointment |
+| `* *` | busy property agent | view all appointments for a selected day | plan my schedule and avoid missing appointments |
+| `* *` | property agent | record feedback after a viewing | remember the client's response when choosing the next recommendation |
+| `* *` | property agent | record a client's current follow-up status | know what action I need to take next |
+| `* *` | property agent | record the next follow-up date | contact the client at an appropriate time |
+| `* *` | property agent | view clients whose follow-ups are due or overdue | prioritise clients who require my attention |
+| `* *` | property agent | sort contacts by name, latest update, or next follow-up | review my clients in an order suitable for my current task |
+| `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
+| `* *` | property agent | detect possible duplicate contacts | avoid splitting one client's information across multiple records |
+| `* *` | long-time property agent | archive an inactive client | reduce clutter without permanently losing past information |
+| `* *` | returning property agent | restore an archived client | resume working with a past client who has become active again |
+| `* *` | property agent migrating from spreadsheets | import client records from a common tabular format | avoid entering all my existing client information manually |
+| `* *` | privacy-conscious property agent | mask sensitive client details on screen | work safely when other people can see my computer |
+| `* *` | property agent | identify incomplete client records | fill important gaps before they affect my service |
+| `*` | fast-typing property agent | use short aliases for common commands | reduce typing during repetitive work |
+| `*` | property agent | reuse a recent command with small changes | process similar client updates efficiently |
+| `*` | property agent | preview the records affected by a bulk command | avoid modifying the wrong clients |
+| `*` | property agent | merge confirmed duplicate contacts | maintain one complete record for each client |
+| `*` | property agent changing agencies | export selected client records | retain records that I am permitted to take with me |
+| `*` | property agent | create a backup of my client records | reduce the risk of losing important information |
+| `*` | property agent | restore my client records from a valid backup | recover my information after data loss or device replacement |
+| `*` | property agent | view when and how a client record was last changed | determine whether the information is current |
+| `*` | property agent | separate personal leads from agency-assigned leads | keep my different work contexts organised |
+| `*` | property agent | record relationships between clients | recognise couples, co-buyers, family members, and co-owners |
+| `*` | property agent | save a frequently used search | repeat a common client review without rebuilding the search criteria |
 
 ### Use cases
 
