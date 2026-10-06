@@ -122,6 +122,39 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_phoneOfOtherPersonUnfilteredList_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withPhone(firstPerson.getPhone().value).build();
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_emailOfOtherPersonUnfilteredList_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withEmail(firstPerson.getEmail().value).build();
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_ownPhoneUnfilteredList_success() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withPhone(firstPerson.getPhone().value).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(firstPerson));
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_invalidPersonIndexUnfilteredList_failure() {
         Index outOfBoundIndex = Index.fromOneBased(model.getFilteredPersonList().size() + 1);
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB).build();
