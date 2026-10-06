@@ -106,7 +106,7 @@ public class EditCommandTest {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(firstPerson).build();
         EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
 
-        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+        assertCommandFailure(editCommand, model, Messages.MESSAGE_DUPLICATE_NAME);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class EditCommandTest {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
                 new EditPersonDescriptorBuilder(personInList).build());
 
-        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+        assertCommandFailure(editCommand, model, Messages.MESSAGE_DUPLICATE_NAME);
     }
 
     @Test
@@ -128,7 +128,8 @@ public class EditCommandTest {
                 .withPhone(firstPerson.getPhone().value).build();
         EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
 
-        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+        assertCommandFailure(editCommand, model,
+                String.format(Messages.MESSAGE_DUPLICATE_PHONE, firstPerson.getName()));
     }
 
     @Test
@@ -138,7 +139,8 @@ public class EditCommandTest {
                 .withEmail(firstPerson.getEmail().value).build();
         EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
 
-        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+        assertCommandFailure(editCommand, model,
+                String.format(Messages.MESSAGE_DUPLICATE_EMAIL, firstPerson.getName()));
     }
 
     @Test
