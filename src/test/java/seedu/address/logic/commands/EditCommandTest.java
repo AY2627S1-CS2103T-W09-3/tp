@@ -144,6 +144,26 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_nameOfOtherPersonUnfilteredList_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withName(firstPerson.getName().fullName).build();
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
+
+        assertCommandFailure(editCommand, model, Messages.MESSAGE_DUPLICATE_NAME);
+    }
+
+    @Test
+    public void execute_nameOfOtherPersonInDifferentCaseUnfilteredList_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withName(firstPerson.getName().fullName.toLowerCase()).build();
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
+
+        assertCommandFailure(editCommand, model, Messages.MESSAGE_DUPLICATE_NAME);
+    }
+
+    @Test
     public void execute_ownPhoneUnfilteredList_success() {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()

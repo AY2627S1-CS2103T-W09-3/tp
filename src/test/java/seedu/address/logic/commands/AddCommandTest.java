@@ -74,6 +74,35 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_personWithSameNameOnly_throwsCommandException() {
+        Person personWithSameName = new PersonBuilder().withName(ALICE.getName().fullName).build();
+        AddCommand addCommand = new AddCommand(personWithSameName);
+        ModelStub modelStub = new ModelStubWithPerson(ALICE);
+
+        assertThrows(CommandException.class, Messages.MESSAGE_DUPLICATE_NAME, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
+    public void execute_personWithSameNameInDifferentCase_throwsCommandException() {
+        Person personWithSameName = new PersonBuilder().withName(ALICE.getName().fullName.toUpperCase()).build();
+        AddCommand addCommand = new AddCommand(personWithSameName);
+        ModelStub modelStub = new ModelStubWithPerson(ALICE);
+
+        assertThrows(CommandException.class, Messages.MESSAGE_DUPLICATE_NAME, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
+    public void execute_personWithSamePhoneAndEmail_throwsPhoneMessage() {
+        Person personWithSamePhoneAndEmail = new PersonBuilder().withPhone(ALICE.getPhone().value)
+                .withEmail(ALICE.getEmail().value).build();
+        AddCommand addCommand = new AddCommand(personWithSamePhoneAndEmail);
+        ModelStub modelStub = new ModelStubWithPerson(ALICE);
+        String expectedMessage = String.format(Messages.MESSAGE_DUPLICATE_PHONE, ALICE.getName());
+
+        assertThrows(CommandException.class, expectedMessage, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
     public void equals() {
         Person alice = new PersonBuilder().withName("Alice").build();
         Person bob = new PersonBuilder().withName("Bob").build();
