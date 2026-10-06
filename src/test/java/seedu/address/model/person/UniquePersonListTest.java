@@ -81,6 +81,13 @@ public class UniquePersonListTest {
     }
 
     @Test
+    public void containsOtherThan_otherPersonHasNameInDifferentCase_returnsTrue() {
+        addAliceAndBob();
+        Person editedBob = new PersonBuilder(BOB).withName(ALICE.getName().fullName.toUpperCase()).build();
+        assertTrue(uniquePersonList.containsOtherThan(BOB, editedBob));
+    }
+
+    @Test
     public void containsOtherThan_otherPersonHasSamePhone_returnsTrue() {
         addAliceAndBob();
         Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();

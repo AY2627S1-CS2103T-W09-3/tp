@@ -68,13 +68,18 @@ public class PersonTest {
                 .withEmail(VALID_EMAIL_BOB).build();
         assertFalse(ALICE.isSamePerson(editedAlice));
 
-        // name differs in case, phone and email different -> returns false
+        // name differs in case, phone and email different -> returns true
         Person editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.toLowerCase())
                 .withPhone(VALID_PHONE_AMY).withEmail(VALID_EMAIL_AMY).build();
-        assertFalse(BOB.isSamePerson(editedBob));
+        assertTrue(BOB.isSamePerson(editedBob));
 
         // name has trailing spaces, phone and email different -> returns false
         editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB + " ")
+                .withPhone(VALID_PHONE_AMY).withEmail(VALID_EMAIL_AMY).build();
+        assertFalse(BOB.isSamePerson(editedBob));
+
+        // name has extra internal space, phone and email different -> returns false
+        editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.replace(" ", "  "))
                 .withPhone(VALID_PHONE_AMY).withEmail(VALID_EMAIL_AMY).build();
         assertFalse(BOB.isSamePerson(editedBob));
     }

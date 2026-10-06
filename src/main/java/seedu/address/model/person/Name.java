@@ -39,6 +39,14 @@ public class Name {
     }
 
 
+    /**
+     * Returns true if both names are the same, ignoring case.
+     * Spaces are not collapsed, so "Bob  Lee" and "Bob Lee" are different names.
+     */
+    public boolean isSameName(Name otherName) {
+        return otherName != null && fullName.equalsIgnoreCase(otherName.fullName);
+    }
+
     @Override
     public String toString() {
         return fullName;
