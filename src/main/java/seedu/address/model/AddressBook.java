@@ -57,6 +57,14 @@ public class AddressBook implements ReadOnlyAddressBook {
     }
 
     /**
+     * Returns true if {@code candidate} is a duplicate of any person in the address book
+     * other than {@code excludedPerson}.
+     */
+    public boolean hasPersonOtherThan(Person excludedPerson, Person candidate) {
+        return persons.containsOtherThan(excludedPerson, candidate);
+    }
+
+    /**
      * Adds a person to the address book.
      * The person must not already exist in the address book.
      */

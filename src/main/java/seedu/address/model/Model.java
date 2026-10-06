@@ -42,6 +42,12 @@ public interface Model {
     boolean hasPerson(Person person);
 
     /**
+     * Returns true if {@code candidate} is a duplicate of any person in the address book
+     * other than {@code excludedPerson}.
+     */
+    boolean hasPersonOtherThan(Person excludedPerson, Person candidate);
+
+    /**
      * Deletes the given person.
      * The person must exist in the address book.
      */

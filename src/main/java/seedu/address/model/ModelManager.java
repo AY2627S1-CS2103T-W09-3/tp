@@ -76,6 +76,12 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public boolean hasPersonOtherThan(Person excludedPerson, Person candidate) {
+        requireAllNonNull(excludedPerson, candidate);
+        return addressBook.hasPersonOtherThan(excludedPerson, candidate);
+    }
+
+    @Override
     public void deletePerson(Person target) {
         addressBook.removePerson(target);
     }
