@@ -86,14 +86,11 @@ public class Person {
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
             return true;
-        } else if (otherPerson.getName().equals(this.name)) {
-            return true;
-        } else if (otherPerson.getPhone().equals(this.phone)) {
-            return true;
-        } else if (otherPerson.getEmail().equals(this.email)) {
-            return true;
         }
-        return otherPerson != null;
+        return otherPerson != null
+                && (otherPerson.getName().equals(this.name)
+                        || otherPerson.getPhone().equals(this.phone)
+                        || otherPerson.getEmail().equals(this.email));
     }
 
     /**
