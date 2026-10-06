@@ -80,16 +80,20 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name.
-     * This defines a weaker notion of equality between two persons.
+     * Returns true if both persons have the same name, phone or email.
+     * If any of the 3 are identical, persons are duplicates of each other.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
             return true;
+        } else if (otherPerson.getName().equals(this.name)) {
+            return true;
+        } else if (otherPerson.getPhone().equals(this.phone)) {
+            return true;
+        } else if (otherPerson.getEmail().equals(this.email)) {
+            return true;
         }
-
-        return otherPerson != null
-                && otherPerson.getName().equals(getName());
+        return otherPerson != null;
     }
 
     /**
