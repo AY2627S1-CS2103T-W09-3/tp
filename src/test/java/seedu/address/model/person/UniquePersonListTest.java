@@ -11,6 +11,7 @@ import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -99,6 +100,47 @@ public class UniquePersonListTest {
         addAliceAndBob();
         Person editedBob = new PersonBuilder(BOB).withEmail(ALICE.getEmail().value).build();
         assertTrue(uniquePersonList.containsOtherThan(BOB, editedBob));
+    }
+
+    @Test
+    public void find_nullPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> uniquePersonList.find(null));
+    }
+
+    @Test
+    public void find_noPersonMatches_returnsEmpty() {
+        uniquePersonList.add(ALICE);
+        assertEquals(Optional.empty(), uniquePersonList.find(AMY));
+    }
+
+    @Test
+    public void find_duplicateInList_returnsExistingPerson() {
+        addAliceAndBob();
+        Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();
+        assertEquals(Optional.of(ALICE), uniquePersonList.find(editedBob));
+    }
+
+    @Test
+    public void findOtherThan_nullExcludedPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> uniquePersonList.findOtherThan(null, ALICE));
+    }
+
+    @Test
+    public void findOtherThan_nullCandidate_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> uniquePersonList.findOtherThan(ALICE, null));
+    }
+
+    @Test
+    public void findOtherThan_onlyExcludedPersonMatches_returnsEmpty() {
+        addAliceAndBob();
+        assertEquals(Optional.empty(), uniquePersonList.findOtherThan(BOB, BOB));
+    }
+
+    @Test
+    public void findOtherThan_otherPersonMatches_returnsOtherPerson() {
+        addAliceAndBob();
+        Person editedBob = new PersonBuilder(BOB).withEmail(ALICE.getEmail().value).build();
+        assertEquals(Optional.of(ALICE), uniquePersonList.findOtherThan(BOB, editedBob));
     }
 
     @Test

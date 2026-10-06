@@ -80,7 +80,7 @@ public class EditCommand extends Command {
         Person personToEdit = lastShownList.get(index.getZeroBased());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
-        if (model.hasPersonOtherThan(personToEdit, editedPerson)) {
+        if (model.findPersonOtherThan(personToEdit, editedPerson).isPresent()) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 

@@ -5,6 +5,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -110,14 +111,33 @@ public class UniquePersonList implements Iterable<Person> {
     }
 
     /**
-     * Return true if {@code candidate} is a duplicate of any person other than
-     * {@code excludedPerson}.
+     * Returns the first person in the list that is a duplicate of {@code candidate}, if any.
      */
-    public boolean containsOtherThan(Person excludedPerson, Person candidate) {
+    public Optional<Person> find(Person candidate) {
+        requireNonNull(candidate);
+        return internalList.stream()
+                .filter(person -> person.isSamePerson(candidate))
+                .findFirst();
+    }
+
+    /**
+     * Returns the first person in the list, other than {@code excludedPerson}, that is a duplicate of
+     * {@code candidate}, if any.
+     */
+    public Optional<Person> findOtherThan(Person excludedPerson, Person candidate) {
         requireAllNonNull(excludedPerson, candidate);
         return internalList.stream()
                 .filter(person -> !person.equals(excludedPerson))
-                .anyMatch(person -> person.isSamePerson(candidate));
+                .filter(person -> person.isSamePerson(candidate))
+                .findFirst();
+    }
+
+    /**
+     * Returns true if {@code candidate} is a duplicate of any person other than
+     * {@code excludedPerson}.
+     */
+    public boolean containsOtherThan(Person excludedPerson, Person candidate) {
+        return findOtherThan(excludedPerson, candidate).isPresent();
     }
 
     @Override

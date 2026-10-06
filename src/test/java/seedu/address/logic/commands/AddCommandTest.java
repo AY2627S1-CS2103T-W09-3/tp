@@ -9,6 +9,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
@@ -141,7 +142,12 @@ public class AddCommandTest {
         }
 
         @Override
-        public boolean hasPersonOtherThan(Person excludedPerson, Person candidate) {
+        public Optional<Person> findPerson(Person candidate) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public Optional<Person> findPersonOtherThan(Person excludedPerson, Person candidate) {
             throw new AssertionError("This method should not be called.");
         }
 
