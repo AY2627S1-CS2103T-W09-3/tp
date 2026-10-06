@@ -7,6 +7,7 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.Collection;
@@ -74,6 +75,27 @@ public class AddressBookTest {
         Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         assertTrue(addressBook.hasPerson(editedAlice));
+    }
+
+    @Test
+    public void hasPersonOtherThan_nullPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> addressBook.hasPersonOtherThan(null, ALICE));
+        assertThrows(NullPointerException.class, () -> addressBook.hasPersonOtherThan(ALICE, null));
+    }
+
+    @Test
+    public void hasPersonOtherThan_onlyExcludedPersonMatches_returnsFalse() {
+        addressBook.addPerson(ALICE);
+        addressBook.addPerson(BOB);
+        assertFalse(addressBook.hasPersonOtherThan(BOB, BOB));
+    }
+
+    @Test
+    public void hasPersonOtherThan_otherPersonMatches_returnsTrue() {
+        addressBook.addPerson(ALICE);
+        addressBook.addPerson(BOB);
+        Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();
+        assertTrue(addressBook.hasPersonOtherThan(BOB, editedBob));
     }
 
     @Test

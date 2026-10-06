@@ -7,6 +7,7 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.util.List;
 
@@ -14,7 +15,9 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.PersonBuilder;
 
 public class ModelManagerTest {
 
@@ -66,6 +69,27 @@ public class ModelManagerTest {
     public void hasPerson_personInAddressBook_returnsTrue() {
         modelManager.addPerson(ALICE);
         assertTrue(modelManager.hasPerson(ALICE));
+    }
+
+    @Test
+    public void hasPersonOtherThan_nullPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> modelManager.hasPersonOtherThan(null, ALICE));
+        assertThrows(NullPointerException.class, () -> modelManager.hasPersonOtherThan(ALICE, null));
+    }
+
+    @Test
+    public void hasPersonOtherThan_onlyExcludedPersonMatches_returnsFalse() {
+        modelManager.addPerson(ALICE);
+        modelManager.addPerson(BOB);
+        assertFalse(modelManager.hasPersonOtherThan(BOB, BOB));
+    }
+
+    @Test
+    public void hasPersonOtherThan_otherPersonMatches_returnsTrue() {
+        modelManager.addPerson(ALICE);
+        modelManager.addPerson(BOB);
+        Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();
+        assertTrue(modelManager.hasPersonOtherThan(BOB, editedBob));
     }
 
     @Test
