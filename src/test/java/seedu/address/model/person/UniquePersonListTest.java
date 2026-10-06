@@ -7,6 +7,7 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.util.List;
@@ -20,6 +21,11 @@ import seedu.address.testutil.PersonBuilder;
 public class UniquePersonListTest {
 
     private final UniquePersonList uniquePersonList = new UniquePersonList();
+
+    private void addAliceAndBob() {
+        uniquePersonList.add(ALICE);
+        uniquePersonList.add(BOB);
+    }
 
     @Test
     public void contains_nullPerson_throwsNullPointerException() {
@@ -43,6 +49,49 @@ public class UniquePersonListTest {
         Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         assertTrue(uniquePersonList.contains(editedAlice));
+    }
+
+    @Test
+    public void containsOtherThan_nullExcludedPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> uniquePersonList.containsOtherThan(null, ALICE));
+    }
+
+    @Test
+    public void containsOtherThan_nullCandidate_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> uniquePersonList.containsOtherThan(ALICE, null));
+    }
+
+    @Test
+    public void containsOtherThan_onlyExcludedPersonMatches_returnsFalse() {
+        addAliceAndBob();
+        assertFalse(uniquePersonList.containsOtherThan(BOB, BOB));
+    }
+
+    @Test
+    public void containsOtherThan_noPersonMatches_returnsFalse() {
+        addAliceAndBob();
+        assertFalse(uniquePersonList.containsOtherThan(BOB, AMY));
+    }
+
+    @Test
+    public void containsOtherThan_otherPersonHasSameName_returnsTrue() {
+        addAliceAndBob();
+        Person editedBob = new PersonBuilder(BOB).withName(ALICE.getName().fullName).build();
+        assertTrue(uniquePersonList.containsOtherThan(BOB, editedBob));
+    }
+
+    @Test
+    public void containsOtherThan_otherPersonHasSamePhone_returnsTrue() {
+        addAliceAndBob();
+        Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();
+        assertTrue(uniquePersonList.containsOtherThan(BOB, editedBob));
+    }
+
+    @Test
+    public void containsOtherThan_otherPersonHasSameEmail_returnsTrue() {
+        addAliceAndBob();
+        Person editedBob = new PersonBuilder(BOB).withEmail(ALICE.getEmail().value).build();
+        assertTrue(uniquePersonList.containsOtherThan(BOB, editedBob));
     }
 
     @Test
@@ -105,6 +154,31 @@ public class UniquePersonListTest {
         uniquePersonList.add(ALICE);
         uniquePersonList.add(BOB);
         assertThrows(DuplicatePersonException.class, () -> uniquePersonList.setPerson(ALICE, BOB));
+    }
+
+    @Test
+    public void setPerson_editedPersonHasPhoneOfOtherPerson_throwsDuplicatePersonException() {
+        addAliceAndBob();
+        Person editedAlice = new PersonBuilder(ALICE).withPhone(BOB.getPhone().value).build();
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.setPerson(ALICE, editedAlice));
+    }
+
+    @Test
+    public void setPerson_editedPersonHasEmailOfOtherPerson_throwsDuplicatePersonException() {
+        addAliceAndBob();
+        Person editedAlice = new PersonBuilder(ALICE).withEmail(BOB.getEmail().value).build();
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.setPerson(ALICE, editedAlice));
+    }
+
+    @Test
+    public void setPerson_otherPersonInList_success() {
+        addAliceAndBob();
+        Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build();
+        uniquePersonList.setPerson(ALICE, editedAlice);
+        UniquePersonList expectedUniquePersonList = new UniquePersonList();
+        expectedUniquePersonList.add(editedAlice);
+        expectedUniquePersonList.add(BOB);
+        assertEquals(expectedUniquePersonList, uniquePersonList);
     }
 
     @Test
