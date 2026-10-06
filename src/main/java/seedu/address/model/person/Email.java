@@ -12,8 +12,8 @@ public class Email {
     private static final String SPECIAL_CHARACTERS = "+_.-";
     public static final String MESSAGE_CONSTRAINTS = "Emails should be of the format local-part@domain, "
             + "where the local part uses letters, digits, and " + SPECIAL_CHARACTERS + " and does not start or end "
-            + "with a special character. Domain labels are separated by periods, and the last label is at least "
-            + "2 characters long";
+            + "with a special character or have two special characters in a row. Domain labels are separated by "
+            + "periods, and the last label is at least 2 characters long";
     // alphanumeric and special characters
     private static final String ALPHANUMERIC_NO_UNDERSCORE = "[^\\W_]+"; // alphanumeric characters except underscore
     private static final String LOCAL_PART_REGEX = "^" + ALPHANUMERIC_NO_UNDERSCORE + "([" + SPECIAL_CHARACTERS + "]"
