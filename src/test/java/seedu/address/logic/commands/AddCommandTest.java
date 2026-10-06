@@ -53,6 +53,24 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_personWithSamePhone_throwsCommandException() {
+        Person personWithSamePhone = new PersonBuilder().withPhone(ALICE.getPhone().value).build();
+        AddCommand addCommand = new AddCommand(personWithSamePhone);
+        ModelStub modelStub = new ModelStubWithPerson(ALICE);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
+    public void execute_personWithSameEmail_throwsCommandException() {
+        Person personWithSameEmail = new PersonBuilder().withEmail(ALICE.getEmail().value).build();
+        AddCommand addCommand = new AddCommand(personWithSameEmail);
+        ModelStub modelStub = new ModelStubWithPerson(ALICE);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
     public void equals() {
         Person alice = new PersonBuilder().withName("Alice").build();
         Person bob = new PersonBuilder().withName("Bob").build();
