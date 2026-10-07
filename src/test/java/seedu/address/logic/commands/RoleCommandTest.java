@@ -1,6 +1,8 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
@@ -79,5 +81,16 @@ public class RoleCommandTest {
         storage.saveAddressBook(model.getAddressBook());
 
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void equals() {
+        RoleCommand firstBuyerCommand = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BUYER);
+
+        assertTrue(firstBuyerCommand.equals(firstBuyerCommand));
+        assertTrue(firstBuyerCommand.equals(new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BUYER)));
+        assertFalse(firstBuyerCommand.equals(null));
+        assertFalse(firstBuyerCommand.equals(new RoleCommand(INDEX_SECOND_PERSON, ClientRole.BUYER)));
+        assertFalse(firstBuyerCommand.equals(new RoleCommand(INDEX_FIRST_PERSON, ClientRole.SELLER)));
     }
 }
