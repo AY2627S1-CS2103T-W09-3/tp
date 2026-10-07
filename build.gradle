@@ -26,6 +26,15 @@ checkstyle {
 
 test {
     useJUnitPlatform()
+    // Run JavaFX UI tests without opening windows or requiring a display on CI.
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'prism.order', 'sw'
+    doFirst {
+        // JDKs bundled with JavaFX must load Monocle in the same module as Glass.
+        def monocle = configurations.testRuntimeClasspath.find { it.name.startsWith('openjfx-monocle-') }
+        jvmArgs '--patch-module', "javafx.graphics=${monocle}"
+    }
     finalizedBy jacocoTestReport
 }
 
@@ -69,6 +78,7 @@ dependencies {
 
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jUnitVersion}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
+    testRuntimeOnly 'org.testfx:openjfx-monocle:17.0.10'
 }
 
 shadowJar {
