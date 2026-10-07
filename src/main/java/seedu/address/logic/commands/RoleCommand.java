@@ -56,7 +56,7 @@ public class RoleCommand extends Command {
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
 
         return new CommandResult(String.format(MESSAGE_SUCCESS,
-                editedClient.getName(), role.getValue()));
+                editedClient.getName(), role.getDisplayValue()));
     }
 
     @Override

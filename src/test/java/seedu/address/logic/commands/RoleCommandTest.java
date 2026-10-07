@@ -35,7 +35,7 @@ public class RoleCommandTest {
 
         RoleCommand command = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BUYER);
         String expectedMessage = String.format(RoleCommand.MESSAGE_SUCCESS,
-                editedClient.getName(), ClientRole.BUYER.getValue());
+                editedClient.getName(), ClientRole.BUYER.getDisplayValue());
 
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
     }
@@ -50,7 +50,7 @@ public class RoleCommandTest {
 
         RoleCommand command = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BOTH);
         String expectedMessage = String.format(RoleCommand.MESSAGE_SUCCESS,
-                editedClient.getName(), ClientRole.BOTH.getValue());
+                editedClient.getName(), ClientRole.BOTH.getDisplayValue());
 
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
     }
