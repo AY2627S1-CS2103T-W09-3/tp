@@ -7,10 +7,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Address;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -30,6 +32,13 @@ class JsonAdaptedPerson {
     private final String email;
     private final String address;
     private final String remark;
+
+    /**
+     * Absent when the client has no role, in which case the key is left out of the data file.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final String role;
+
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
@@ -38,12 +47,14 @@ class JsonAdaptedPerson {
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("address") String address,
-            @JsonProperty("remark") String remark, @JsonProperty("tags") List<JsonAdaptedTag> tags) {
+            @JsonProperty("remark") String remark, @JsonProperty("role") String role,
+            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
         this.remark = remark;
+        this.role = role;
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -58,6 +69,7 @@ class JsonAdaptedPerson {
         email = source.getEmail().value;
         address = source.getAddress().value;
         remark = source.getRemark().value;
+        role = source.getRole() == null ? null : source.getRole().getValue();
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -109,8 +121,19 @@ class JsonAdaptedPerson {
         // Address books saved before remarks were introduced do not have this field.
         final Remark modelRemark = new Remark(remark == null ? "" : remark);
 
+        // Client books saved before roles were introduced do not have this field,
+        // and a client is allowed to have no role.
+        final ClientRole modelRole;
+        if (role == null) {
+            modelRole = null;
+        } else if (!ClientRole.isValidRole(role)) {
+            throw new IllegalValueException(ClientRole.MESSAGE_CONSTRAINTS);
+        } else {
+            modelRole = ClientRole.fromString(role);
+        }
+
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelRemark, modelTags);
+        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelRemark, modelRole, modelTags);
     }
 
 }
