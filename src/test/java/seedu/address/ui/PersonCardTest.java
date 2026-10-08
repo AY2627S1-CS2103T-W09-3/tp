@@ -20,7 +20,11 @@ public class PersonCardTest {
 
     @BeforeAll
     public static void setUpJavaFx() {
-        Platform.startup(() -> { });
+        try {
+            Platform.startup(() -> { });
+        } catch (IllegalStateException e) {
+            // Another UI test has already started JavaFX.
+        }
     }
 
     @Test
