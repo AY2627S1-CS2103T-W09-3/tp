@@ -1,5 +1,7 @@
 package seedu.address.logic;
 
+import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
+
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,8 +22,12 @@ public class Messages {
                 "Multiple values specified for the following single-valued field(s): ";
     public static final String MESSAGE_DUPLICATE_NAME =
             "A client with this name already exists in the client book.";
-    public static final String MESSAGE_DUPLICATE_PHONE = "This phone number already belongs to another client: %1$s.";
-    public static final String MESSAGE_DUPLICATE_EMAIL = "This email address already belongs to another client: %1$s.";
+    private static final String COBUYER_WORKAROUND_HINT =
+            "For co-buyers, use one household record tagged " + PREFIX_TAG + "couple.";
+    public static final String MESSAGE_DUPLICATE_PHONE =
+            "This phone number already belongs to another client: %1$s. " + COBUYER_WORKAROUND_HINT;
+    public static final String MESSAGE_DUPLICATE_EMAIL =
+            "This email address already belongs to another client: %1$s. " + COBUYER_WORKAROUND_HINT;
 
     /**
      * Returns an error message indicating the duplicate prefixes.
