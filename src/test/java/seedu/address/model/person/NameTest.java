@@ -65,6 +65,7 @@ public class NameTest {
                 Name.MESSAGE_CONSTRAINTS);
     }
 
+    @Test
     public void isSameName() {
         Name name = new Name("Valid Name");
 
