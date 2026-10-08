@@ -63,5 +63,25 @@ public class NameTest {
     public void messageConstraints_hasExpectedWording() {
         assertEquals("Name should only contain alphanumeric characters and spaces, and it should not be blank",
                 Name.MESSAGE_CONSTRAINTS);
+    public void isSameName() {
+        Name name = new Name("Valid Name");
+
+        // same value -> returns true
+        assertTrue(name.isSameName(new Name("Valid Name")));
+
+        // differs in case -> returns true
+        assertTrue(name.isSameName(new Name("vALID nAME")));
+
+        // null -> returns false
+        assertFalse(name.isSameName(null));
+
+        // different name -> returns false
+        assertFalse(name.isSameName(new Name("Other Valid Name")));
+
+        // trailing space -> returns false
+        assertFalse(name.isSameName(new Name("Valid Name ")));
+
+        // extra internal space -> returns false
+        assertFalse(name.isSameName(new Name("Valid  Name")));
     }
 }

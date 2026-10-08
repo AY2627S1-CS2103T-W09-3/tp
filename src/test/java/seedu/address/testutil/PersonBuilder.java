@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import seedu.address.model.person.Address;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
@@ -28,6 +29,7 @@ public class PersonBuilder {
     private Email email;
     private Address address;
     private Remark remark;
+    private ClientRole role;
     private Set<Tag> tags;
 
     /**
@@ -39,6 +41,7 @@ public class PersonBuilder {
         email = new Email(DEFAULT_EMAIL);
         address = new Address(DEFAULT_ADDRESS);
         remark = new Remark(DEFAULT_REMARK);
+        role = null; // a client has no role until one is assigned
         tags = new HashSet<>();
     }
 
@@ -51,6 +54,7 @@ public class PersonBuilder {
         email = personToCopy.getEmail();
         address = personToCopy.getAddress();
         remark = personToCopy.getRemark();
+        role = personToCopy.getRole();
         tags = new HashSet<>(personToCopy.getTags());
     }
 
@@ -102,8 +106,16 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the {@code ClientRole} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withRole(ClientRole role) {
+        this.role = role;
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, phone, email, address, remark, tags);
+        return new Person(name, phone, email, address, remark, role, tags);
     }
 
 }

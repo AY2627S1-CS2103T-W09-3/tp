@@ -12,7 +12,8 @@ import seedu.address.model.tag.Tag;
 
 /**
  * Represents a Person in the address book.
- * Guarantees: details are present and not null, field values are validated, immutable.
+ * Guarantees: details are present and not null, field values are validated, immutable,
+ * except for the role, which may be absent.
  */
 public class Person {
 
@@ -24,18 +25,22 @@ public class Person {
     // Data fields
     private final Address address;
     private final Remark remark;
+    private final ClientRole role;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
-     * Every field must be present and not null.
+     * Every field must be present and not null, except {@code role}, which is null
+     * when no role has been assigned to the client.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Remark remark, Set<Tag> tags) {
+    public Person(Name name, Phone phone, Email email, Address address, Remark remark, ClientRole role,
+            Set<Tag> tags) {
         requireAllNonNull(name, phone, email, address, remark, tags);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
         this.remark = remark;
+        this.role = role;
         this.tags.addAll(tags);
     }
 
@@ -60,6 +65,13 @@ public class Person {
     }
 
     /**
+     * Returns the client's role, or null if no role has been assigned yet.
+     */
+    public ClientRole getRole() {
+        return role;
+    }
+
+    /**
      * Returns an immutable tag set, which throws {@code UnsupportedOperationException}
      * if modification is attempted.
      */
@@ -68,16 +80,17 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name.
-     * This defines a weaker notion of equality between two persons.
+     * Returns true if both persons have the same name (ignoring case), phone or email.
+     * If any of the 3 are identical, persons are duplicates of each other.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
             return true;
         }
-
         return otherPerson != null
-                && otherPerson.getName().equals(getName());
+                && (otherPerson.getName().isSameName(this.name)
+                        || otherPerson.getPhone().equals(this.phone)
+                        || otherPerson.getEmail().equals(this.email));
     }
 
     /**
@@ -100,13 +113,14 @@ public class Person {
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
                 && remark.equals(otherPerson.remark)
+                && Objects.equals(role, otherPerson.role)
                 && tags.equals(otherPerson.tags);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, remark, tags);
+        return Objects.hash(name, phone, email, address, remark, role, tags);
     }
 
     @Override
@@ -117,6 +131,7 @@ public class Person {
                 .add("email", email)
                 .add("address", address)
                 .add("remark", remark)
+                .add("role", role)
                 .add("tags", tags)
                 .toString();
     }

@@ -62,6 +62,11 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBook_duplicatePersonAddressBook_throwDataLoadingException() {
+        assertThrows(DataLoadingException.class, () -> readAddressBook("duplicatePersonAddressBook.json"));
+    }
+
+    @Test
     public void readAndSaveAddressBook_legacyFile_preservesPerson() throws Exception {
         ReadOnlyAddressBook legacyAddressBook = readAddressBook("legacyAddressBook.json").get();
         AddressBook expectedAddressBook = new AddressBook();
