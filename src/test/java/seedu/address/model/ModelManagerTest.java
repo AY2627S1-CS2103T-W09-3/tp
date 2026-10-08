@@ -7,14 +7,18 @@ import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.PersonBuilder;
 
 public class ModelManagerTest {
 
@@ -66,6 +70,45 @@ public class ModelManagerTest {
     public void hasPerson_personInAddressBook_returnsTrue() {
         modelManager.addPerson(ALICE);
         assertTrue(modelManager.hasPerson(ALICE));
+    }
+
+    @Test
+    public void findPerson_nullPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> modelManager.findPerson(null));
+    }
+
+    @Test
+    public void findPerson_noPersonMatches_returnsEmpty() {
+        modelManager.addPerson(BOB);
+        assertEquals(Optional.empty(), modelManager.findPerson(ALICE));
+    }
+
+    @Test
+    public void findPerson_duplicateInAddressBook_returnsExistingPerson() {
+        modelManager.addPerson(ALICE);
+        Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();
+        assertEquals(Optional.of(ALICE), modelManager.findPerson(editedBob));
+    }
+
+    @Test
+    public void findPersonOtherThan_nullPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> modelManager.findPersonOtherThan(null, ALICE));
+        assertThrows(NullPointerException.class, () -> modelManager.findPersonOtherThan(ALICE, null));
+    }
+
+    @Test
+    public void findPersonOtherThan_onlyExcludedPersonMatches_returnsEmpty() {
+        modelManager.addPerson(ALICE);
+        modelManager.addPerson(BOB);
+        assertEquals(Optional.empty(), modelManager.findPersonOtherThan(BOB, BOB));
+    }
+
+    @Test
+    public void findPersonOtherThan_otherPersonMatches_returnsOtherPerson() {
+        modelManager.addPerson(ALICE);
+        modelManager.addPerson(BOB);
+        Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();
+        assertEquals(Optional.of(ALICE), modelManager.findPersonOtherThan(BOB, editedBob));
     }
 
     @Test

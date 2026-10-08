@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -84,5 +85,13 @@ public class EmailTest {
 
         // different values -> returns false
         assertFalse(email.equals(new Email("other.valid@email")));
+    }
+
+    @Test
+    public void messageConstraints_hasExpectedWording() {
+        assertEquals("Emails should be of the format local-part@domain, where the local part uses letters, "
+                + "digits, and the special characters +_.- (not at the start or end, and never two in a row). "
+                + "Domain labels are separated by periods, and the last label is at least 2 characters long",
+                Email.MESSAGE_CONSTRAINTS);
     }
 }

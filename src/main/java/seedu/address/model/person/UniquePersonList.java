@@ -5,6 +5,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -12,10 +13,14 @@ import seedu.address.model.person.exceptions.DuplicatePersonException;
 import seedu.address.model.person.exceptions.PersonNotFoundException;
 
 /**
- * A list of persons that enforces uniqueness between its elements and does not allow nulls.
- * A person is considered unique by comparing using {@code Person#isSamePerson(Person)}. As such, adding and updating of
- * persons uses Person#isSamePerson(Person) for equality so as to ensure that the person being added or updated is
- * unique in terms of identity in the UniquePersonList. However, the removal of a person uses Person#equals(Object) so
+ * A list of persons that enforces uniqueness between its elements and does not
+ * allow nulls.
+ * A person is considered unique by comparing using
+ * {@code Person#isSamePerson(Person)}. As such, adding and updating of
+ * persons uses Person#isSamePerson(Person) for equality so as to ensure that
+ * the person being added or updated is
+ * unique in terms of identity in the UniquePersonList. However, the removal of
+ * a person uses Person#equals(Object) so
  * as to ensure that the person with exactly the same fields will be removed.
  *
  * Supports a minimal set of list operations.
@@ -25,8 +30,8 @@ import seedu.address.model.person.exceptions.PersonNotFoundException;
 public class UniquePersonList implements Iterable<Person> {
 
     private final ObservableList<Person> internalList = FXCollections.observableArrayList();
-    private final ObservableList<Person> internalUnmodifiableList =
-            FXCollections.unmodifiableObservableList(internalList);
+    private final ObservableList<Person> internalUnmodifiableList = FXCollections
+            .unmodifiableObservableList(internalList);
 
     /**
      * Returns true if the list contains an equivalent person as the given argument.
@@ -51,7 +56,8 @@ public class UniquePersonList implements Iterable<Person> {
     /**
      * Replaces the person {@code target} in the list with {@code editedPerson}.
      * {@code target} must exist in the list.
-     * The person identity of {@code editedPerson} must not be the same as another existing person in the list.
+     * The person identity of {@code editedPerson} must not be the same as another
+     * existing person in the list.
      */
     public void setPerson(Person target, Person editedPerson) {
         requireAllNonNull(target, editedPerson);
@@ -61,7 +67,7 @@ public class UniquePersonList implements Iterable<Person> {
             throw new PersonNotFoundException();
         }
 
-        if (!target.isSamePerson(editedPerson) && contains(editedPerson)) {
+        if (this.containsOtherThan(target, editedPerson)) {
             throw new DuplicatePersonException();
         }
 
@@ -102,6 +108,36 @@ public class UniquePersonList implements Iterable<Person> {
      */
     public ObservableList<Person> asUnmodifiableObservableList() {
         return internalUnmodifiableList;
+    }
+
+    /**
+     * Returns the first person in the list that is a duplicate of {@code candidate}, if any.
+     */
+    public Optional<Person> find(Person candidate) {
+        requireNonNull(candidate);
+        return internalList.stream()
+                .filter(person -> person.isSamePerson(candidate))
+                .findFirst();
+    }
+
+    /**
+     * Returns the first person in the list, other than {@code excludedPerson}, that is a duplicate of
+     * {@code candidate}, if any.
+     */
+    public Optional<Person> findOtherThan(Person excludedPerson, Person candidate) {
+        requireAllNonNull(excludedPerson, candidate);
+        return internalList.stream()
+                .filter(person -> !person.equals(excludedPerson))
+                .filter(person -> person.isSamePerson(candidate))
+                .findFirst();
+    }
+
+    /**
+     * Returns true if {@code candidate} is a duplicate of any person other than
+     * {@code excludedPerson}.
+     */
+    public boolean containsOtherThan(Person excludedPerson, Person candidate) {
+        return findOtherThan(excludedPerson, candidate).isPresent();
     }
 
     @Override

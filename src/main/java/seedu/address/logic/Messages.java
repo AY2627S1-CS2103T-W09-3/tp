@@ -18,6 +18,10 @@ public class Messages {
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d person(s) listed!";
     public static final String MESSAGE_DUPLICATE_FIELDS =
                 "Multiple values specified for the following single-valued field(s): ";
+    public static final String MESSAGE_DUPLICATE_NAME =
+            "A client with this name already exists in the client book.";
+    public static final String MESSAGE_DUPLICATE_PHONE = "This phone number already belongs to another client: %1$s.";
+    public static final String MESSAGE_DUPLICATE_EMAIL = "This email address already belongs to another client: %1$s.";
 
     /**
      * Returns an error message indicating the duplicate prefixes.
@@ -29,6 +33,22 @@ public class Messages {
                 Stream.of(duplicatePrefixes).map(Prefix::toString).collect(Collectors.toSet());
 
         return MESSAGE_DUPLICATE_FIELDS + String.join(" ", duplicateFields);
+    }
+
+    /**
+     * Returns an error message indicating which field of {@code candidate} clashes with {@code existing}.
+     * Fields are checked in the order name, phone, email.
+     */
+    public static String getErrorMessageForDuplicatePerson(Person candidate, Person existing) {
+        assert candidate.isSamePerson(existing);
+
+        if (candidate.getName().isSameName(existing.getName())) {
+            return MESSAGE_DUPLICATE_NAME;
+        }
+        if (candidate.getPhone().equals(existing.getPhone())) {
+            return String.format(MESSAGE_DUPLICATE_PHONE, existing.getName());
+        }
+        return String.format(MESSAGE_DUPLICATE_EMAIL, existing.getName());
     }
 
     /**

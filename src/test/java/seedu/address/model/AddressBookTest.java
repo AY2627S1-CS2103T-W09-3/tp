@@ -7,10 +7,12 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -74,6 +76,45 @@ public class AddressBookTest {
         Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         assertTrue(addressBook.hasPerson(editedAlice));
+    }
+
+    @Test
+    public void findPerson_nullPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> addressBook.findPerson(null));
+    }
+
+    @Test
+    public void findPerson_noPersonMatches_returnsEmpty() {
+        addressBook.addPerson(BOB);
+        assertEquals(Optional.empty(), addressBook.findPerson(ALICE));
+    }
+
+    @Test
+    public void findPerson_duplicateInAddressBook_returnsExistingPerson() {
+        addressBook.addPerson(ALICE);
+        Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();
+        assertEquals(Optional.of(ALICE), addressBook.findPerson(editedBob));
+    }
+
+    @Test
+    public void findPersonOtherThan_nullPerson_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> addressBook.findPersonOtherThan(null, ALICE));
+        assertThrows(NullPointerException.class, () -> addressBook.findPersonOtherThan(ALICE, null));
+    }
+
+    @Test
+    public void findPersonOtherThan_onlyExcludedPersonMatches_returnsEmpty() {
+        addressBook.addPerson(ALICE);
+        addressBook.addPerson(BOB);
+        assertEquals(Optional.empty(), addressBook.findPersonOtherThan(BOB, BOB));
+    }
+
+    @Test
+    public void findPersonOtherThan_otherPersonMatches_returnsOtherPerson() {
+        addressBook.addPerson(ALICE);
+        addressBook.addPerson(BOB);
+        Person editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().value).build();
+        assertEquals(Optional.of(ALICE), addressBook.findPersonOtherThan(BOB, editedBob));
     }
 
     @Test
