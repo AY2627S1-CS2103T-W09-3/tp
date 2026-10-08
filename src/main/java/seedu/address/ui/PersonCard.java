@@ -71,16 +71,8 @@ public class PersonCard extends UiPart<Region> {
             return;
         }
 
-        role.setText(getRoleDisplayText(clientRole));
+        role.setText(clientRole.getDisplayValue());
         role.getStyleClass().add(getRoleStyleClass(clientRole));
-    }
-
-    static String getRoleDisplayText(ClientRole clientRole) {
-        return switch (clientRole) {
-            case BUYER -> "Buyer";
-            case SELLER -> "Seller";
-            case BOTH -> "Buyer, Seller";
-        };
     }
 
     static String getRoleStyleClass(ClientRole clientRole) {

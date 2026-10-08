@@ -25,12 +25,12 @@ public class PersonCardTest {
 
     @Test
     public void constructor_rolePresent_displaysRoleBadge() throws ExecutionException, InterruptedException {
-        Person person = new PersonBuilder().withRole(ClientRole.BUYER).withTags("friend").build();
+        Person person = new PersonBuilder().withRole(ClientRole.BOTH).withTags("friend").build();
 
         Label roleBadge = createPersonCard(person);
 
-        assertEquals("Buyer", roleBadge.getText());
-        assertTrue(roleBadge.getStyleClass().contains("role-buyer"));
+        assertEquals(ClientRole.BOTH.getDisplayValue(), roleBadge.getText());
+        assertTrue(roleBadge.getStyleClass().contains("role-both"));
         assertTrue(roleBadge.isVisible());
         assertTrue(roleBadge.isManaged());
     }
@@ -44,13 +44,6 @@ public class PersonCardTest {
 
         assertFalse(roleBadge.isVisible());
         assertFalse(roleBadge.isManaged());
-    }
-
-    @Test
-    public void getRoleDisplayText_eachRole_returnsBadgeText() {
-        assertEquals("Buyer", PersonCard.getRoleDisplayText(ClientRole.BUYER));
-        assertEquals("Seller", PersonCard.getRoleDisplayText(ClientRole.SELLER));
-        assertEquals("Buyer, Seller", PersonCard.getRoleDisplayText(ClientRole.BOTH));
     }
 
     @Test
