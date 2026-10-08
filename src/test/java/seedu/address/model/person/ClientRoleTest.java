@@ -72,14 +72,14 @@ public class ClientRoleTest {
 
     @Test
     public void getDisplayValue_returnsTextForTheUser() {
-        assertEquals("buyer", ClientRole.BUYER.getDisplayValue());
-        assertEquals("seller", ClientRole.SELLER.getDisplayValue());
-        assertEquals("(buyer, seller)", ClientRole.BOTH.getDisplayValue());
+        assertEquals("Buyer", ClientRole.BUYER.getDisplayValue());
+        assertEquals("Seller", ClientRole.SELLER.getDisplayValue());
+        assertEquals("Buyer, Seller", ClientRole.BOTH.getDisplayValue());
     }
 
     @Test
     public void toString_returnsDisplayValue() {
         assertEquals(ClientRole.BOTH.getDisplayValue(), ClientRole.BOTH.toString());
-        assertEquals("(buyer, seller)", ClientRole.BOTH.toString());
+        assertEquals("Buyer, Seller", ClientRole.BOTH.toString());
     }
 }
