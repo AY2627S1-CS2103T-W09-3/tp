@@ -8,9 +8,9 @@ import static java.util.Objects.requireNonNull;
  */
 public enum ClientRole {
 
-    BUYER("buyer"),
-    SELLER("seller"),
-    BOTH("both");
+    BUYER("buyer", "Buyer"),
+    SELLER("seller", "Seller"),
+    BOTH("both", "Buyer, Seller");
 
     /**
      * Message shown when the user supplies a role that is not buyer, seller or both.
@@ -19,14 +19,17 @@ public enum ClientRole {
             "Invalid Role: Role must be 'buyer', 'seller', or 'both'.";
 
     private final String value;
+    private final String displayValue;
 
     /**
      * Constructs a {@code ClientRole}.
      *
      * @param value The token the user types and the data file stores.
+     * @param displayValue The text shown to the user.
      */
-    ClientRole(String value) {
+    ClientRole(String value, String displayValue) {
         this.value = value;
+        this.displayValue = displayValue;
     }
 
     /**
@@ -37,10 +40,10 @@ public enum ClientRole {
     }
 
     /**
-     * Returns the text shown to the user, where {@code BOTH} reads as {@code (buyer, seller)}.
+     * Returns the text shown to the user.
      */
     public String getDisplayValue() {
-        return this == BOTH ? "(buyer, seller)" : value;
+        return displayValue;
     }
 
     /**
