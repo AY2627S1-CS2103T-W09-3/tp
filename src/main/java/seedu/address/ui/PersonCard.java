@@ -7,6 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
 
 /**
@@ -31,6 +32,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label name;
     @FXML
+    private Label role;
+    @FXML
     private Label id;
     @FXML
     private Label phone;
@@ -51,6 +54,7 @@ public class PersonCard extends UiPart<Region> {
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
+        setRoleBadge(person.getRole());
         phone.setText(person.getPhone().value);
         address.setText(person.getAddress().value);
         email.setText(person.getEmail().value);
@@ -58,5 +62,24 @@ public class PersonCard extends UiPart<Region> {
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+    }
+
+    private void setRoleBadge(ClientRole clientRole) {
+        if (clientRole == null) {
+            role.setVisible(false);
+            role.setManaged(false);
+            return;
+        }
+
+        role.setText(clientRole.getDisplayValue());
+        role.getStyleClass().add(getRoleStyleClass(clientRole));
+    }
+
+    static String getRoleStyleClass(ClientRole clientRole) {
+        return switch (clientRole) {
+            case BUYER -> "role-buyer";
+            case SELLER -> "role-seller";
+            case BOTH -> "role-both";
+        };
     }
 }
