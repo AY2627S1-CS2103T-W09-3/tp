@@ -132,6 +132,27 @@
     -fx-text-fill: #010504;
 }
 
+.role-badge {
+    -fx-padding: 3 10 3 10;
+    -fx-background-radius: 12;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 12px;
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.role-buyer {
+    -fx-background-color: #2456a6;
+}
+
+.role-seller {
+    -fx-background-color: #9a6400;
+}
+
+.role-both {
+    -fx-background-color: #7a2e91;
+}
+
 .stack-pane {
      -fx-background-color: derive(#1d1d1d, 20%);
 }

@@ -3,6 +3,7 @@ package seedu.address.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
@@ -14,9 +15,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -29,118 +28,125 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
-import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
 
 /**
- * Tests command feedback and the displayed client list through the actual JavaFX command box.
+ * Tests error feedback, recovery, and the displayed client list through the command box.
  */
 public class MainWindowTest {
 
     @TempDir
     public Path temporaryFolder;
 
-    private MainWindow window;
-    private TextField commandBox;
-    private TextArea resultDisplay;
-    private ListView<?> personList;
-
     @BeforeAll
     public static void startJavaFx() throws Exception {
         CountDownLatch ready = new CountDownLatch(1);
-        Platform.startup(() -> {
+        Runnable initialise = () -> {
             Platform.setImplicitExit(false);
             ready.countDown();
-        });
-        assertTrue(ready.await(10, TimeUnit.SECONDS), "JavaFX did not start in time");
+        };
+        try {
+            Platform.startup(initialise);
+        } catch (IllegalStateException e) {
+            // Another UI test has already started JavaFX.
+            Platform.runLater(initialise);
+        }
+        assertTrue(ready.await(10, TimeUnit.SECONDS));
     }
 
-    @BeforeEach
-    public void setUp() throws Exception {
+    @Test
+    public void execute_parseFailureThenSuccess_resetsErrorFeedback() throws Exception {
+        assertFailureAndRecovery("find", String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void execute_commandFailureThenSuccess_resetsErrorFeedback() throws Exception {
+        assertFailureAndRecovery("delete 1", MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void execute_findWithoutKeywords_keepsFilteredListUntilListCommand() throws Exception {
         runOnFxThread(() -> {
-            Model model = new ModelManager();
+            ModelManager model = new ModelManager();
             model.addPerson(AMY);
             model.addPerson(BOB);
             Path dataFile = temporaryFolder.resolve("addressbook.json");
             StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
                     new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
-            window.fillInnerParts();
-            commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
-            resultDisplay = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
-            personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
-        });
-    }
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            try {
+                window.fillInnerParts();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
 
-    @AfterEach
-    public void tearDown() throws Exception {
-        runOnFxThread(() -> {
-            if (window != null) {
+                enterCommand(window, commandBox, "find aMY");
+                assertEquals("1 clients listed!", feedback.getText());
+                assertEquals(List.of(AMY), personList.getItems());
+
+                String expectedError = "Error: "
+                        + String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE);
+                for (String command : List.of("find", "find   \t")) {
+                    enterCommand(window, commandBox, command);
+                    assertEquals(expectedError, feedback.getText());
+                    assertEquals(List.of(AMY), personList.getItems());
+                    assertTrue(feedback.getStyleClass().contains("error"));
+                }
+
+                enterCommand(window, commandBox, "list");
+                assertEquals(ListCommand.MESSAGE_SUCCESS, feedback.getText());
+                assertEquals(List.of(AMY, BOB), personList.getItems());
+                assertFalse(feedback.getStyleClass().contains("error"));
+
+                enterCommand(window, commandBox, "find Nobody");
+                assertEquals("0 clients listed!", feedback.getText());
+                assertEquals(List.of(), personList.getItems());
+
+                enterCommand(window, commandBox, "list");
+                assertEquals(List.of(AMY, BOB), personList.getItems());
+            } finally {
                 window.getRoot().close();
             }
         });
     }
 
-    @Test
-    public void execute_emptyFind_showsRedErrorAndKeepsList() throws Exception {
+    private void assertFailureAndRecovery(String command, String expectedError) throws Exception {
         runOnFxThread(() -> {
-            enterCommand("find aMY");
-            assertEquals("1 clients listed!", resultDisplay.getText());
-            assertEquals(List.of(AMY), personList.getItems());
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            try {
+                window.fillInnerParts();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
 
-            String expectedMessage = "Invalid command format!\n"
-                    + "find: Finds clients by name.\n"
-                    + "Parameters: KEYWORD [MORE_KEYWORDS]\n"
-                    + "Example: find John";
-            for (String command : List.of("find", "find   \t")) {
-                enterCommand(command);
-                assertEquals(expectedMessage, resultDisplay.getText());
-                assertEquals(List.of(AMY), personList.getItems());
-                assertErrorStyle();
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    enterCommand(window, commandBox, command);
+                    assertEquals("Error: " + expectedError, feedback.getText());
+                    assertEquals(1, Collections.frequency(feedback.getStyleClass(), "error"));
+                    assertEquals(Color.web("#d06651"), ((Text) feedback.lookup(".text")).getFill());
+                }
+
+                enterCommand(window, commandBox, "list");
+                assertEquals(ListCommand.MESSAGE_SUCCESS, feedback.getText());
+                assertFalse(feedback.getStyleClass().contains("error"));
+                assertEquals(Color.WHITE, ((Text) feedback.lookup(".text")).getFill());
+            } finally {
+                window.getRoot().close();
             }
-
-            enterCommand("list");
-            assertEquals(ListCommand.MESSAGE_SUCCESS, resultDisplay.getText());
-            assertEquals(List.of(AMY, BOB), personList.getItems());
-            assertSuccessStyle();
         });
     }
 
-    @Test
-    public void execute_commandFailureThenFind_clearsErrorStyle() throws Exception {
-        runOnFxThread(() -> {
-            enterCommand("delete 9");
-            assertEquals(MESSAGE_INVALID_PERSON_DISPLAYED_INDEX, resultDisplay.getText());
-            assertEquals(List.of(AMY, BOB), personList.getItems());
-            assertErrorStyle();
-
-            enterCommand("find Nobody");
-            assertEquals("0 clients listed!", resultDisplay.getText());
-            assertEquals(List.of(), personList.getItems());
-            assertSuccessStyle();
-        });
-    }
-
-    private void enterCommand(String command) {
+    private static void enterCommand(MainWindow window, TextField commandBox, String command) {
         commandBox.setText(command);
         commandBox.fireEvent(new ActionEvent());
         window.getRoot().getScene().getRoot().applyCss();
-    }
-
-    private void assertErrorStyle() {
-        assertEquals(1, Collections.frequency(resultDisplay.getStyleClass(), "error"));
-        Text feedbackText = (Text) resultDisplay.lookup(".text");
-        assertEquals(Color.web("#d06651"), feedbackText.getFill());
-    }
-
-    private void assertSuccessStyle() {
-        assertFalse(resultDisplay.getStyleClass().contains("error"));
-        Text feedbackText = (Text) resultDisplay.lookup(".text");
-        assertEquals(Color.WHITE, feedbackText.getFill());
     }
 
     private static void runOnFxThread(Runnable action) throws Exception {

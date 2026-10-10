@@ -10,7 +10,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names should only contain alphanumeric characters and spaces, and should not be blank";
+            "Name should only contain alphanumeric characters and spaces, and it should not be blank";
 
     /*
      * The first character of the name must not be a whitespace,
@@ -38,6 +38,14 @@ public class Name {
         return test.matches(VALIDATION_REGEX);
     }
 
+
+    /**
+     * Returns true if both names are the same, ignoring case.
+     * Spaces are not collapsed, so "Bob  Lee" and "Bob Lee" are different names.
+     */
+    public boolean isSameName(Name otherName) {
+        return otherName != null && fullName.equalsIgnoreCase(otherName.fullName);
+    }
 
     @Override
     public String toString() {

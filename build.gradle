@@ -82,7 +82,7 @@ dependencies {
 }
 
 shadowJar {
-    archiveFileName = 'addressbook.jar'
+    archiveFileName = 'estatebookultrapromax.jar'
 }
 
 defaultTasks 'clean', 'test'

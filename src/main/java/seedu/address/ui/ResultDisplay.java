@@ -22,7 +22,7 @@ public class ResultDisplay extends UiPart<Region> {
     }
 
     /**
-     * Displays successful feedback and clears any previous error styling.
+     * Displays successful feedback and clears previous error styling.
      */
     public void setFeedbackToUser(String feedbackToUser) {
         requireNonNull(feedbackToUser);
@@ -31,10 +31,11 @@ public class ResultDisplay extends UiPart<Region> {
     }
 
     /**
-     * Displays failed command feedback using the existing error style.
+     * Displays failed command feedback with an error prefix and styling.
      */
     public void setErrorFeedbackToUser(String feedbackToUser) {
-        setFeedbackToUser(feedbackToUser);
+        requireNonNull(feedbackToUser);
+        setFeedbackToUser("Error: " + feedbackToUser);
         resultDisplay.getStyleClass().add(ERROR_STYLE_CLASS);
     }
 
