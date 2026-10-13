@@ -7,7 +7,9 @@ import seedu.address.commons.util.StringUtil;
 import seedu.address.commons.util.ToStringBuilder;
 
 /**
- * Tests that a {@code Person}'s {@code Name} matches any of the keywords given.
+ * Tests that a {@code Person}'s {@code Name}, {@code Phone} or {@code Email} matches any of the keywords given.
+ * A name matches if a keyword equals one of its words, ignoring case. A phone matches if a keyword equals it exactly.
+ * An email matches if a keyword equals it, ignoring case.
  */
 public class NameContainsKeywordsPredicate implements Predicate<Person> {
     private final List<String> keywords;
@@ -18,8 +20,10 @@ public class NameContainsKeywordsPredicate implements Predicate<Person> {
 
     @Override
     public boolean test(Person person) {
-        return keywords.stream()
-                .anyMatch(keyword -> StringUtil.containsWordIgnoreCase(person.getName().fullName, keyword));
+        return keywords.stream().anyMatch(keyword ->
+                StringUtil.containsWordIgnoreCase(person.getName().fullName, keyword)
+                        || person.getPhone().value.equals(keyword)
+                        || person.getEmail().value.equalsIgnoreCase(keyword));
     }
 
     @Override
