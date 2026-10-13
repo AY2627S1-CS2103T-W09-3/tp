@@ -5,9 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
@@ -32,7 +36,7 @@ import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
 
 /**
- * Tests error feedback and recovery through the command box.
+ * Tests error feedback, recovery, and the displayed client list through the command box.
  */
 public class MainWindowTest {
 
@@ -63,6 +67,52 @@ public class MainWindowTest {
     @Test
     public void execute_commandFailureThenSuccess_resetsErrorFeedback() throws Exception {
         assertFailureAndRecovery("delete 1", MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void execute_findWithoutKeywords_keepsFilteredListUntilListCommand() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            try {
+                window.fillInnerParts();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+
+                enterCommand(window, commandBox, "find aMY");
+                assertEquals("1 clients listed!", feedback.getText());
+                assertEquals(List.of(AMY), personList.getItems());
+
+                String expectedError = "Error: "
+                        + String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE);
+                for (String command : List.of("find", "find   \t")) {
+                    enterCommand(window, commandBox, command);
+                    assertEquals(expectedError, feedback.getText());
+                    assertEquals(List.of(AMY), personList.getItems());
+                    assertTrue(feedback.getStyleClass().contains("error"));
+                }
+
+                enterCommand(window, commandBox, "list");
+                assertEquals(ListCommand.MESSAGE_SUCCESS, feedback.getText());
+                assertEquals(List.of(AMY, BOB), personList.getItems());
+                assertFalse(feedback.getStyleClass().contains("error"));
+
+                enterCommand(window, commandBox, "find Nobody");
+                assertEquals("0 clients listed!", feedback.getText());
+                assertEquals(List.of(), personList.getItems());
+
+                enterCommand(window, commandBox, "list");
+                assertEquals(List.of(AMY, BOB), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
     }
 
     private void assertFailureAndRecovery(String command, String expectedError) throws Exception {
