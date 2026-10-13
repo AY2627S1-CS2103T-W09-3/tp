@@ -19,11 +19,12 @@ public class DeleteCommand extends Command {
     public static final String COMMAND_WORD = "delete";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Deletes the person identified by the index number used in the displayed person list.\n"
+            + ": Deletes the client identified by the index number used in the displayed client list.\n"
             + "Parameters: INDEX (must be a positive integer)\n"
             + "Example: " + COMMAND_WORD + " 1";
 
-    public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted person: %1$s";
+    public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted client: %1$s (%2$s)";
+    public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: delete INDEX.";
 
     private final Index targetIndex;
 
@@ -41,8 +42,15 @@ public class DeleteCommand extends Command {
         }
 
         Person personToDelete = lastShownList.get(targetIndex.getZeroBased());
+
+        String role = personToDelete.getRole() == null
+                ? "No role"
+                : personToDelete.getRole().toString();
+
         model.deletePerson(personToDelete);
-        return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(personToDelete)));
+
+        return new CommandResult(String.format(
+                MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName(), role));
     }
 
     @Override

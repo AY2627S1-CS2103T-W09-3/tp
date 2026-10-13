@@ -104,7 +104,8 @@ public class MainWindowTest {
                 assertFalse(feedback.getStyleClass().contains("error"));
 
                 enterCommand(window, commandBox, "find Nobody");
-                assertEquals("0 clients listed!", feedback.getText());
+                assertEquals("No clients found", feedback.getText());
+                assertFalse(feedback.getStyleClass().contains("error"));
                 assertEquals(List.of(), personList.getItems());
 
                 enterCommand(window, commandBox, "list");

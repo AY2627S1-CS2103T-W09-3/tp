@@ -54,7 +54,7 @@ public class FindCommandTest {
 
     @Test
     public void execute_nonMatchingKeyword_noPersonFound() {
-        String expectedMessage = "0 clients listed!";
+        String expectedMessage = "No clients found";
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Nobody");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
