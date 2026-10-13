@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,9 +20,13 @@ import org.junit.jupiter.api.io.TempDir;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.model.AddressBook;
+import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
-import seedu.address.model.util.SampleDataUtil;
+import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
+import seedu.address.storage.SampleAddressBookLoader;
+import seedu.address.testutil.TypicalPersons;
 import seedu.address.ui.Ui;
 
 public class MainAppTest {
@@ -53,7 +58,11 @@ public class MainAppTest {
     public void init_missingFiles_loadsSampleClientsAndLogsBranding() throws Exception {
         app.init();
 
-        assertEquals(SampleDataUtil.getSampleAddressBook(), app.model.getAddressBook());
+        ReadOnlyAddressBook expectedSamples = SampleAddressBookLoader.load();
+        assertEquals(expectedSamples, app.model.getAddressBook());
+        assertTrue(Files.exists(addressBookPath));
+        assertEquals(expectedSamples,
+                new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
         assertEquals(app.model.getFilteredPersonList(), app.logic.getFilteredPersonList());
         assertNotNull(app.ui);
         assertEquals(userPrefsPath, app.storage.getUserPrefsFilePath());
@@ -63,6 +72,53 @@ public class MainAppTest {
                 .anyMatch(message -> message.contains("Initializing EstateBookUltraProMax")));
         assertTrue(logHandler.messages.stream()
                 .anyMatch(message -> message.contains("populated with sample client data.")));
+    }
+
+    @Test
+    public void init_existingClients_preservesDataFile() throws Exception {
+        AddressBook existing = TypicalPersons.getTypicalAddressBook();
+        new JsonAddressBookStorage(addressBookPath).saveAddressBook(existing);
+        String originalJson = Files.readString(addressBookPath);
+
+        app.init();
+
+        assertEquals(existing, app.model.getAddressBook());
+        assertEquals(originalJson, Files.readString(addressBookPath));
+    }
+
+    @Test
+    public void init_existingEmptyClientBook_doesNotLoadSamples() throws Exception {
+        new JsonAddressBookStorage(addressBookPath).saveAddressBook(new AddressBook());
+        String originalJson = Files.readString(addressBookPath);
+
+        app.init();
+
+        assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+        assertEquals(originalJson, Files.readString(addressBookPath));
+    }
+
+    @Test
+    public void init_corruptDataFile_doesNotOverwriteFile() throws Exception {
+        String invalidJson = "{invalid json";
+        Files.writeString(addressBookPath, invalidJson);
+
+        app.init();
+
+        assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+        assertEquals(invalidJson, Files.readString(addressBookPath));
+    }
+
+    @Test
+    public void init_secondStartup_preservesSavedClientChanges() throws Exception {
+        app.init();
+        app.logic.execute("delete 1");
+        ReadOnlyAddressBook expected = new AddressBook(app.model.getAddressBook());
+
+        MainApp restartedApp = new MainApp(userPrefsPath, addressBookPath);
+        restartedApp.init();
+
+        assertEquals(expected, restartedApp.model.getAddressBook());
+        assertEquals(4, restartedApp.model.getAddressBook().getPersonList().size());
     }
 
     @Test
