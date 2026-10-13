@@ -5,7 +5,7 @@ import static java.util.Objects.requireNonNull;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.model.Model;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
 
 /**
  * Finds and lists all clients whose name, phone or email matches any of the argument keywords.
@@ -19,9 +19,9 @@ public class FindCommand extends Command {
             + "Parameters: KEYWORD [MORE_KEYWORDS]\n"
             + "Example: " + COMMAND_WORD + " John";
 
-    private final NameContainsKeywordsPredicate predicate;
+    private final PersonMatchesSearchTermsPredicate predicate;
 
-    public FindCommand(NameContainsKeywordsPredicate predicate) {
+    public FindCommand(PersonMatchesSearchTermsPredicate predicate) {
         this.predicate = predicate;
     }
 
