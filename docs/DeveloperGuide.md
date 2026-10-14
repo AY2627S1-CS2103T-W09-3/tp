@@ -191,6 +191,10 @@ Invalid inputs do not change the client's role:
 | The role is missing or is not `buyer`, `seller`, or `both` | `Invalid Role: Role must be 'buyer', 'seller', or 'both'.` |
 | The positive index is outside the currently displayed list | `The client index provided is invalid.` |
 
+The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
+
+![Interactions for the `role 1 buyer` command](images/RoleSequenceDiagram.png)
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation

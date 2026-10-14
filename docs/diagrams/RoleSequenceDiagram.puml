@@ -1,0 +1,110 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":RoleCommandParser" as RoleCommandParser LOGIC_COLOR
+participant "<<class>>\nParserUtil" as ParserUtil LOGIC_COLOR
+participant "c:RoleCommand" as RoleCommand LOGIC_COLOR
+participant "result:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "<<class>>\nClientRole" as ClientRole MODEL_COLOR
+participant "m:Model" as Model MODEL_COLOR
+participant "editedClient:Person" as Person MODEL_COLOR
+end box
+
+[-> LogicManager : execute("role 1 buyer")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("role 1 buyer")
+activate AddressBookParser
+
+create RoleCommandParser
+AddressBookParser -> RoleCommandParser
+activate RoleCommandParser
+
+RoleCommandParser --> AddressBookParser
+deactivate RoleCommandParser
+
+AddressBookParser -> RoleCommandParser : parse("1 buyer")
+activate RoleCommandParser
+
+RoleCommandParser -> ParserUtil : parseIndex("1")
+activate ParserUtil
+
+ParserUtil --> RoleCommandParser : index
+deactivate ParserUtil
+
+RoleCommandParser -> ClientRole : isValidRole("buyer")
+activate ClientRole
+
+ClientRole --> RoleCommandParser : true
+deactivate ClientRole
+
+RoleCommandParser -> ClientRole : fromString("buyer")
+activate ClientRole
+
+ClientRole --> RoleCommandParser : BUYER
+deactivate ClientRole
+
+create RoleCommand
+RoleCommandParser -> RoleCommand
+activate RoleCommand
+
+RoleCommand --> RoleCommandParser
+deactivate RoleCommand
+
+RoleCommandParser --> AddressBookParser : c
+deactivate RoleCommandParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+RoleCommandParser -[hidden]-> AddressBookParser
+destroy RoleCommandParser
+
+AddressBookParser --> LogicManager : c
+deactivate AddressBookParser
+
+LogicManager -> RoleCommand : execute(m)
+activate RoleCommand
+
+RoleCommand -> Model : getFilteredPersonList()
+activate Model
+
+Model --> RoleCommand : lastShownList
+deactivate Model
+
+create Person
+RoleCommand -> Person
+activate Person
+
+Person --> RoleCommand
+deactivate Person
+
+RoleCommand -> Model : setPerson(clientToEdit, editedClient)
+activate Model
+
+Model --> RoleCommand
+deactivate Model
+
+RoleCommand -> Model : updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS)
+activate Model
+
+Model --> RoleCommand
+deactivate Model
+
+create CommandResult
+RoleCommand -> CommandResult
+activate CommandResult
+
+CommandResult --> RoleCommand
+deactivate CommandResult
+
+RoleCommand --> LogicManager : result
+deactivate RoleCommand
+
+[<--LogicManager : result
+deactivate LogicManager
+@enduml
