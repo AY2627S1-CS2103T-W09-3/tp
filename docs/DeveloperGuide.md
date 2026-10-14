@@ -560,7 +560,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 ### Non-Functional Requirements
 
 1. **Usability:** A user with an above average typing speed for English text should be able to accomplish most tasks using the _Command Line Interface (CLI)_ and command _aliases_ than navigating with mouse-driven GUI.
-2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed. 
+2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed.
 3. **Performance:** The system should be able to hold up to <ins>100</ins> active client records without any noticeable sluggishness in performance during typical usage (e.g., searching, filtering).
 4. **Data Reliability:** The application must ensure that all data-changing actions are saved safely so that the latest changes are retained upon exiting.
 5. **Fault Tolerance:** The application must gracefully handle invalid inputs (e.g., invalid client references, missing roles, or conflicting duplicate details) by displaying clear error messages, instead of crashing.
@@ -587,6 +587,10 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 Given below are instructions to test the app manually.
 
+Unless stated otherwise, start each subsection in a separate test folder that initially contains only the JAR file.
+This ensures that the six sample clients are loaded and that their indexes are predictable. Back up
+`data/addressbook.json` before any test that edits or removes it.
+
 <div markdown="span" class="alert alert-info">:information_source: **Note:** These instructions only provide a starting point for testers to work on;
 testers are expected to do more *exploratory* testing.
 
@@ -608,29 +612,129 @@ testers are expected to do more *exploratory* testing.
    1. Relaunch the app by double-clicking the JAR file.<br>
        Expected: The most recent window size and location are retained.
 
-1. _{ more test cases …​ }_
+### Changing a client's role
 
-### Deleting a person
+1. Changing a role while all clients are displayed
 
-1. Deleting a person while all persons are being shown
+   1. Prerequisites: Run `list`. Confirm that `Alex Yeoh` is client 1.
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+   1. Test case: `role 1 buyer`<br>
+      Expected: Alex's badge shows `Buyer`. The result box shows
+      `Role updated: Alex Yeoh is now marked as Buyer`.
 
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+   1. Test case: `role 1 SELLER`<br>
+      Expected: Role input is case-insensitive. Alex's badge changes to `Seller`. The result box shows
+      `Role updated: Alex Yeoh is now marked as Seller`.
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+   1. Test case: `role 1 both`<br>
+      Expected: Alex's badge changes to `Buyer, Seller`. The result box shows
+      `Role updated: Alex Yeoh is now marked as Buyer, Seller`.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+### Rejecting invalid role commands
 
-1. _{ more test cases …​ }_
+1. Rejecting invalid formats, roles, and indexes
 
-### Saving data
+   1. Prerequisites: Run `list` and note the current role of client 1.
 
-1. Dealing with missing/corrupted data files
+   1. Test case: `role 0 buyer`<br>
+      Expected: No role is changed. The result box shows `Invalid command format. Use: role INDEX ROLE.`
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+   1. Test case: `role 1`<br>
+      Expected: No role is changed. The result box shows
+      `Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
 
-1. _{ more test cases …​ }_
+   1. Test case: `role 1 landlord`<br>
+      Expected: No role is changed. The result box shows
+      `Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+
+   1. Test case: `role 999 buyer`<br>
+      Expected: No role is changed. The result box shows `The client index provided is invalid.`
+
+   1. Test case: `role 1 buyer extra`<br>
+      Expected: No role is changed. The result box shows `Invalid command format. Use: role INDEX ROLE.`
+
+### Rejecting duplicate clients
+
+1. Rejecting duplicate details when adding or editing a client
+
+   1. Prerequisites: Run `list`. Confirm that `Alex Yeoh` is client 1 and `Bernice Yu` is client 2.
+
+   1. Test case: `add n/Alex Yeoh p/81111111 e/alex.test@example.com a/1 Test Road`<br>
+      Expected: No client is added. The result box shows
+      `A client with this name already exists in the client book.`
+
+   1. Test case: `add n/Test Buyer p/87438807 e/test.buyer@example.com a/2 Test Road`<br>
+      Expected: No client is added. The result box shows
+      `This phone number already belongs to another client: Alex Yeoh. For co-buyers, use one household record tagged t/couple.`
+
+   1. Test case: `add n/Test Seller p/82222222 e/alexyeoh@example.com a/3 Test Road`<br>
+      Expected: No client is added. The result box shows
+      `This email address already belongs to another client: Alex Yeoh. For co-buyers, use one household record tagged t/couple.`
+
+   1. Test case: `edit 2 p/87438807`<br>
+      Expected: Bernice's details are unchanged. The result box shows
+      `This phone number already belongs to another client: Alex Yeoh. For co-buyers, use one household record tagged t/couple.`
+
+### Using indexes from a filtered list
+
+1. Changing the role of a client in filtered results
+
+   1. Test case: `find Bernice`<br>
+      Expected: Only `Bernice Yu` is displayed, at index 1. The result box shows `1 clients listed!`.
+
+   1. Test case: `role 1 seller`<br>
+      Expected: Bernice's badge changes to `Seller`, even though she is client 2 in the full list. The full client list
+      is displayed again. The result box shows `Role updated: Bernice Yu is now marked as Seller`.
+
+   1. Test case: `find Alex`, followed by `role 2 buyer`<br>
+      Expected: The filtered list contains only one client, so no role is changed. The result box shows
+      `The client index provided is invalid.`
+
+### Saving and loading role data
+
+1. Retaining a changed role after restarting the app
+
+   1. Prerequisites: Run `list`, followed by `role 1 buyer`.
+
+   1. Exit the app using `exit`, then relaunch the same JAR file from the same folder.<br>
+      Expected: Alex's `Buyer` badge is still displayed. `data/addressbook.json` contains
+      `"role" : "buyer"` in Alex's client record.
+
+2. Loading a client record that has no role field
+
+   1. Prerequisites: Exit the app and back up `data/addressbook.json`.
+
+   1. Remove the entire `"role" : "buyer",` line from Alex's client record, while keeping the remaining JSON valid.
+
+   1. Relaunch the app.<br>
+      Expected: All saved clients load normally. Alex has no role badge, while his other details are unchanged.
+
+   1. Exit the app and restore the backup.
+
+### Handling missing or corrupted data
+
+1. Starting with a missing data file
+
+   1. Prerequisites: Run `list` to create the data file. Exit the app and rename `data/addressbook.json` to
+      `addressbook.backup.json`.
+
+   1. Relaunch the app.<br>
+      Expected: The app starts normally with the six sample clients.
+
+   1. Run `list`.<br>
+      Expected: The sample clients remain displayed and a new valid `data/addressbook.json` is created.
+
+2. Starting with corrupted data
+
+   1. Prerequisites: Run `list`, followed by `role 1 buyer`, to create data containing a role. Exit the app and back
+      up `data/addressbook.json`.
+
+   1. Either replace the file contents with text that is not valid JSON, or change a saved role value to an invalid
+      value such as `"role" : "landlord"`.
+
+   1. Relaunch the app.<br>
+      Expected: The app does not crash and starts with an empty client list because the file cannot be loaded.
+
+   1. Run `list`.<br>
+      Expected: The result box shows `0 clients listed!` and the corrupted file is replaced with a valid empty
+      client book. Restore the backup after completing the test.
