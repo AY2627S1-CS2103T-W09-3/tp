@@ -109,7 +109,7 @@ and add the tag `t/couple`. Adding this tag does not allow duplicate records.
 
 Shows a message explaining how to access the help page.
 
-![help message](images/helpMessage.png)
+![help message](images/helpMessage(1).png)
 
 Format: `help`
 
