@@ -174,14 +174,14 @@ The success message follows this format:
 
 `Role updated: CLIENT_NAME is now marked as DISPLAY_ROLE`
 
-The examples below are independent and assume that `Alice Tan` is client 2 in
+The examples below are independent and assume that `Alicia Tan` is client 1 in
 the currently displayed list.
 
 | Command | Expected result |
 |---------|-----------------|
-| `role 2 buyer` | Alice Tan's role becomes `Buyer`. The result box shows `Role updated: Alice Tan is now marked as Buyer`. |
-| `role 2 seller` | Alice Tan's role becomes `Seller`. The result box shows `Role updated: Alice Tan is now marked as Seller`. |
-| `role 2 both` | Alice Tan's role becomes `Buyer, Seller`. The result box shows `Role updated: Alice Tan is now marked as Buyer, Seller`. |
+| `role 1 buyer` | Alicia Tan's role becomes `Buyer`. The result box shows `Role updated: Alicia Tan is now marked as Buyer`. |
+| `role 1 seller` | Alicia Tan's role becomes `Seller`. The result box shows `Role updated: Alicia Tan is now marked as Seller`. |
+| `role 1 both` | Alicia Tan's role becomes `Buyer, Seller`. The result box shows `Role updated: Alicia Tan is now marked as Buyer, Seller`. |
 
 Invalid inputs do not change the client's role:
 
@@ -499,7 +499,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 Given below are instructions to test the app manually.
 
 Unless stated otherwise, start each subsection in a separate test folder that initially contains only the JAR file.
-This ensures that the six sample clients are loaded and that their indexes are predictable. Back up
+This ensures that the five sample clients are loaded and that their indexes are predictable. Back up
 `data/addressbook.json` before any test that edits or removes it.
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** These instructions only provide a starting point for testers to work on;
@@ -517,7 +517,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Open a terminal, change to the folder containing the JAR file, and run
       `java -jar estatebookultrapromax.jar`.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+      Expected: The GUI opens with five sample clients. The window size may not be optimal.
 
 1. Saving window preferences
 
@@ -530,19 +530,19 @@ testers are expected to do more *exploratory* testing.
 
 1. Changing a role while all clients are displayed
 
-   1. Prerequisites: Run `list`. Confirm that `Alex Yeoh` is client 1.
+   1. Prerequisites: Run `list`. Confirm that `Alicia Tan` is client 1.
 
-   1. Test case: `role 1 buyer`<br>
-      Expected: Alex's badge shows `Buyer`. The result box shows
-      `Role updated: Alex Yeoh is now marked as Buyer`.
+   1. Test case: `role 1 seller`<br>
+      Expected: Alicia's badge changes to `Seller`. The result box shows
+      `Role updated: Alicia Tan is now marked as Seller`.
 
-   1. Test case: `role 1 SELLER`<br>
-      Expected: Role input is case-insensitive. Alex's badge changes to `Seller`. The result box shows
-      `Role updated: Alex Yeoh is now marked as Seller`.
+   1. Test case: `role 1 BUYER`<br>
+      Expected: Role input is case-insensitive. Alicia's badge changes to `Buyer`. The result box shows
+      `Role updated: Alicia Tan is now marked as Buyer`.
 
    1. Test case: `role 1 both`<br>
-      Expected: Alex's badge changes to `Buyer, Seller`. The result box shows
-      `Role updated: Alex Yeoh is now marked as Buyer, Seller`.
+      Expected: Alicia's badge changes to `Buyer, Seller`. The result box shows
+      `Role updated: Alicia Tan is now marked as Buyer, Seller`.
 
 ### Rejecting invalid role commands
 
@@ -571,36 +571,36 @@ testers are expected to do more *exploratory* testing.
 
 1. Rejecting duplicate details when adding or editing a client
 
-   1. Prerequisites: Run `list`. Confirm that `Alex Yeoh` is client 1 and `Bernice Yu` is client 2.
+   1. Prerequisites: Run `list`. Confirm that `Alicia Tan` is client 1 and `Benjamin Lim` is client 2.
 
-   1. Test case: `add n/Alex Yeoh p/81111111 e/alex.test@example.com a/1 Test Road`<br>
+   1. Test case: `add n/Alicia Tan p/81111111 e/alicia.test@example.com a/1 Test Road`<br>
       Expected: No client is added. The result box shows
       `A client with this name already exists in the client book.`
 
-   1. Test case: `add n/Test Buyer p/87438807 e/test.buyer@example.com a/2 Test Road`<br>
+   1. Test case: `add n/Test Buyer p/81234567 e/test.buyer@example.com a/2 Test Road`<br>
       Expected: No client is added. The result box shows
-      `This phone number already belongs to another client: Alex Yeoh. For co-buyers, use one household record tagged t/couple.`
+      `This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
 
-   1. Test case: `add n/Test Seller p/82222222 e/alexyeoh@example.com a/3 Test Road`<br>
+   1. Test case: `add n/Test Seller p/82222222 e/alicia.tan@example.com a/3 Test Road`<br>
       Expected: No client is added. The result box shows
-      `This email address already belongs to another client: Alex Yeoh. For co-buyers, use one household record tagged t/couple.`
+      `This email address already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
 
-   1. Test case: `edit 2 p/87438807`<br>
-      Expected: Bernice's details are unchanged. The result box shows
-      `This phone number already belongs to another client: Alex Yeoh. For co-buyers, use one household record tagged t/couple.`
+   1. Test case: `edit 2 p/81234567`<br>
+      Expected: Benjamin's details are unchanged. The result box shows
+      `This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
 
 ### Using indexes from a filtered list
 
 1. Changing the role of a client in filtered results
 
-   1. Test case: `find Bernice`<br>
-      Expected: Only `Bernice Yu` is displayed, at index 1. The result box shows `1 clients listed!`.
+   1. Test case: `find Benjamin`<br>
+      Expected: Only `Benjamin Lim` is displayed, at index 1. The result box shows `1 clients listed!`.
 
    1. Test case: `role 1 seller`<br>
-      Expected: Bernice's badge changes to `Seller`, even though she is client 2 in the full list. The full client list
-      is displayed again. The result box shows `Role updated: Bernice Yu is now marked as Seller`.
+      Expected: Benjamin's badge changes to `Seller`, even though he is client 2 in the full list. The full client list
+      is displayed again. The result box shows `Role updated: Benjamin Lim is now marked as Seller`.
 
-   1. Test case: `find Alex`, followed by `role 2 buyer`<br>
+   1. Test case: `find Alicia`, followed by `role 2 buyer`<br>
       Expected: The filtered list contains only one client, so no role is changed. The result box shows
       `The client index provided is invalid.`
 
@@ -608,20 +608,20 @@ testers are expected to do more *exploratory* testing.
 
 1. Retaining a changed role after restarting the app
 
-   1. Prerequisites: Run `list`, followed by `role 1 buyer`.
+   1. Prerequisites: Run `list`, followed by `role 1 seller`.
 
    1. Exit the app using `exit`, then relaunch the same JAR file from the same folder.<br>
-      Expected: Alex's `Buyer` badge is still displayed. `data/addressbook.json` contains
-      `"role" : "buyer"` in Alex's client record.
+      Expected: Alicia's `Seller` badge is still displayed. `data/addressbook.json` contains
+      `"role" : "seller"` in Alicia's client record.
 
 2. Loading a client record that has no role field
 
    1. Prerequisites: Exit the app and back up `data/addressbook.json`.
 
-   1. Remove the entire `"role" : "buyer",` line from Alex's client record, while keeping the remaining JSON valid.
+   1. Remove the entire `"role" : "seller",` line from Alicia's client record, while keeping the remaining JSON valid.
 
    1. Relaunch the app.<br>
-      Expected: All saved clients load normally. Alex has no role badge, while his other details are unchanged.
+      Expected: All saved clients load normally. Alicia has no role badge, while her other details are unchanged.
 
    1. Exit the app and restore the backup.
 
@@ -633,14 +633,15 @@ testers are expected to do more *exploratory* testing.
       `addressbook.backup.json`.
 
    1. Relaunch the app.<br>
-      Expected: The app starts normally with the six sample clients.
+      Expected: The app starts normally with the five sample clients and creates a new valid
+      `data/addressbook.json`.
 
    1. Run `list`.<br>
-      Expected: The sample clients remain displayed and a new valid `data/addressbook.json` is created.
+      Expected: The sample clients remain displayed. The result box shows `Listed all clients.`
 
 2. Starting with corrupted data
 
-   1. Prerequisites: Run `list`, followed by `role 1 buyer`, to create data containing a role. Exit the app and back
+   1. Prerequisites: Run `list`, followed by `role 1 seller`, to create data containing a role. Exit the app and back
       up `data/addressbook.json`.
 
    1. Either replace the file contents with text that is not valid JSON, or change a saved role value to an invalid
@@ -650,5 +651,5 @@ testers are expected to do more *exploratory* testing.
       Expected: The app does not crash and starts with an empty client list because the file cannot be loaded.
 
    1. Run `list`.<br>
-      Expected: The result box shows `0 clients listed!` and the corrupted file is replaced with a valid empty
+      Expected: The result box shows `Listed all clients.` and the corrupted file is replaced with a valid empty
       client book. Restore the backup after completing the test.
