@@ -163,16 +163,16 @@ Format: `role INDEX ROLE`
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
 * `ROLE` accepts `buyer`, `seller`, or `both`, ignoring case.
+* The client card displays `Buyer`, `Seller`, or `Buyer, Seller`.
 * Newly added clients have no role assigned.
 * Assigning a role replaces any existing role.
-* The client card displays Buyer, Seller, or both.
 * After a successful role change, the list shows all clients again.
 
 Examples:
 
 * `role 1 buyer` marks the first displayed client as a buyer.
 * `role 2 both` marks the second displayed client as both a buyer and a seller.
-  The role badge displays `Buyer, Seller`
+  The role badge displays `Buyer, Seller`.
 
 For example, if the first displayed client is John Doe, `role 1 buyer` displays:
 `Role updated: John Doe is now marked as Buyer`
