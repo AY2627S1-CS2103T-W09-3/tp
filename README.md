@@ -9,15 +9,15 @@ EstateBookUltraProMax is a desktop contact book for property agents who manage
 many buyers and sellers at once. Every action is a short command typed into the
 command box, and the result appears in the GUI.
 
-Each contact stores the client's details along with the budget, the preferred
-areas and property type, the viewing status and the next follow-up date. Property
-and viewing details are kept as context for the contact.
+Each client record stores a name, a phone number, email address, address and tags.
+Clients can also be marked as a buyer, a seller, or both.
 
 Records are stored in one file that can be opened and edited by hand. There is no
 server and no database.
 
 * Mark a client as a buyer, a seller, or both.
-* Find someone by part of a name, or list everyone.
+* Find clients by whole words in their names, a full phone number, or a full email address.
+* List all clients.
 * If you can type fast, EstateBookUltraProMax can get your client management
   tasks done faster than a mouse-driven app.
 
