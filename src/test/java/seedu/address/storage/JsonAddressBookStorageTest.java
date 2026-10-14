@@ -70,7 +70,7 @@ public class JsonAddressBookStorageTest {
     public void readAndSaveAddressBook_legacyFile_preservesPerson() throws Exception {
         ReadOnlyAddressBook legacyAddressBook = readAddressBook("legacyAddressBook.json").get();
         AddressBook expectedAddressBook = new AddressBook();
-        expectedAddressBook.addPerson(new PersonBuilder(ALICE).withRemark("").build());
+        expectedAddressBook.addPerson(new PersonBuilder(ALICE).build());
         assertEquals(expectedAddressBook, legacyAddressBook);
 
         JsonAddressBookStorage storage = new JsonAddressBookStorage(testFolder.resolve("migratedAddressBook.json"));
