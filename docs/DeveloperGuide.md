@@ -156,6 +156,41 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Client role command
+
+The `role` command assigns a transaction role to an existing client. It uses the
+client's one-based index in the currently displayed client list.
+
+**Format:** `role INDEX ROLE`
+
+* `INDEX` must be a positive integer that refers to a client in the currently
+  displayed list.
+* `ROLE` must be `buyer`, `seller`, or `both`. Role values are
+  case-insensitive.
+* After a successful update, the full client list is displayed again and the
+  client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+
+The success message follows this format:
+
+`Role updated: CLIENT_NAME is now marked as DISPLAY_ROLE`
+
+The examples below are independent and assume that `Alice Tan` is client 2 in
+the currently displayed list.
+
+| Command | Expected result |
+|---------|-----------------|
+| `role 2 buyer` | Alice Tan's role becomes `Buyer`. The result box shows `Role updated: Alice Tan is now marked as Buyer`. |
+| `role 2 seller` | Alice Tan's role becomes `Seller`. The result box shows `Role updated: Alice Tan is now marked as Seller`. |
+| `role 2 both` | Alice Tan's role becomes `Buyer, Seller`. The result box shows `Role updated: Alice Tan is now marked as Buyer, Seller`. |
+
+Invalid inputs do not change the client's role:
+
+| Situation | Expected result |
+|-----------|-----------------|
+| The command format or index syntax is invalid | `Invalid command format. Use: role INDEX ROLE.` |
+| The role is missing or is not `buyer`, `seller`, or `both` | `Invalid Role: Role must be 'buyer', 'seller', or 'both'.` |
+| The positive index is outside the currently displayed list | `The client index provided is invalid.` |
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
