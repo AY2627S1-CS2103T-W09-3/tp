@@ -31,9 +31,14 @@ public class FindCommand extends Command {
         model.updateFilteredPersonList(predicate);
 
         int count = model.getFilteredPersonList().size();
-        String message = count == 0
-                ? Messages.MESSAGE_NO_CLIENTS_FOUND
-                : String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, count);
+        String message;
+        if (count == 0) {
+            message = Messages.MESSAGE_NO_CLIENTS_FOUND;
+        } else if (count == 1) {
+            message = Messages.MESSAGE_ONE_CLIENT_LISTED;
+        } else {
+            message = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, count);
+        }
 
         return new CommandResult(message);
     }

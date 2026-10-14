@@ -63,6 +63,16 @@ public class FindCommandTest {
     }
 
     @Test
+    public void execute_oneMatchingClient_usesSingularFeedback() {
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("Elle");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "1 client listed!", expectedModel);
+        assertEquals(List.of(ELLE), model.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_multipleKeywords_multiplePersonsFound() {
         String expectedMessage = "3 clients listed!";
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Kurz Elle Kunz");

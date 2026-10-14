@@ -86,7 +86,7 @@ public class MainWindowTest {
                 ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
 
                 enterCommand(window, commandBox, "find aMY");
-                assertEquals("1 clients listed!", feedback.getText());
+                assertEquals("1 client listed!", feedback.getText());
                 assertEquals(List.of(AMY), personList.getItems());
 
                 String expectedError = "Error: "
