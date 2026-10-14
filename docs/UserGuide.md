@@ -172,6 +172,7 @@ Examples:
 
 * `role 1 buyer` marks the first displayed client as a buyer.
 * `role 2 both` marks the second displayed client as both a buyer and a seller.
+  The role badge displays `Buyer, Seller`
 
 For example, if the first displayed client is John Doe, `role 1 buyer` displays:
 `Role updated: John Doe is now marked as Buyer`
