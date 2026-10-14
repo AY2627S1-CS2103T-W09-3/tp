@@ -600,16 +600,19 @@ testers are expected to do more *exploratory* testing.
 
 1. Initial launch
 
+   1. Ensure that Java `25` or later is installed on the computer.
+
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
+   1. Open a terminal, change to the folder containing the JAR file, and run
+      `java -jar estatebookultrapromax.jar`.<br>
       Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
 
 1. Saving window preferences
 
-   1. Resize the window to an optimal size. Move the window to a different location. Close the window.
+   1. Resize the window to an optimal size. Move the window to a different location. Enter `exit` to close the app.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   1. From the same folder, relaunch the app by running `java -jar estatebookultrapromax.jar`.<br>
        Expected: The most recent window size and location are retained.
 
 ### Changing a client's role
