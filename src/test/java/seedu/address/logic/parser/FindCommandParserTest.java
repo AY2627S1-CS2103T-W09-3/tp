@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FindCommand;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
 
 public class FindCommandParserTest {
 
@@ -17,7 +17,7 @@ public class FindCommandParserTest {
     @Test
     public void parse_emptyArg_throwsParseException() {
         String expectedMessage = "Invalid command format!\n"
-                + "find: Finds clients by name.\n"
+                + "find: Finds clients by name, phone or email.\n"
                 + "Parameters: KEYWORD [MORE_KEYWORDS]\n"
                 + "Example: find John";
         assertParseFailure(parser, "", expectedMessage);
@@ -28,7 +28,7 @@ public class FindCommandParserTest {
     public void parse_validArgs_returnsFindCommand() {
         // no leading and trailing whitespaces
         FindCommand expectedFindCommand =
-                new FindCommand(new NameContainsKeywordsPredicate(List.of("Alice", "Bob")));
+                new FindCommand(new PersonMatchesSearchTermsPredicate(List.of("Alice", "Bob")));
         assertParseSuccess(parser, "Alice Bob", expectedFindCommand);
 
         // multiple whitespaces between keywords
