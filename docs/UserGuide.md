@@ -191,6 +191,10 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Keyword order does not matter.
 * Entering `find` without keywords shows an error and leaves the displayed list unchanged.
 * Use `list` to show all clients again.
+* If no clients match, the result shows `No clients found`.
+* If one client matches, the result shows `1 client listed!`.
+* If multiple clients match, the result shows the number of matches,
+  e.g. `2 clients listed!`.
 
 Examples:
 
