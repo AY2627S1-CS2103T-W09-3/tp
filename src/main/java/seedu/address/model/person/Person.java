@@ -24,7 +24,6 @@ public class Person {
 
     // Data fields
     private final Address address;
-    private final Remark remark;
     private final ClientRole role;
     private final Set<Tag> tags = new HashSet<>();
 
@@ -32,14 +31,13 @@ public class Person {
      * Every field must be present and not null, except {@code role}, which is null
      * when no role has been assigned to the client.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Remark remark, ClientRole role,
+    public Person(Name name, Phone phone, Email email, Address address, ClientRole role,
             Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, remark, tags);
+        requireAllNonNull(name, phone, email, address, tags);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
-        this.remark = remark;
         this.role = role;
         this.tags.addAll(tags);
     }
@@ -58,10 +56,6 @@ public class Person {
 
     public Address getAddress() {
         return address;
-    }
-
-    public Remark getRemark() {
-        return remark;
     }
 
     /**
@@ -112,7 +106,6 @@ public class Person {
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
-                && remark.equals(otherPerson.remark)
                 && Objects.equals(role, otherPerson.role)
                 && tags.equals(otherPerson.tags);
     }
@@ -120,7 +113,7 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, remark, role, tags);
+        return Objects.hash(name, phone, email, address, role, tags);
     }
 
     @Override
@@ -130,7 +123,6 @@ public class Person {
                 .add("phone", phone)
                 .add("email", email)
                 .add("address", address)
-                .add("remark", remark)
                 .add("role", role)
                 .add("tags", tags)
                 .toString();

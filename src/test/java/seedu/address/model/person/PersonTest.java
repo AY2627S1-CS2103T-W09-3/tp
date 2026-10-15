@@ -22,15 +22,9 @@ import seedu.address.testutil.PersonBuilder;
 public class PersonTest {
 
     @Test
-    public void constructor_nullRemark_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(),
-                ALICE.getAddress(), null, ALICE.getRole(), ALICE.getTags()));
-    }
-
-    @Test
     public void constructor_nullRole_isAllowed() {
         Person personWithNoRole = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(),
-                ALICE.getAddress(), ALICE.getRemark(), null, ALICE.getTags());
+                ALICE.getAddress(), null, ALICE.getTags());
         assertNull(personWithNoRole.getRole());
     }
 
@@ -123,11 +117,6 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
 
-        // different remark -> different details, but still the same person
-        editedAlice = new PersonBuilder(ALICE).withRemark("Likes swimming.").build();
-        assertFalse(ALICE.equals(editedAlice));
-        assertTrue(ALICE.isSamePerson(editedAlice));
-
         // different role -> different details, but still the same person
         editedAlice = new PersonBuilder(ALICE).withRole(ClientRole.BUYER).build();
         assertFalse(ALICE.equals(editedAlice));
@@ -137,7 +126,7 @@ public class PersonTest {
     @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", remark=" + ALICE.getRemark()
+                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
                 + ", role=" + ALICE.getRole() + ", tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
     }
