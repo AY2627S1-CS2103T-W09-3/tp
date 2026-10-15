@@ -24,7 +24,7 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
    If no saved data file exists, the app starts with five sample clients:
    two buyers, two sellers, and one who is both.
    Otherwise, it loads your saved clients.<br>
-   ![Ui](images/Ui(1).png)
+   ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
@@ -112,7 +112,7 @@ and add the tag `t/couple`. Adding this tag does not allow duplicate records.
 
 Shows a message explaining how to access the help page.
 
-![help message](images/helpMessage(1).png)
+![help message](images/helpMessage.png)
 
 Format: `help`
 
@@ -307,7 +307,7 @@ Action | Format, Examples
 **Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
 **Clear** | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find Alicia`, `find 81234567`, `find alicia.tan@example.com`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
 **List** | `list`

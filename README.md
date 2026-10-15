@@ -1,7 +1,7 @@
 [![CI Status](https://github.com/AY2627S1-CS2103T-W09-3/tp/workflows/Java%20CI/badge.svg)](https://github.com/AY2627S1-CS2103T-W09-3/tp/actions)
 [![codecov](https://codecov.io/github/AY2627S1-CS2103T-W09-3/tp/graph/badge.svg?token=OQE4XLBERL)](https://codecov.io/github/AY2627S1-CS2103T-W09-3/tp)
 
-![Ui](docs/images/Ui(1).png)
+![Ui](docs/images/Ui.png)
 
 # EstateBookUltraProMax
 
