@@ -24,7 +24,7 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
    If no saved data file exists, the app starts with five sample clients:
    two buyers, two sellers, and one who is both.
    Otherwise, it loads your saved clients.<br>
-   ![Ui](images/Ui.png)
+   ![Ui](images/Ui(1).png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
@@ -199,12 +199,12 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * If multiple clients match, the result shows the number of matches,
   e.g. `2 clients listed!`.
 
-Examples:
+Examples using the sample clients:
 
-* `find John` finds clients with the whole word John in their names.
-* `find 98765432` finds clients with that exact phone number.
-* `find johnd@example.com` finds clients with that email address.
-* `find John 98765432` finds clients matching either the name word John or the phone number 98765432.
+* `find Alicia` finds Alicia Tan by name.
+* `find 81234567` finds Alicia Tan by her complete phone number.
+* `find alicia.tan@example.com` finds Alicia Tan by her complete email address.
+* `find Alicia 82345678` finds Alicia Tan by name and Benjamin Lim by phone number.
 
 ### Deleting a client: `delete`
 
@@ -308,7 +308,7 @@ Action | Format, Examples
 **Clear** | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find John`, `find 98765432`, `find johnd@example.com`
+**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find Alicia`, `find 81234567`, `find alicia.tan@example.com`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
 **List** | `list`
 **Help** | `help`

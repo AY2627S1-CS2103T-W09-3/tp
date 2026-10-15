@@ -6,7 +6,7 @@ title: EstateBookUltraProMax
 [![CI Status](https://github.com/AY2627S1-CS2103T-W09-3/tp/workflows/Java%20CI/badge.svg)](https://github.com/AY2627S1-CS2103T-W09-3/tp/actions)
 [![codecov](https://codecov.io/github/AY2627S1-CS2103T-W09-3/tp/graph/badge.svg?token=OQE4XLBERL)](https://codecov.io/github/AY2627S1-CS2103T-W09-3/tp)
 
-![Ui](images/Ui.png)
+![Ui](images/Ui(1).png)
 
 **EstateBookUltraProMax is a desktop contact book for property agents who manage many buyers and sellers at once.** While it has a GUI, most of the user interactions happen using a CLI (Command Line Interface).
 
