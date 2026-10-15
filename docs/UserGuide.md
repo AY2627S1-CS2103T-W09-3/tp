@@ -20,7 +20,10 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 1. Copy the file to the folder you want to use as the _home folder_ for EstateBookUltraProMax.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar estatebookultrapromax.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+   A GUI similar to the one below should appear in a few seconds.<br>
+   If no saved data file exists, the app starts with five sample clients:
+   two buyers, two sellers, and one who is both.
+   Otherwise, it loads your saved clients.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
