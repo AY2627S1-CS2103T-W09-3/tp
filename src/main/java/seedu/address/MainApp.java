@@ -21,9 +21,9 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
-import seedu.address.model.util.SampleDataUtil;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
+import seedu.address.storage.SampleAddressBookLoader;
 import seedu.address.storage.Storage;
 import seedu.address.storage.StorageManager;
 import seedu.address.ui.Ui;
@@ -81,26 +81,34 @@ public class MainApp extends Application {
     }
 
     /**
-     * Returns a {@code ModelManager} with the data from {@code storage}'s address book and {@code userPrefs}. <br>
-     * The data from the sample address book will be used instead if {@code storage}'s address book is not found,
-     * or an empty address book will be used instead if errors occur when reading {@code storage}'s address book.
+     * Loads existing client data, or loads and saves sample clients if the data file is missing.
+     * An unreadable existing file is left unchanged and starts with an empty client book.
      */
     private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getAddressBookFilePath());
 
         Optional<ReadOnlyAddressBook> addressBookOptional;
-        ReadOnlyAddressBook initialData;
+
         try {
             addressBookOptional = storage.readAddressBook();
-            if (addressBookOptional.isEmpty()) {
-                logger.info("Creating a new data file " + storage.getAddressBookFilePath()
-                        + " populated with sample client data.");
-            }
-            initialData = addressBookOptional.orElseGet(SampleDataUtil::getSampleAddressBook);
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty client book.");
-            initialData = new AddressBook();
+            return new ModelManager(new AddressBook(), userPrefs);
+        }
+
+        if (addressBookOptional.isPresent()) {
+            return new ModelManager(addressBookOptional.get(), userPrefs);
+        }
+
+        ReadOnlyAddressBook initialData = SampleAddressBookLoader.load();
+
+        try {
+            storage.saveAddressBook(initialData);
+            logger.info("Created a new data file " + storage.getAddressBookFilePath()
+                    + " populated with sample client data.");
+        } catch (IOException e) {
+            logger.warning("Failed to save sample data to file: " + StringUtil.getDetails(e));
         }
 
         return new ModelManager(initialData, userPrefs);
@@ -128,7 +136,7 @@ public class MainApp extends Application {
             initializedPrefs = new UserPrefs();
         }
 
-        //Update prefs file in case it was missing to begin with or there are new/unused fields
+        // Update prefs file in case it was missing to begin with or there are new/unused fields.
         try {
             storage.saveUserPrefs(initializedPrefs);
         } catch (IOException e) {

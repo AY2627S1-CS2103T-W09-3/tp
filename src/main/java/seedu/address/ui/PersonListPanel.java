@@ -9,6 +9,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Region;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.Messages;
 import seedu.address.model.person.Person;
 
 /**
@@ -27,7 +28,7 @@ public class PersonListPanel extends UiPart<Region> {
     public PersonListPanel(ObservableList<Person> personList) {
         super(FXML);
         personListView.setItems(personList);
-        Label emptyListLabel = new Label("No clients found");
+        Label emptyListLabel = new Label(Messages.MESSAGE_NO_CLIENTS_FOUND);
         emptyListLabel.getStyleClass().add("label-bright");
         personListView.setPlaceholder(emptyListLabel);
         personListView.setCellFactory(listView -> new PersonListViewCell());
