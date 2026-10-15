@@ -187,9 +187,9 @@ Invalid inputs do not change the client's role:
 
 | Situation | Expected result |
 |-----------|-----------------|
-| The command format or index syntax is invalid | `Invalid command format. Use: role INDEX ROLE.` |
-| The role is missing or is not `buyer`, `seller`, or `both` | `Invalid Role: Role must be 'buyer', 'seller', or 'both'.` |
-| The positive index is outside the currently displayed list | `The client index provided is invalid.` |
+| The command format or index syntax is invalid | `Error: Invalid command format. Use: role INDEX ROLE.` |
+| The role is missing or is not `buyer`, `seller`, or `both` | `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.` |
+| The positive index is outside the currently displayed list | `Error: The client index provided is invalid.` |
 
 The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
 
@@ -536,6 +536,9 @@ testers are expected to do more *exploratory* testing.
       Expected: Alicia's badge changes to `Seller`. The result box shows
       `Role updated: Alicia Tan is now marked as Seller`.
 
+   1. Test case: `edit 1 p/99998888`<br>
+      Expected: Alicia's phone number changes to `99998888`, and her `Seller` badge remains displayed.
+
    1. Test case: `role 1 BUYER`<br>
       Expected: Role input is case-insensitive. Alicia's badge changes to `Buyer`. The result box shows
       `Role updated: Alicia Tan is now marked as Buyer`.
@@ -551,21 +554,21 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: Run `list` and note the current role of client 1.
 
    1. Test case: `role 0 buyer`<br>
-      Expected: No role is changed. The result box shows `Invalid command format. Use: role INDEX ROLE.`
+      Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
 
    1. Test case: `role 1`<br>
       Expected: No role is changed. The result box shows
-      `Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+      `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
 
    1. Test case: `role 1 landlord`<br>
       Expected: No role is changed. The result box shows
-      `Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+      `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
 
    1. Test case: `role 999 buyer`<br>
-      Expected: No role is changed. The result box shows `The client index provided is invalid.`
+      Expected: No role is changed. The result box shows `Error: The client index provided is invalid.`
 
    1. Test case: `role 1 buyer extra`<br>
-      Expected: No role is changed. The result box shows `Invalid command format. Use: role INDEX ROLE.`
+      Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
 
 ### Rejecting duplicate clients
 
@@ -575,26 +578,26 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `add n/Alicia Tan p/81111111 e/alicia.test@example.com a/1 Test Road`<br>
       Expected: No client is added. The result box shows
-      `A client with this name already exists in the client book.`
+      `Error: A client with this name already exists in the client book.`
 
    1. Test case: `add n/Test Buyer p/81234567 e/test.buyer@example.com a/2 Test Road`<br>
       Expected: No client is added. The result box shows
-      `This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+      `Error: This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
 
    1. Test case: `add n/Test Seller p/82222222 e/alicia.tan@example.com a/3 Test Road`<br>
       Expected: No client is added. The result box shows
-      `This email address already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+      `Error: This email address already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
 
    1. Test case: `edit 2 p/81234567`<br>
       Expected: Benjamin's details are unchanged. The result box shows
-      `This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+      `Error: This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
 
 ### Using indexes from a filtered list
 
 1. Changing the role of a client in filtered results
 
    1. Test case: `find Benjamin`<br>
-      Expected: Only `Benjamin Lim` is displayed, at index 1. The result box shows `1 clients listed!`.
+      Expected: Only `Benjamin Lim` is displayed, at index 1. The result box shows `1 client listed!`.
 
    1. Test case: `role 1 seller`<br>
       Expected: Benjamin's badge changes to `Seller`, even though he is client 2 in the full list. The full client list
@@ -602,7 +605,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `find Alicia`, followed by `role 2 buyer`<br>
       Expected: The filtered list contains only one client, so no role is changed. The result box shows
-      `The client index provided is invalid.`
+      `Error: The client index provided is invalid.`
 
 ### Saving and loading role data
 
