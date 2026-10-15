@@ -156,94 +156,44 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### \[Proposed\] Undo/redo feature
+### Client role command
 
-#### Proposed Implementation
+The `role` command assigns a transaction role to an existing client. It uses the
+client's one-based index in the currently displayed client list.
 
-The proposed undo/redo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo/redo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+**Format:** `role INDEX ROLE`
 
-* `VersionedAddressBook#commit()` — Saves the current address book state in its history.
-* `VersionedAddressBook#undo()` — Restores the previous address book state from its history.
-* `VersionedAddressBook#redo()` — Restores a previously undone address book state from its history.
+* `INDEX` must be a positive integer that refers to a client in the currently
+  displayed list.
+* `ROLE` must be `buyer`, `seller`, or `both`. Role values are
+  case-insensitive.
+* After a successful update, the full client list is displayed again and the
+  client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
 
-These operations are exposed in the `Model` interface as `Model#commitAddressBook()`, `Model#undoAddressBook()` and `Model#redoAddressBook()` respectively.
+The success message follows this format:
 
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
+`Role updated: CLIENT_NAME is now marked as DISPLAY_ROLE`
 
-Step 1. The user launches the application for the first time. The `VersionedAddressBook` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
+The examples below are independent and assume that `Alicia Tan` is client 1 in
+the currently displayed list.
 
-![UndoRedoState0](images/UndoRedoState0.png)
+| Command | Expected result |
+|---------|-----------------|
+| `role 1 buyer` | Alicia Tan's role becomes `Buyer`. The result box shows `Role updated: Alicia Tan is now marked as Buyer`. |
+| `role 1 seller` | Alicia Tan's role becomes `Seller`. The result box shows `Role updated: Alicia Tan is now marked as Seller`. |
+| `role 1 both` | Alicia Tan's role becomes `Buyer, Seller`. The result box shows `Role updated: Alicia Tan is now marked as Buyer, Seller`. |
 
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
+Invalid inputs do not change the client's role:
 
-![UndoRedoState1](images/UndoRedoState1.png)
+| Situation | Expected result |
+|-----------|-----------------|
+| The command format or index syntax is invalid | `Error: Invalid command format. Use: role INDEX ROLE.` |
+| The role is missing or is not `buyer`, `seller`, or `both` | `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.` |
+| The positive index is outside the currently displayed list | `Error: The client index provided is invalid.` |
 
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
+The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
 
-![UndoRedoState2](images/UndoRedoState2.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If a command fails its execution, it will not call `Model#commitAddressBook()`, so the address book state will not be saved into the `addressBookStateList`.
-
-</div>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
-
-![UndoRedoState3](images/UndoRedoState3.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index 0, pointing to the initial AddressBook state, then there are no previous AddressBook states to restore. The `undo` command uses `Model#canUndoAddressBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-
-</div>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-![UndoSequenceDiagram](images/UndoSequenceDiagram-Logic.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-
-</div>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-![UndoSequenceDiagram](images/UndoSequenceDiagram-Model.png)
-
-The `redo` command does the opposite — it calls `Model#redoAddressBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. The `redo` command uses `Model#canRedoAddressBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-
-</div>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()`, `Model#undoAddressBook()` or `Model#redoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
-
-![UndoRedoState4](images/UndoRedoState4.png)
-
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
-
-![UndoRedoState5](images/UndoRedoState5.png)
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<img src="images/CommitActivityDiagram.png" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (current choice):** Saves the entire address book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
+![Interactions for the `role 1 buyer` command](images/RoleSequenceDiagram.png)
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -521,7 +471,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 ### Non-Functional Requirements
 
 1. **Usability:** A user with an above average typing speed for English text should be able to accomplish most tasks using the _Command Line Interface (CLI)_ and command _aliases_ than navigating with mouse-driven GUI.
-2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed. 
+2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed.
 3. **Performance:** The system should be able to hold up to <ins>100</ins> active client records without any noticeable sluggishness in performance during typical usage (e.g., searching, filtering).
 4. **Data Reliability:** The application must ensure that all data-changing actions are saved safely so that the latest changes are retained upon exiting.
 5. **Fault Tolerance:** The application must gracefully handle invalid inputs (e.g., invalid client references, missing roles, or conflicting duplicate details) by displaying clear error messages, instead of crashing.
@@ -548,6 +498,10 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 Given below are instructions to test the app manually.
 
+Unless stated otherwise, start each subsection in a separate test folder that initially contains only the JAR file.
+This ensures that the five sample clients are loaded and that their indexes are predictable. Back up
+`data/addressbook.json` before any test that edits or removes it.
+
 <div markdown="span" class="alert alert-info">:information_source: **Note:** These instructions only provide a starting point for testers to work on;
 testers are expected to do more *exploratory* testing.
 
@@ -557,41 +511,148 @@ testers are expected to do more *exploratory* testing.
 
 1. Initial launch
 
+   1. Ensure that Java `25` or later is installed on the computer.
+
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+   1. Open a terminal, change to the folder containing the JAR file, and run
+      `java -jar estatebookultrapromax.jar`.<br>
+      Expected: The GUI opens with five sample clients. The window size may not be optimal.
 
 1. Saving window preferences
 
-   1. Resize the window to an optimal size. Move the window to a different location. Close the window.
+   1. Resize the window to an optimal size. Move the window to a different location. Enter `exit` to close the app.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   1. From the same folder, relaunch the app by running `java -jar estatebookultrapromax.jar`.<br>
        Expected: The most recent window size and location are retained.
 
-1. _{ more test cases …​ }_
+### Changing a client's role
 
-### Deleting a person
+1. Changing a role while all clients are displayed
 
-1. Deleting a person while all persons are being shown
+   1. Prerequisites: Run `list`. Confirm that `Alicia Tan` is client 1.
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+   1. Test case: `role 1 seller`<br>
+      Expected: Alicia's badge changes to `Seller`. The result box shows
+      `Role updated: Alicia Tan is now marked as Seller`.
 
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+   1. Test case: `edit 1 p/99998888`<br>
+      Expected: Alicia's phone number changes to `99998888`, and her `Seller` badge remains displayed.
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+   1. Test case: `role 1 BUYER`<br>
+      Expected: Role input is case-insensitive. Alicia's badge changes to `Buyer`. The result box shows
+      `Role updated: Alicia Tan is now marked as Buyer`.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+   1. Test case: `role 1 both`<br>
+      Expected: Alicia's badge changes to `Buyer, Seller`. The result box shows
+      `Role updated: Alicia Tan is now marked as Buyer, Seller`.
 
-1. _{ more test cases …​ }_
+### Rejecting invalid role commands
 
-### Saving data
+1. Rejecting invalid formats, roles, and indexes
 
-1. Dealing with missing/corrupted data files
+   1. Prerequisites: Run `list` and note the current role of client 1.
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+   1. Test case: `role 0 buyer`<br>
+      Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
 
-1. _{ more test cases …​ }_
+   1. Test case: `role 1`<br>
+      Expected: No role is changed. The result box shows
+      `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+
+   1. Test case: `role 1 landlord`<br>
+      Expected: No role is changed. The result box shows
+      `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+
+   1. Test case: `role 999 buyer`<br>
+      Expected: No role is changed. The result box shows `Error: The client index provided is invalid.`
+
+   1. Test case: `role 1 buyer extra`<br>
+      Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
+
+### Rejecting duplicate clients
+
+1. Rejecting duplicate details when adding or editing a client
+
+   1. Prerequisites: Run `list`. Confirm that `Alicia Tan` is client 1 and `Benjamin Lim` is client 2.
+
+   1. Test case: `add n/Alicia Tan p/81111111 e/alicia.test@example.com a/1 Test Road`<br>
+      Expected: No client is added. The result box shows
+      `Error: A client with this name already exists in the client book.`
+
+   1. Test case: `add n/Test Buyer p/81234567 e/test.buyer@example.com a/2 Test Road`<br>
+      Expected: No client is added. The result box shows
+      `Error: This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+
+   1. Test case: `add n/Test Seller p/82222222 e/alicia.tan@example.com a/3 Test Road`<br>
+      Expected: No client is added. The result box shows
+      `Error: This email address already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+
+   1. Test case: `edit 2 p/81234567`<br>
+      Expected: Benjamin's details are unchanged. The result box shows
+      `Error: This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+
+### Using indexes from a filtered list
+
+1. Changing the role of a client in filtered results
+
+   1. Test case: `find Benjamin`<br>
+      Expected: Only `Benjamin Lim` is displayed, at index 1. The result box shows `1 client listed!`.
+
+   1. Test case: `role 1 seller`<br>
+      Expected: Benjamin's badge changes to `Seller`, even though he is client 2 in the full list. The full client list
+      is displayed again. The result box shows `Role updated: Benjamin Lim is now marked as Seller`.
+
+   1. Test case: `find Alicia`, followed by `role 2 buyer`<br>
+      Expected: The filtered list contains only one client, so no role is changed. The result box shows
+      `Error: The client index provided is invalid.`
+
+### Saving and loading role data
+
+1. Retaining a changed role after restarting the app
+
+   1. Prerequisites: Run `list`, followed by `role 1 seller`.
+
+   1. Exit the app using `exit`, then relaunch the same JAR file from the same folder.<br>
+      Expected: Alicia's `Seller` badge is still displayed. `data/addressbook.json` contains
+      `"role" : "seller"` in Alicia's client record.
+
+2. Loading a client record that has no role field
+
+   1. Prerequisites: Exit the app and back up `data/addressbook.json`.
+
+   1. Remove the entire `"role" : "seller",` line from Alicia's client record, while keeping the remaining JSON valid.
+
+   1. Relaunch the app.<br>
+      Expected: All saved clients load normally. Alicia has no role badge, while her other details are unchanged.
+
+   1. Exit the app and restore the backup.
+
+### Handling missing or corrupted data
+
+1. Starting with a missing data file
+
+   1. Prerequisites: Run `list` to create the data file. Exit the app and rename `data/addressbook.json` to
+      `addressbook.backup.json`.
+
+   1. Relaunch the app.<br>
+      Expected: The app starts normally with the five sample clients and creates a new valid
+      `data/addressbook.json`.
+
+   1. Run `list`.<br>
+      Expected: The sample clients remain displayed. The result box shows `Listed all clients.`
+
+2. Starting with corrupted data
+
+   1. Prerequisites: Run `list`, followed by `role 1 seller`, to create data containing a role. Exit the app and back
+      up `data/addressbook.json`.
+
+   1. Either replace the file contents with text that is not valid JSON, or change a saved role value to an invalid
+      value such as `"role" : "landlord"`.
+
+   1. Relaunch the app.<br>
+      Expected: The app does not crash and starts with an empty client list because the file cannot be loaded.
+
+   1. Run `list`.<br>
+      Expected: The result box shows `Listed all clients.` and the corrupted file is replaced with a valid empty
+      client book. Restore the backup after completing the test.
