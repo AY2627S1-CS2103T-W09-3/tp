@@ -19,7 +19,7 @@ Class Email
 Class Name
 Class Phone
 Class Tag
-Class ClientRole
+enum ClientRole
 
 Class I #FFFFFF
 }
@@ -43,7 +43,7 @@ Person *--> Phone
 Person *--> Email
 Person *--> Address
 Person *--> "*" Tag
-Person *--> "0..1" ClientRole
+Person --> "0..1" ClientRole
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I
