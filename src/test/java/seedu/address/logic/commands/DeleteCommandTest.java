@@ -17,7 +17,9 @@ import seedu.address.logic.Messages;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Contains integration tests (interaction with the Model) and unit tests for
@@ -32,8 +34,10 @@ public class DeleteCommandTest {
         Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
 
-        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS,
-                Messages.format(personToDelete));
+        String role = personToDelete.getRole() == null
+                ? "No role"
+                : personToDelete.getRole().getDisplayValue();
+        String expectedMessage = "Deleted client: " + personToDelete.getName() + " (" + role + ")";
 
         ModelManager expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.deletePerson(personToDelete);
@@ -56,8 +60,10 @@ public class DeleteCommandTest {
         Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
 
-        String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS,
-                Messages.format(personToDelete));
+        String role = personToDelete.getRole() == null
+                ? "No role"
+                : personToDelete.getRole().getDisplayValue();
+        String expectedMessage = "Deleted client: " + personToDelete.getName() + " (" + role + ")";
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.deletePerson(personToDelete);
@@ -77,6 +83,14 @@ public class DeleteCommandTest {
         DeleteCommand deleteCommand = new DeleteCommand(outOfBoundIndex);
 
         assertCommandFailure(deleteCommand, model, Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void execute_eachRole_displaysNameAndRole() {
+        assertDeleteFeedback(ClientRole.BUYER, "Deleted client: Alice Tan (Buyer)");
+        assertDeleteFeedback(ClientRole.SELLER, "Deleted client: Alice Tan (Seller)");
+        assertDeleteFeedback(ClientRole.BOTH, "Deleted client: Alice Tan (Buyer, Seller)");
+        assertDeleteFeedback(null, "Deleted client: Alice Tan (No role)");
     }
 
     @Test
@@ -107,6 +121,18 @@ public class DeleteCommandTest {
         DeleteCommand deleteCommand = new DeleteCommand(targetIndex);
         String expected = DeleteCommand.class.getCanonicalName() + "{targetIndex=" + targetIndex + "}";
         assertEquals(expected, deleteCommand.toString());
+    }
+
+    /**
+     * Verifies deletion and feedback for a client with the specified optional role.
+     */
+    private void assertDeleteFeedback(ClientRole role, String expectedMessage) {
+        Model actualModel = new ModelManager();
+        Person person = new PersonBuilder().withName("Alice Tan").withRole(role).build();
+        actualModel.addPerson(person);
+
+        assertCommandSuccess(new DeleteCommand(INDEX_FIRST_PERSON), actualModel,
+                expectedMessage, new ModelManager());
     }
 
     /**

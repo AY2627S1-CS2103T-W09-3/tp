@@ -54,12 +54,22 @@ public class FindCommandTest {
 
     @Test
     public void execute_nonMatchingKeyword_noPersonFound() {
-        String expectedMessage = "0 clients listed!";
+        String expectedMessage = "No clients found";
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Nobody");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
         assertEquals(List.of(), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_oneMatchingClient_usesSingularFeedback() {
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("Elle");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "1 client listed!", expectedModel);
+        assertEquals(List.of(ELLE), model.getFilteredPersonList());
     }
 
     @Test
