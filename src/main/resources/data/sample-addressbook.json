@@ -1,0 +1,54 @@
+{
+    "persons": [
+        {
+            "name": "Alicia Tan",
+            "phone": "81234567",
+            "email": "alicia.tan@example.com",
+            "address": "Blk 123 Bishan Street 12, #08-45",
+            "role": "buyer",
+            "tags": [
+                "firsttime"
+            ]
+        },
+        {
+            "name": "Benjamin Lim",
+            "phone": "82345678",
+            "email": "benjamin.lim@example.com",
+            "address": "Blk 456 Tampines Street 42, #05-12",
+            "role": "buyer",
+            "tags": [
+                "upgrading"
+            ]
+        },
+        {
+            "name": "Nur Aisyah",
+            "phone": "83456789",
+            "email": "nur.aisyah@example.com",
+            "address": "Blk 210 Yishun Street 21, #10-23",
+            "role": "seller",
+            "tags": [
+                "urgent"
+            ]
+        },
+        {
+            "name": "Raj Kumar",
+            "phone": "84567890",
+            "email": "raj.kumar@example.com",
+            "address": "Blk 678 Jurong West Street 64, #12-34",
+            "role": "seller",
+            "tags": [
+                "weekend"
+            ]
+        },
+        {
+            "name": "Cheryl Goh",
+            "phone": "85678901",
+            "email": "cheryl.goh@example.com",
+            "address": "Blk 315 Punggol Way, #09-56",
+            "role": "both",
+            "tags": [
+                "upgrading"
+            ]
+        }
+    ]
+}
