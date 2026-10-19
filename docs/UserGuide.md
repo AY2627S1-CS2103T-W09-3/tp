@@ -152,7 +152,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`
 * Existing values will be updated to the input values.
 * When editing tags, all of the client's existing tags are removed; adding tags is not cumulative.
 * To remove all of a client's tags, enter `t/` without a tag after it.
-* After a successful edit, the list shows all clients again.
+* After a successful edit, the current search or filter stays active. The edited client leaves the list if it no longer matches. Enter `list` to show all clients.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st client to be `91234567` and `johndoe@example.com` respectively.
@@ -169,7 +169,7 @@ Format: `role INDEX ROLE`
 * The client card displays `Buyer`, `Seller`, or `Buyer, Seller`.
 * Newly added clients have no role assigned.
 * Assigning a role replaces any existing role.
-* After a successful role change, the list shows all clients again.
+* After a successful role change, the current search or filter stays active. The client leaves the list if the new role no longer matches it. Enter `list` to show all clients.
 
 Examples:
 

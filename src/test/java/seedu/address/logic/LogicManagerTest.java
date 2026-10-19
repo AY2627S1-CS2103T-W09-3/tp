@@ -16,6 +16,7 @@ import static seedu.address.testutil.TypicalPersons.BOB;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
@@ -84,6 +86,70 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void execute_filterThenAdd_keepsFilterAndHidesClientThatDoesNotMatch() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter t/urgent");
+        assertEquals(List.of(clients[0], clients[1]), model.getFilteredPersonList());
+
+        logic.execute("add n/Dan Ho p/84444444 e/dan@example.com a/1 Test Road t/weekend");
+        assertEquals(List.of(clients[0], clients[1]), model.getFilteredPersonList());
+        assertEquals(4, model.getAddressBook().getPersonList().size());
+
+        logic.execute("add n/Eve Ong p/85555555 e/eve@example.com a/2 Test Road t/urgent");
+        assertEquals(3, model.getFilteredPersonList().size());
+        assertEquals("Eve Ong", model.getFilteredPersonList().get(2).getName().fullName);
+    }
+
+    @Test
+    public void execute_filterThenDelete_keepsFilterAndUsesFilteredIndex() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter r/buyer");
+        assertEquals(List.of(clients[0], clients[2]), model.getFilteredPersonList());
+
+        // Index 2 is the second client shown, not the second client in the address book.
+        logic.execute("delete 2");
+
+        assertEquals(List.of(clients[0]), model.getFilteredPersonList());
+        assertEquals(List.of(clients[0], clients[1]), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_filterThenRole_keepsFilterAndClientLeavesWhenNoLongerMatching() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter r/buyer");
+
+        logic.execute("role 1 seller");
+
+        assertEquals(List.of(clients[2]), model.getFilteredPersonList());
+        assertEquals(3, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_filterThenEdit_keepsFilterAndClientLeavesWhenNoLongerMatching() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter t/urgent");
+
+        logic.execute("edit 1 t/weekend");
+
+        assertEquals(List.of(clients[1]), model.getFilteredPersonList());
+        assertEquals(3, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_filterThenMutations_stayFilteredUntilList() throws Exception {
+        addFilterTestClients();
+        logic.execute("filter r/buyer");
+
+        logic.execute("role 1 both");
+        logic.execute("edit 1 p/86666666");
+
+        assertEquals(2, model.getFilteredPersonList().size());
+
+        logic.execute("list");
+        assertEquals(3, model.getFilteredPersonList().size());
     }
 
     @Test
@@ -170,6 +236,25 @@ public class LogicManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    /**
+     * Adds an urgent buyer, an urgent seller and a buyer tagged weekend to the model, in that order,
+     * and returns them.
+     */
+    private Person[] addFilterTestClients() {
+        Person[] clients = {
+            new PersonBuilder().withName("Alice Tan").withPhone("81111111").withEmail("alice@example.com")
+                    .withRole(ClientRole.BUYER).withTags("urgent").build(),
+            new PersonBuilder().withName("Ben Lim").withPhone("82222222").withEmail("ben@example.com")
+                    .withRole(ClientRole.SELLER).withTags("urgent").build(),
+            new PersonBuilder().withName("Cara Goh").withPhone("83333333").withEmail("cara@example.com")
+                    .withRole(ClientRole.BUYER).withTags("weekend").build()
+        };
+        for (Person client : clients) {
+            model.addPerson(client);
+        }
+        return clients;
     }
 
     /**

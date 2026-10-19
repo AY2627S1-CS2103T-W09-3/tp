@@ -73,6 +73,35 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void addPerson_activeFilter_keepsFilterActive() {
+        modelManager.addPerson(ALICE);
+        modelManager.addPerson(BOB);
+        PersonMatchesSearchTermsPredicate predicate = new PersonMatchesSearchTermsPredicate(List.of("Alice"));
+        modelManager.updateFilteredPersonList(predicate);
+
+        modelManager.addPerson(new PersonBuilder().withName("Carl Young").withPhone("81112222")
+                .withEmail("carlyoung@example.com").build());
+
+        // The new client does not match the filter, so it is added but hidden.
+        assertEquals(List.of(ALICE), modelManager.getFilteredPersonList());
+        assertEquals(3, modelManager.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void addPerson_activeFilter_showsNewPersonThatMatches() {
+        modelManager.addPerson(ALICE);
+        modelManager.addPerson(BOB);
+        PersonMatchesSearchTermsPredicate predicate = new PersonMatchesSearchTermsPredicate(List.of("Alice"));
+        modelManager.updateFilteredPersonList(predicate);
+
+        Person matchingPerson = new PersonBuilder().withName("Alice Young").withPhone("81112222")
+                .withEmail("aliceyoung@example.com").build();
+        modelManager.addPerson(matchingPerson);
+
+        assertEquals(List.of(ALICE, matchingPerson), modelManager.getFilteredPersonList());
+    }
+
+    @Test
     public void findPerson_nullPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> modelManager.findPerson(null));
     }
