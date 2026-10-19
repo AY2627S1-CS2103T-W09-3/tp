@@ -214,6 +214,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Multiple keywords use OR matching: a client appears if any keyword matches their name, phone number, or email.
 * Keyword order does not matter.
 * Entering `find` without keywords shows an error and leaves the displayed list unchanged.
+* Notes are not searched. A note is free-text working detail in which any word may appear, so matching it would return clients for the wrong reason.
 * Use `list` to show all clients again.
 * If no clients match, the result shows `No clients found`.
 * If one client matches, the result shows `1 client listed!`.

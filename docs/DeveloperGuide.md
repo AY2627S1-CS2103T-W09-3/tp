@@ -213,6 +213,22 @@ A client's role is a dedicated `ClientRole` field on `Person`, not a tag. `Clien
 
 **Client books with no role.** A client book written before the role existed has no `role` key, and every record in it loads with no role assigned. The sample clients shipped with the app set roles so that the feature is visible on first run, and the model class diagram above shows `ClientRole` as an optional association of `Person`. The saving and reading path, `JsonAddressBookStorage` to `JsonSerializableAddressBook` to `JsonAdaptedPerson`, is unchanged and is shown in `StorageClassDiagram.puml`.
 
+### Client note
+
+A note is free-text working detail kept on a client: where a negotiation stands, when to call back, what to prepare for a viewing. It holds 1 to 500 characters after surrounding whitespace is trimmed, and it may contain real line breaks.
+
+**Parsing.** `NoteCommandParser` splits the index from the note text, and the text runs to the end of the line, so it may contain spaces. Because a note is free text, the parser must know where the text ends before it can decode anything: each two-character `\n` is replaced with a real line break, and the result is trimmed of surrounding whitespace. Only then is the text handed to `Note`, which validates it, so `Note` never sees an escape sequence. The lowercase word `clear` is reserved after trimming: only the exact decoded text `clear` clears the note, while `CLEAR` and sentences such as `Please clear the outstanding paperwork` are stored as ordinary text. A blank note or one longer than 500 characters raises a `ParseException` carrying `Notes should be 1 to 500 characters.`
+
+**Executing.** `NoteCommand` builds a new `Person` that carries the new note, or no note for the clear form, and copies every other field from the client being edited, then calls `Model#setPerson`. It does not touch the filtered list, so an active search or filter stays in effect. The result message is `Note updated for <name>.` or `Note cleared for <name>.`
+
+![Interactions for the `note 1 Call at 6 PM\non Monday` command](images/NoteSequenceDiagram.png)
+
+**Storing.** `JsonAdaptedPerson` mirrors the note as a string under the `note` key. Because the field carries `@JsonInclude(JsonInclude.Include.NON_NULL)`, a client with no note leaves the key out of the data file entirely, and real line breaks are stored as actual newline characters inside the JSON string. When a client book is read back, a missing key becomes no note, and a value that is blank or longer than 500 characters raises an `IllegalValueException` carrying the same message, so a hand-edited data file is reported rather than silently accepted. A 500-character two-line note therefore survives a restart unchanged.
+
+**Display.** A note is visible in two places: the confirmation message when it is set or cleared, and the data file. The person card does not show the note yet, because a note can run to 500 characters over several lines, which does not fit the card layout the UI uses today. Until the UI gains a treatment for long text, the card keeps its current fields and the note stays in storage.
+
+**Why `find` does not search notes.** `find` matches the fields that identify a client: name, phone number and email. A note is unstructured working detail in which any word may appear, so matching it would return clients for the wrong reason; a user searching `call` wants the client named Call, not every client whose note says to call back. A note can be re-read from the data file, and setting a new note with `note` replaces the old one, so the command remains usable even without a note display.
+
 ### Clear confirmation
 
 `clear` deletes every client, so it needs two steps. `clear` warns and starts a pending state, and `clear confirm` completes it. Any other input cancels it.

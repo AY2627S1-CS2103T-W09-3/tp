@@ -1,0 +1,111 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":NoteCommandParser" as NoteCommandParser LOGIC_COLOR
+participant "<<class>>\nParserUtil" as ParserUtil LOGIC_COLOR
+participant "c:NoteCommand" as NoteCommand LOGIC_COLOR
+participant "result:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "<<class>>\nNote" as Note MODEL_COLOR
+participant "m:Model" as Model MODEL_COLOR
+participant "editedClient:Person" as Person MODEL_COLOR
+end box
+
+[-> LogicManager : execute("note 1 Call at 6 PM\\non Monday")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("note 1 Call at 6 PM\\non Monday")
+activate AddressBookParser
+
+create NoteCommandParser
+AddressBookParser -> NoteCommandParser
+activate NoteCommandParser
+
+NoteCommandParser --> AddressBookParser
+deactivate NoteCommandParser
+
+AddressBookParser -> NoteCommandParser : parse(" 1 Call at 6 PM\\non Monday")
+activate NoteCommandParser
+
+NoteCommandParser -> ParserUtil : parseIndex("1")
+activate ParserUtil
+
+ParserUtil --> NoteCommandParser : index
+deactivate ParserUtil
+
+note over NoteCommandParser
+The text after the index runs to the end of the line.
+Each two-character \n becomes a real line break, and
+surrounding whitespace is trimmed. Only the exact
+lowercase result clear clears the note.
+end note
+
+NoteCommandParser -> Note : isValidNote("Call at 6 PM\non Monday")
+activate Note
+
+Note --> NoteCommandParser : true
+deactivate Note
+
+NoteCommandParser -> Note : new Note("Call at 6 PM\non Monday")
+activate Note
+
+Note --> NoteCommandParser : n
+deactivate Note
+
+create NoteCommand
+NoteCommandParser -> NoteCommand
+activate NoteCommand
+
+NoteCommand --> NoteCommandParser
+deactivate NoteCommand
+
+NoteCommandParser --> AddressBookParser : c
+deactivate NoteCommandParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+NoteCommandParser -[hidden]-> AddressBookParser
+destroy NoteCommandParser
+
+AddressBookParser --> LogicManager : c
+deactivate AddressBookParser
+
+LogicManager -> NoteCommand : execute(m)
+activate NoteCommand
+
+NoteCommand -> Model : getFilteredPersonList()
+activate Model
+
+Model --> NoteCommand : lastShownList
+deactivate Model
+
+create Person
+NoteCommand -> Person
+activate Person
+
+Person --> NoteCommand
+deactivate Person
+
+NoteCommand -> Model : setPerson(personToEdit, editedClient)
+activate Model
+
+Model --> NoteCommand
+deactivate Model
+
+create CommandResult
+NoteCommand -> CommandResult
+activate CommandResult
+
+CommandResult --> NoteCommand
+deactivate CommandResult
+
+NoteCommand --> LogicManager : result
+deactivate NoteCommand
+
+[<--LogicManager : result
+deactivate LogicManager
+@enduml
