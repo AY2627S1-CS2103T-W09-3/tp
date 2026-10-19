@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
@@ -58,6 +59,30 @@ public class MainWindowTest {
             Platform.runLater(initialise);
         }
         assertTrue(ready.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void show_commandBoxHasInitialFocus() throws Exception {
+        FutureTask<MainWindow> createWindow = new FutureTask<>(() -> {
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            window.show();
+            window.fillInnerParts();
+            return window;
+        });
+        Platform.runLater(createWindow);
+        MainWindow window = createWindow.get(10, TimeUnit.SECONDS);
+        try {
+            runOnFxThread(() -> {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                assertSame(commandBox, window.getRoot().getScene().getFocusOwner());
+                assertTrue(commandBox.isFocused());
+            });
+        } finally {
+            runOnFxThread(() -> window.getRoot().close());
+        }
     }
 
     @Test
