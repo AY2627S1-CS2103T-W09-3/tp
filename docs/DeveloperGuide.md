@@ -167,8 +167,8 @@ client's one-based index in the currently displayed client list.
   displayed list.
 * `ROLE` must be `buyer`, `seller`, or `both`. Role values are
   case-insensitive.
-* After a successful update, the full client list is displayed again and the
-  client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+* After a successful update, the client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+  The displayed list is not reset, so a search or filter that is active stays active.
 
 The success message follows this format:
 
@@ -618,8 +618,8 @@ testers are expected to do more *exploratory* testing.
       Expected: Only `Benjamin Lim` is displayed, at index 1. The result box shows `1 client listed!`.
 
    1. Test case: `role 1 seller`<br>
-      Expected: Benjamin's badge changes to `Seller`, even though he is client 2 in the full list. The full client list
-      is displayed again. The result box shows `Role updated: Benjamin Lim is now marked as Seller`.
+      Expected: Benjamin's badge changes to `Seller`, even though he is client 2 in the full list. The search stays active,
+      so only Benjamin is still displayed. The result box shows `Role updated: Benjamin Lim is now marked as Seller`.
 
    1. Test case: `find Alicia`, followed by `role 2 buyer`<br>
       Expected: The filtered list contains only one client, so no role is changed. The result box shows
