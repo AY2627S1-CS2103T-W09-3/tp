@@ -239,7 +239,7 @@ Format: `clear`, then `clear confirm`
   A single space counts as input and cancels.
 * If there are no clients, `clear` shows `The client book is already empty.` and no confirmation is pending.
 * `clear confirm` only works straight after `clear`. Otherwise it shows `No clear is pending. Type clear first.`
-* Any other word after `clear` shows `Invalid command format. Use: clear.`
+* When no clear is pending, any other word after `clear` shows `Invalid command format. Use: clear.`
 * A pending confirmation is not saved, so closing the app cancels it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Warning:**
