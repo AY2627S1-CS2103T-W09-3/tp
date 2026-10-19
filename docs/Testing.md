@@ -34,3 +34,46 @@ This project has three types of tests:
    For example: `seedu.address.storage.StorageManagerTest`
 1. *Hybrid tests* combine unit and integration testing. These tests check both the individual units and how they work together.<br>
    For example: `seedu.address.logic.LogicManagerTest`
+
+--------------------------------------------------------------------------------------------------------------------
+
+## Main window layout checks
+
+### Automated logical viewport checks
+
+Run `./gradlew test --tests seedu.address.ui.MainWindowTest` (Windows: `gradlew test --tests seedu.address.ui.MainWindowTest`).
+
+The `layout_supportedLogicalViewports_keepsMainRegionsVisible` test resizes the JavaFX root to
+1920 × 1080, 1536 × 864, 853 × 480, and 820 × 440 logical pixels. It checks that the main regions remain
+inside the viewport and that the detail pane displays `Select a client to see details.`.
+
+This is a logical-size check, **not an operating-system display-scaling check**. Resizing the root does not
+change the display scale or font metrics. The manual checks below are still required.
+
+### Manual display-scaling checks
+
+Use a display and operating system that support each configuration below. Set the actual screen resolution
+and display scaling in the operating system; resizing the app window is not a substitute.
+If a configuration is unavailable on your computer, ask a teammate with a supporting display to check it.
+Leave unavailable or untested configurations unverified.
+
+For each configuration:
+
+1. Use a separate test-data folder so that your normal client data is not changed.
+1. Launch the app and maximise its window within the available desktop area.
+1. Check that the menu, command box, and result box are visible and usable.
+1. Check that the client list and detail pane appear side by side, with
+   `Select a client to see details.` visible before selecting a client.
+1. Ensure there are enough test clients to scroll, then check that the last client can be reached.
+1. Check that the footer's data path and client count are visible without overlapping.
+1. Enter `list` and check that its result is readable. Confirm that no controls overlap or are cut off.
+1. Record the app commit, operating system, screen resolution, actual display scale, pass/fail result,
+   and a screenshot. Restore your usual display settings afterwards.
+
+The actual display-scaling checks for issue #88 are not yet verified:
+
+| Screen resolution | Actual display scale | Result |
+| ----------------- | -------------------- | ------ |
+| 1920 × 1080 | 100% | Not yet verified |
+| 1920 × 1080 | 125% | Not yet verified |
+| 1280 × 720 | 150% | Not yet verified |

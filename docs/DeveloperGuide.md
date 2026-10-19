@@ -16,7 +16,7 @@ title: Developer Guide
 
 ## **Setting up, getting started**
 
-Refer to the guide [_Setting up and getting started_](SettingUp.md).
+Refer to the guide [_Setting up and getting started_](SettingUp.md). When launching the app from IntelliJ IDEA, add `-ea` to the run configuration's **VM options** so assertions are enabled; the Gradle `run` task enables them automatically.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -167,8 +167,8 @@ client's one-based index in the currently displayed client list.
   displayed list.
 * `ROLE` must be `buyer`, `seller`, or `both`. Role values are
   case-insensitive.
-* After a successful update, the full client list is displayed again and the
-  client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+* After a successful update, the client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+  The displayed list is not reset, so a search or filter that is active stays active.
 
 The success message follows this format:
 
@@ -212,6 +212,37 @@ A client's role is a dedicated `ClientRole` field on `Person`, not a tag. `Clien
 **Why a dedicated field and not a tag.** Tags are free-form, they may be many, and they cannot be checked against a fixed set of values. A role is exactly one of three known values, it is validated as soon as the user supplies it, and it may also be absent, which a set of tags cannot express. `Person` compares roles with `Objects.equals`, so an unassigned role is a legal value rather than a missing one.
 
 **Client books with no role.** A client book written before the role existed has no `role` key, and every record in it loads with no role assigned. The sample clients shipped with the app set roles so that the feature is visible on first run, and the model class diagram above shows `ClientRole` as an optional association of `Person`. The saving and reading path, `JsonAddressBookStorage` to `JsonSerializableAddressBook` to `JsonAdaptedPerson`, is unchanged and is shown in `StorageClassDiagram.puml`.
+
+### Clear confirmation
+
+`clear` deletes every client, so it needs two steps. `clear` warns and starts a pending state, and `clear confirm` completes it. Any other input cancels it.
+
+**Parsing.** `ClearCommandParser` accepts no argument or exactly `confirm`, and creates `ClearCommand(isConfirmed)` with the flag set only for `confirm`. Any other argument raises a `ParseException` with `Invalid command format. Use: clear.`.
+
+**Executing.** `ClearCommand#execute(Model)` counts the clients in the whole address book, not the filtered list, because clear also deletes hidden clients. It then does one of three things:
+
+| Situation | Result |
+|-----------|--------|
+| The address book is empty | `The client book is already empty.` and nothing is pending |
+| Not confirmed | `This will delete the only client. Type clear confirm to proceed.` for one client, or `This will delete all N clients. Type clear confirm to proceed.`, with `CommandResult#isAwaitingConfirmation()` set |
+| Confirmed | Replaces the address book with an empty one and shows `Client book has been cleared!` |
+
+**Remembering the pending state.** `LogicManager` holds one `isClearPending` flag. It is set from `CommandResult#isAwaitingConfirmation()` only after the data has been saved, so a failed save never leaves a clear pending. While the flag is set, the next input is parsed:
+
+* `clear confirm` runs the confirmed `ClearCommand`.
+* Any other input, including input that cannot be parsed, clears the flag without being executed and shows `Clear cancelled.`.
+
+A completely empty Enter never reaches `Logic`, because `CommandBox` ignores an empty command box, so a pending clear stays pending. Input that is only spaces is sent on, cannot be parsed, and so cancels like any other input.
+
+When nothing is pending, `clear confirm` is rejected with `No clear is pending. Type clear first.`, so the confirmation cannot be skipped. The flag is not written to the data file, so restarting the app cancels it.
+
+**Showing the pending state.** `CommandBox` and `MainWindow` read `CommandResult#isAwaitingConfirmation()` from each result. While it is true, the command box gets the `pending` style class and a prompt asking the user to confirm, and `ResultDisplay` shows the warning with the same style class. The next result removes both, so the indicator is always the same as the state held by `LogicManager`.
+
+**Why the state lives in `LogicManager`.** A `Command` is created again for every input, so it cannot remember the previous one. `Model` holds saved client data, and a pending confirmation is not data. Keeping the flag in `LogicManager` makes it testable without the UI, and the UI only has to display it.
+
+**Alternatives considered.**
+* **A stateless `clear confirm`:** the warning would be a hint only, because a user could skip it by typing `clear confirm` straight away. It also gives the UI nothing to show.
+* **A confirmation popup:** this needs a window in the UI layer and cannot be tested through `Logic` alone.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -618,8 +649,8 @@ testers are expected to do more *exploratory* testing.
       Expected: Only `Benjamin Lim` is displayed, at index 1. The result box shows `1 client listed!`.
 
    1. Test case: `role 1 seller`<br>
-      Expected: Benjamin's badge changes to `Seller`, even though he is client 2 in the full list. The full client list
-      is displayed again. The result box shows `Role updated: Benjamin Lim is now marked as Seller`.
+      Expected: Benjamin's badge changes to `Seller`, even though he is client 2 in the full list. The search stays active,
+      so only Benjamin is still displayed. The result box shows `Role updated: Benjamin Lim is now marked as Seller`.
 
    1. Test case: `find Alicia`, followed by `role 2 buyer`<br>
       Expected: The filtered list contains only one client, so no role is changed. The result box shows

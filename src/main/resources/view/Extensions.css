@@ -3,6 +3,15 @@
     -fx-text-fill: #d06651 !important; /* The error class should always override the default text-fill style */
 }
 
+.pending {
+    -fx-text-fill: #e0a526 !important; /* Shows that a confirmation is waiting, as .error shows a failure */
+}
+
+#commandTextField.pending {
+    -fx-border-color: #e0a526;
+    -fx-border-width: 2;
+}
+
 .list-cell:empty {
     /* Empty cells will not have alternating colours */
     -fx-background: #383838;

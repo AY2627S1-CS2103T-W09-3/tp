@@ -10,6 +10,11 @@ application {
     mainClass = 'seedu.address.Main'
 }
 
+run {
+    // JavaExec does not enable assertions by default.
+    enableAssertions = true
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
@@ -26,6 +31,8 @@ checkstyle {
 
 test {
     useJUnitPlatform()
+    // Gradle enables assertions for Test tasks by default; keep this explicit.
+    enableAssertions = true
     // Run JavaFX UI tests without opening windows or requiring a display on CI.
     systemProperty 'glass.platform', 'Monocle'
     systemProperty 'monocle.platform', 'Headless'

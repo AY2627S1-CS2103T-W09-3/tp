@@ -33,6 +33,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.ModelManager;
@@ -89,7 +90,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void layout_supportedLogicalSizes_keepsMainRegionsVisible() throws Exception {
+    public void layout_supportedLogicalViewports_keepsMainRegionsVisible() throws Exception {
         runOnFxThread(() -> {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
@@ -103,7 +104,8 @@ public class MainWindowTest {
                 Region root = (Region) window.getRoot().getScene().getRoot();
                 root.applyCss();
 
-                // Effective content sizes for 100%, 125%, and 150% scaling, plus the window minimum.
+                // Check logical viewport sizes only; this does not change the display scale or font metrics.
+                // Actual display-scaling checks are listed in docs/Testing.md.
                 int[][] logicalSizes = {{1920, 1080}, {1536, 864}, {853, 480}, {820, 440}};
                 for (int[] size : logicalSizes) {
                     root.resize(size[0], size[1]);
@@ -116,6 +118,8 @@ public class MainWindowTest {
 
                     assertEquals(340, root.lookup("#personList").getLayoutBounds().getWidth(), 1);
                     assertTrue(root.lookup("#detailPanePlaceholder").getLayoutBounds().getWidth() >= 380);
+                    Label placeholder = (Label) root.lookup("#detailPlaceholderMessage");
+                    assertEquals("Select a client to see details.", placeholder.getText());
                     Label count = (Label) root.lookup("#clientCountStatus");
                     assertEquals("2 clients", count.getText());
                     assertTrue(count.getWidth() >= count.prefWidth(-1) - 1);
@@ -223,8 +227,120 @@ public class MainWindowTest {
                 assertEquals("1 client", count.getText());
 
                 enterCommand(window, commandBox, "clear");
+                assertEquals("1 client", count.getText());
+                enterCommand(window, commandBox, "clear confirm");
                 assertEquals("0 clients", count.getText());
                 assertEquals(dataFile.toString(), saveLocation.getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearThenConfirm_showsPendingStateUntilConfirmed() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+                assertPendingState(commandBox, feedback, false);
+
+                enterCommand(window, commandBox, "clear");
+                assertEquals("This will delete all 2 clients. Type clear confirm to proceed.", feedback.getText());
+                assertPendingState(commandBox, feedback, true);
+                assertFeedbackFill(feedback, Color.web("#e0a526"));
+                assertEquals(List.of(AMY, BOB), personList.getItems());
+
+                enterCommand(window, commandBox, "clear confirm");
+                assertEquals(ClearCommand.MESSAGE_SUCCESS, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertFeedbackFill(feedback, Color.WHITE);
+                assertEquals(List.of(), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearThenOtherInput_cancelsPendingState() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+
+                enterCommand(window, commandBox, "clear");
+                assertPendingState(commandBox, feedback, true);
+
+                commandBox.setText("something else");
+                assertPendingState(commandBox, feedback, true);
+
+                enterCommand(window, commandBox, "something else");
+                assertEquals(ClearCommand.MESSAGE_CANCELLED, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertFeedbackFill(feedback, Color.WHITE);
+                assertEquals(List.of(AMY), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearThenEmptyEnterThenSpace_staysPendingThenCancels() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+
+                enterCommand(window, commandBox, "clear");
+                assertPendingState(commandBox, feedback, true);
+
+                // An empty command box is not an input, so the confirmation stays pending.
+                enterCommand(window, commandBox, "");
+                assertEquals(ClearCommand.MESSAGE_WARNING_ONE_CLIENT, feedback.getText());
+                assertPendingState(commandBox, feedback, true);
+                assertEquals(List.of(AMY), personList.getItems());
+
+                // A single space is an input, so it cancels the confirmation without deleting anyone.
+                enterCommand(window, commandBox, " ");
+                assertEquals(ClearCommand.MESSAGE_CANCELLED, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertEquals(List.of(AMY), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearConfirmWithoutPendingClear_showsErrorNotPendingState() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+
+                enterCommand(window, commandBox, "clear confirm");
+
+                assertEquals("Error: " + ClearCommand.MESSAGE_NO_CLEAR_PENDING, feedback.getText());
+                assertTrue(feedback.getStyleClass().contains("error"));
+                assertPendingState(commandBox, feedback, false);
             } finally {
                 window.getRoot().close();
             }
@@ -266,6 +382,29 @@ public class MainWindowTest {
         assertTrue(bounds.getMinX() >= -1 && bounds.getMinY() >= -1
                 && bounds.getMaxX() <= width + 1 && bounds.getMaxY() <= height + 1,
                 context + " extends beyond the viewport");
+    }
+
+    private MainWindow openWindow(ModelManager model) {
+        Path dataFile = temporaryFolder.resolve("addressbook.json");
+        StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+        MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+        window.fillInnerParts();
+        return window;
+    }
+
+    /**
+     * Verifies that the command box and result display either both show the pending style or both do not.
+     */
+    private static void assertPendingState(TextField commandBox, TextArea feedback, boolean isPending) {
+        assertEquals(isPending, commandBox.getStyleClass().contains("pending"));
+        assertEquals(isPending, feedback.getStyleClass().contains("pending"));
+        assertEquals(isPending ? CommandBox.PENDING_PROMPT_TEXT : "Enter command here...",
+                commandBox.getPromptText());
+    }
+
+    private static void assertFeedbackFill(TextArea feedback, Color expectedFill) {
+        assertEquals(expectedFill, ((Text) feedback.lookup(".text")).getFill());
     }
 
     private static void enterCommand(MainWindow window, TextField commandBox, String command) {

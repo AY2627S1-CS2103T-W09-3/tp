@@ -48,6 +48,7 @@ public class RoleCommandTest {
         Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person editedClient = new PersonBuilder(original).withRole(ClientRole.BOTH).build();
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        showPersonAtIndex(expectedModel, INDEX_SECOND_PERSON);
         expectedModel.setPerson(original, editedClient);
 
         RoleCommand command = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BOTH);
