@@ -28,6 +28,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.ModelManager;
@@ -116,6 +117,85 @@ public class MainWindowTest {
         });
     }
 
+    @Test
+    public void execute_clearThenConfirm_showsPendingStateUntilConfirmed() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+                assertPendingState(commandBox, feedback, false);
+
+                enterCommand(window, commandBox, "clear");
+                assertEquals("This will delete all 2 clients. Type clear confirm to proceed.", feedback.getText());
+                assertPendingState(commandBox, feedback, true);
+                assertFeedbackFill(feedback, Color.web("#e0a526"));
+                assertEquals(List.of(AMY, BOB), personList.getItems());
+
+                enterCommand(window, commandBox, "clear confirm");
+                assertEquals(ClearCommand.MESSAGE_SUCCESS, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertFeedbackFill(feedback, Color.WHITE);
+                assertEquals(List.of(), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearThenOtherInput_cancelsPendingState() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+
+                enterCommand(window, commandBox, "clear");
+                assertPendingState(commandBox, feedback, true);
+
+                commandBox.setText("something else");
+                assertPendingState(commandBox, feedback, true);
+
+                enterCommand(window, commandBox, "something else");
+                assertEquals(ClearCommand.MESSAGE_CANCELLED, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertFeedbackFill(feedback, Color.WHITE);
+                assertEquals(List.of(AMY), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearConfirmWithoutPendingClear_showsErrorNotPendingState() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+
+                enterCommand(window, commandBox, "clear confirm");
+
+                assertEquals("Error: " + ClearCommand.MESSAGE_NO_CLEAR_PENDING, feedback.getText());
+                assertTrue(feedback.getStyleClass().contains("error"));
+                assertPendingState(commandBox, feedback, false);
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
     private void assertFailureAndRecovery(String command, String expectedError) throws Exception {
         runOnFxThread(() -> {
             Path dataFile = temporaryFolder.resolve("addressbook.json");
@@ -142,6 +222,29 @@ public class MainWindowTest {
                 window.getRoot().close();
             }
         });
+    }
+
+    private MainWindow openWindow(ModelManager model) {
+        Path dataFile = temporaryFolder.resolve("addressbook.json");
+        StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+        MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+        window.fillInnerParts();
+        return window;
+    }
+
+    /**
+     * Verifies that the command box and result display either both show the pending style or both do not.
+     */
+    private static void assertPendingState(TextField commandBox, TextArea feedback, boolean isPending) {
+        assertEquals(isPending, commandBox.getStyleClass().contains("pending"));
+        assertEquals(isPending, feedback.getStyleClass().contains("pending"));
+        assertEquals(isPending ? CommandBox.PENDING_PROMPT_TEXT : "Enter command here...",
+                commandBox.getPromptText());
+    }
+
+    private static void assertFeedbackFill(TextArea feedback, Color expectedFill) {
+        assertEquals(expectedFill, ((Text) feedback.lookup(".text")).getFill());
     }
 
     private static void enterCommand(MainWindow window, TextField commandBox, String command) {
