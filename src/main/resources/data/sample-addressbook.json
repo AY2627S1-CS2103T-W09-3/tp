@@ -6,6 +6,7 @@
             "email": "alicia.tan@example.com",
             "address": "Blk 123 Bishan Street 12, #08-45",
             "role": "buyer",
+            "note": "Looking for a three-bedroom unit near an MRT station.\nCall after 6 PM on weekdays.",
             "tags": [
                 "firsttime"
             ]

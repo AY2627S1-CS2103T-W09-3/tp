@@ -13,7 +13,7 @@ import seedu.address.model.tag.Tag;
 /**
  * Represents a Person in the address book.
  * Guarantees: details are present and not null, field values are validated, immutable,
- * except for the role, which may be absent.
+ * except for the role and note, which may be absent.
  */
 public class Person {
 
@@ -25,20 +25,22 @@ public class Person {
     // Data fields
     private final Address address;
     private final ClientRole role;
+    private final Note note;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
-     * Every field must be present and not null, except {@code role}, which is null
-     * when no role has been assigned to the client.
+     * Every field must be present and not null, except {@code role} and {@code note}, which are null
+     * when no role or note has been assigned to the client.
      */
     public Person(Name name, Phone phone, Email email, Address address, ClientRole role,
-            Set<Tag> tags) {
+            Note note, Set<Tag> tags) {
         requireAllNonNull(name, phone, email, address, tags);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
         this.role = role;
+        this.note = note;
         this.tags.addAll(tags);
     }
 
@@ -63,6 +65,13 @@ public class Person {
      */
     public ClientRole getRole() {
         return role;
+    }
+
+    /**
+     * Returns the client's note, or null if no note has been added yet.
+     */
+    public Note getNote() {
+        return note;
     }
 
     /**
@@ -107,13 +116,14 @@ public class Person {
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
                 && Objects.equals(role, otherPerson.role)
+                && Objects.equals(note, otherPerson.note)
                 && tags.equals(otherPerson.tags);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, role, tags);
+        return Objects.hash(name, phone, email, address, role, note, tags);
     }
 
     @Override
@@ -124,6 +134,7 @@ public class Person {
                 .add("email", email)
                 .add("address", address)
                 .add("role", role)
+                .add("note", note)
                 .add("tags", tags)
                 .toString();
     }

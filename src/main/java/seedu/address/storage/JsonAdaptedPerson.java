@@ -15,6 +15,7 @@ import seedu.address.model.person.Address;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.Note;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
@@ -37,6 +38,12 @@ class JsonAdaptedPerson {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final String role;
 
+    /**
+     * Absent when the client has no note, in which case the key is left out of the data file.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final String note;
+
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
@@ -46,12 +53,14 @@ class JsonAdaptedPerson {
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("address") String address,
             @JsonProperty("role") String role,
+            @JsonProperty("note") String note,
             @JsonProperty("tags") List<JsonAdaptedTag> tags) {
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
         this.role = role;
+        this.note = note;
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -66,6 +75,7 @@ class JsonAdaptedPerson {
         email = source.getEmail().value;
         address = source.getAddress().value;
         role = source.getRole() == null ? null : source.getRole().getValue();
+        note = source.getNote() == null ? null : source.getNote().value;
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -125,8 +135,19 @@ class JsonAdaptedPerson {
             modelRole = ClientRole.fromString(role);
         }
 
+        // Client books saved before notes were introduced do not have this field,
+        // and a client is allowed to have no note.
+        final Note modelNote;
+        if (note == null) {
+            modelNote = null;
+        } else if (!Note.isValidNote(note)) {
+            throw new IllegalValueException(Note.MESSAGE_CONSTRAINTS);
+        } else {
+            modelNote = new Note(note);
+        }
+
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelRole, modelTags);
+        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelRole, modelNote, modelTags);
     }
 
 }
