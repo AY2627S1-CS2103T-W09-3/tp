@@ -49,7 +49,8 @@ public class RoleCommand extends Command {
         Person clientToEdit = lastShownList.get(index.getZeroBased());
         Person editedClient = new Person(
                 clientToEdit.getName(), clientToEdit.getPhone(), clientToEdit.getEmail(),
-                clientToEdit.getAddress(), role, clientToEdit.getTags());
+                clientToEdit.getAddress(), role, clientToEdit.getTags(), clientToEdit.getBudget(),
+                clientToEdit.getAskingPrice(), clientToEdit.getAreas(), clientToEdit.getHousingTypes());
 
         model.setPerson(clientToEdit, editedClient);
 

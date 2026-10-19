@@ -6,6 +6,18 @@
             "email": "alicia.tan@example.com",
             "address": "Blk 123 Bishan Street 12, #08-45",
             "role": "buyer",
+            "budget": {
+                "min": 800000,
+                "max": 1200000
+            },
+            "areas": [
+                "Bishan",
+                "Toa Payoh"
+            ],
+            "housingTypes": [
+                "HDB",
+                "Condo"
+            ],
             "tags": [
                 "firsttime"
             ]
@@ -26,6 +38,7 @@
             "email": "nur.aisyah@example.com",
             "address": "Blk 210 Yishun Street 21, #10-23",
             "role": "seller",
+            "askingPrice": 950000,
             "tags": [
                 "urgent"
             ]
@@ -46,6 +59,18 @@
             "email": "cheryl.goh@example.com",
             "address": "Blk 315 Punggol Way, #09-56",
             "role": "both",
+            "budget": {
+                "min": 700000,
+                "max": 900000
+            },
+            "askingPrice": 850000,
+            "areas": [
+                "Tampines"
+            ],
+            "housingTypes": [
+                "HDB",
+                "EC"
+            ],
             "tags": [
                 "upgrading"
             ]

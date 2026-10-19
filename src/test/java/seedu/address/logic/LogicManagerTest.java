@@ -1,6 +1,8 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -9,6 +11,7 @@ import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -20,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -147,6 +151,87 @@ public class LogicManagerTest {
         logic.execute("list");
         assertEquals(3, model.getFilteredPersonList().size());
     }
+    
+    @Test
+    public void execute_clearThenConfirm_warnsThenClears() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+
+        CommandResult warning = logic.execute("clear");
+        assertEquals("This will delete all 2 clients. Type clear confirm to proceed.", warning.getFeedbackToUser());
+        assertTrue(warning.isAwaitingConfirmation());
+        assertEquals(2, model.getAddressBook().getPersonList().size());
+
+        CommandResult cleared = logic.execute("clear confirm");
+        assertEquals(ClearCommand.MESSAGE_SUCCESS, cleared.getFeedbackToUser());
+        assertFalse(cleared.isAwaitingConfirmation());
+        assertTrue(model.getAddressBook().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_clearThenOtherCommand_cancelsWithoutExecutingIt() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("clear");
+
+        CommandResult cancelled = logic.execute("delete 1");
+
+        assertEquals(ClearCommand.MESSAGE_CANCELLED, cancelled.getFeedbackToUser());
+        assertFalse(cancelled.isAwaitingConfirmation());
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+    }
+
+    @Test
+    public void execute_clearThenUnparseableInput_cancelsWithoutError() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("clear");
+
+        CommandResult cancelled = logic.execute("uicfhmowqewca");
+
+        assertEquals(ClearCommand.MESSAGE_CANCELLED, cancelled.getFeedbackToUser());
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+    }
+
+    @Test
+    public void execute_clearThenClear_cancelsThenWarnsAgain() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("clear");
+
+        assertEquals(ClearCommand.MESSAGE_CANCELLED, logic.execute("clear").getFeedbackToUser());
+
+        CommandResult warning = logic.execute("clear");
+        assertEquals(ClearCommand.MESSAGE_WARNING_ONE_CLIENT, warning.getFeedbackToUser());
+        assertTrue(warning.isAwaitingConfirmation());
+    }
+
+    @Test
+    public void execute_clearConfirmWithoutPendingClear_throwsCommandException() {
+        model.addPerson(AMY);
+
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_clearOnEmptyAddressBook_doesNotStartPendingClear() throws Exception {
+        CommandResult result = logic.execute("clear");
+
+        assertEquals(ClearCommand.MESSAGE_EMPTY, result.getFeedbackToUser());
+        assertFalse(result.isAwaitingConfirmation());
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+    }
+
+    @Test
+    public void execute_storageFailsAfterClearWarning_doesNotStartPendingClear() throws Exception {
+        model.addPerson(AMY);
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
+
+        assertCommandException("clear", String.format(
+                LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
 
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
@@ -232,9 +317,24 @@ public class LogicManagerTest {
      * @param expectedMessage the message expected inside exception thrown by the Logic component
      */
     private void assertCommandFailureForExceptionFromStorage(IOException e, String expectedMessage) {
+        logic = new LogicManager(model, createStorageThatFailsToSave(e));
+
+        // Triggers the saveAddressBook method by executing an add command
+        String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
+                + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
+        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
+        ModelManager expectedModel = new ModelManager();
+        expectedModel.addPerson(expectedPerson);
+        assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+    }
+
+    /**
+     * Returns a {@code StorageManager} whose address book storage throws {@code e} when saving.
+     */
+    private StorageManager createStorageThatFailsToSave(IOException e) {
         Path prefPath = temporaryFolder.resolve("ExceptionUserPrefs.json");
 
-        // Inject LogicManager with a JsonAddressBookStorage that throws the IOException e when saving
+        // Inject a JsonAddressBookStorage that throws the IOException e when saving
         JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(prefPath) {
             @Override
             public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
@@ -244,16 +344,6 @@ public class LogicManagerTest {
 
         JsonUserPrefsStorage userPrefsStorage =
                 new JsonUserPrefsStorage(temporaryFolder.resolve("ExceptionUserPrefs.json"));
-        StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
-
-        logic = new LogicManager(model, storage);
-
-        // Triggers the saveAddressBook method by executing an add command
-        String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
-                + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
-        ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
-        assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+        return new StorageManager(addressBookStorage, userPrefsStorage);
     }
 }
