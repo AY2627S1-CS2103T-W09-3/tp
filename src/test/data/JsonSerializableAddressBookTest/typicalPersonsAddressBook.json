@@ -5,6 +5,13 @@
     "phone" : "94351253",
     "email" : "alice@example.com",
     "address" : "123, Jurong West Ave 6, #08-111",
+    "role" : "buyer",
+    "budget" : {
+      "min" : 800000,
+      "max" : 1200000
+    },
+    "areas" : [ "Bishan", "Toa Payoh" ],
+    "housingTypes" : [ "HDB", "Condo" ],
     "remark" : "She likes aardvarks.",
     "tags" : [ "friends" ]
   }, {
@@ -12,6 +19,8 @@
     "phone" : "98765432",
     "email" : "johnd@example.com",
     "address" : "311, Clementi Ave 2, #02-25",
+    "role" : "seller",
+    "askingPrice" : 950000,
     "remark" : "He can't take beer!",
     "tags" : [ "owesMoney", "friends" ]
   }, {
@@ -19,6 +28,14 @@
     "phone" : "95352563",
     "email" : "heinz@example.com",
     "address" : "wall street",
+    "role" : "both",
+    "budget" : {
+      "min" : 700000,
+      "max" : 900000
+    },
+    "askingPrice" : 850000,
+    "areas" : [ "Tampines" ],
+    "housingTypes" : [ "HDB", "EC" ],
     "remark" : "",
     "tags" : [ ]
   }, {

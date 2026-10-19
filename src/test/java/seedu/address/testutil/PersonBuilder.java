@@ -4,11 +4,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 import seedu.address.model.person.Address;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Price;
 import seedu.address.model.tag.Tag;
 import seedu.address.model.util.SampleDataUtil;
 
@@ -28,6 +32,10 @@ public class PersonBuilder {
     private Address address;
     private ClientRole role;
     private Set<Tag> tags;
+    private Budget budget;
+    private Price askingPrice;
+    private Set<Area> areas;
+    private Set<HousingType> housingTypes;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -39,6 +47,10 @@ public class PersonBuilder {
         address = new Address(DEFAULT_ADDRESS);
         role = null; // a client has no role until one is assigned
         tags = new HashSet<>();
+        budget = null;
+        askingPrice = null;
+        areas = new HashSet<>();
+        housingTypes = new HashSet<>();
     }
 
     /**
@@ -51,6 +63,10 @@ public class PersonBuilder {
         address = personToCopy.getAddress();
         role = personToCopy.getRole();
         tags = new HashSet<>(personToCopy.getTags());
+        budget = personToCopy.getBudget();
+        askingPrice = personToCopy.getAskingPrice();
+        areas = new HashSet<>(personToCopy.getAreas());
+        housingTypes = new HashSet<>(personToCopy.getHousingTypes());
     }
 
     /**
@@ -101,8 +117,40 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the {@code Budget} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withBudget(Budget budget) {
+        this.budget = budget;
+        return this;
+    }
+
+    /**
+     * Sets the asking {@code Price} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withAskingPrice(Price askingPrice) {
+        this.askingPrice = askingPrice;
+        return this;
+    }
+
+    /**
+     * Sets the {@code Area} set of the {@code Person} that we are building.
+     */
+    public PersonBuilder withAreas(Set<Area> areas) {
+        this.areas = new HashSet<>(areas);
+        return this;
+    }
+
+    /**
+     * Sets the {@code HousingType} set of the {@code Person} that we are building.
+     */
+    public PersonBuilder withHousingTypes(Set<HousingType> housingTypes) {
+        this.housingTypes = new HashSet<>(housingTypes);
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, phone, email, address, role, tags);
+        return new Person(name, phone, email, address, role, tags, budget, askingPrice, areas, housingTypes);
     }
 
 }

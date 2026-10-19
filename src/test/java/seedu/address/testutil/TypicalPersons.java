@@ -16,7 +16,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import seedu.address.model.AddressBook;
+import seedu.address.model.person.Budget;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Price;
+import seedu.address.model.util.SampleDataUtil;
 
 /**
  * A utility class containing a list of {@code Person} objects to be used in tests.
@@ -26,13 +30,24 @@ public class TypicalPersons {
     public static final Person ALICE = new PersonBuilder().withName("Alice Pauline")
             .withAddress("123, Jurong West Ave 6, #08-111").withEmail("alice@example.com")
             .withPhone("94351253")
-            .withTags("friends").build();
+            .withTags("friends")
+            .withRole(ClientRole.BUYER)
+            .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+            .withAreas(SampleDataUtil.getAreaSet("Bishan", "Toa Payoh"))
+            .withHousingTypes(SampleDataUtil.getHousingTypeSet("HDB", "Condo")).build();
     public static final Person BENSON = new PersonBuilder().withName("Benson Meier")
             .withAddress("311, Clementi Ave 2, #02-25")
             .withEmail("johnd@example.com").withPhone("98765432")
-            .withTags("owesMoney", "friends").build();
+            .withTags("owesMoney", "friends")
+            .withRole(ClientRole.SELLER)
+            .withAskingPrice(new Price("950000")).build();
     public static final Person CARL = new PersonBuilder().withName("Carl Kurz").withPhone("95352563")
-            .withEmail("heinz@example.com").withAddress("wall street").build();
+            .withEmail("heinz@example.com").withAddress("wall street")
+            .withRole(ClientRole.BOTH)
+            .withBudget(new Budget(new Price("700000"), new Price("900000")))
+            .withAskingPrice(new Price("850000"))
+            .withAreas(SampleDataUtil.getAreaSet("Tampines"))
+            .withHousingTypes(SampleDataUtil.getHousingTypeSet("HDB", "EC")).build();
     public static final Person DANIEL = new PersonBuilder().withName("Daniel Meier").withPhone("87652533")
             .withEmail("cornelia@example.com").withAddress("10th street").withTags("friends").build();
     public static final Person ELLE = new PersonBuilder().withName("Elle Meyer").withPhone("9482224")

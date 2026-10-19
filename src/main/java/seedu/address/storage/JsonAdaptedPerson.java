@@ -12,11 +12,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.Address;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Price;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -40,13 +44,35 @@ class JsonAdaptedPerson {
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
+     * Absent when the client has no budget, in which case the key is left out of the data file.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final JsonAdaptedBudget budget;
+
+    /**
+     * Absent when the client has no asking price, in which case the key is left out of the data file.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final Integer askingPrice;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private final List<String> areas = new ArrayList<>();
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private final List<String> housingTypes = new ArrayList<>();
+
+    /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
      */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("address") String address,
             @JsonProperty("role") String role,
-            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
+            @JsonProperty("tags") List<JsonAdaptedTag> tags,
+            @JsonProperty("budget") JsonAdaptedBudget budget,
+            @JsonProperty("askingPrice") Integer askingPrice,
+            @JsonProperty("areas") List<String> areas,
+            @JsonProperty("housingTypes") List<String> housingTypes) {
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -54,6 +80,14 @@ class JsonAdaptedPerson {
         this.role = role;
         if (tags != null) {
             this.tags.addAll(tags);
+        }
+        this.budget = budget;
+        this.askingPrice = askingPrice;
+        if (areas != null) {
+            this.areas.addAll(areas);
+        }
+        if (housingTypes != null) {
+            this.housingTypes.addAll(housingTypes);
         }
     }
 
@@ -68,6 +102,14 @@ class JsonAdaptedPerson {
         role = source.getRole() == null ? null : source.getRole().getValue();
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
+                .collect(Collectors.toList()));
+        budget = source.getBudget() == null ? null : new JsonAdaptedBudget(source.getBudget());
+        askingPrice = source.getAskingPrice() == null ? null : source.getAskingPrice().getValue();
+        areas.addAll(source.getAreas().stream()
+                .map(Area::toString)
+                .collect(Collectors.toList()));
+        housingTypes.addAll(source.getHousingTypes().stream()
+                .map(HousingType::toString)
                 .collect(Collectors.toList()));
     }
 
@@ -125,8 +167,72 @@ class JsonAdaptedPerson {
             modelRole = ClientRole.fromString(role);
         }
 
+        final Budget modelBudget;
+        if (budget == null) {
+            modelBudget = null;
+        } else {
+            if (budget.min == null || budget.max == null) {
+                throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT,
+                        Budget.class.getSimpleName()));
+            }
+            try {
+                modelBudget = new Budget(new Price(String.valueOf(budget.min)),
+                        new Price(String.valueOf(budget.max)));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalValueException(e.getMessage());
+            }
+        }
+
+        final Price modelAskingPrice;
+        if (askingPrice == null) {
+            modelAskingPrice = null;
+        } else {
+            try {
+                modelAskingPrice = new Price(String.valueOf(askingPrice));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalValueException(e.getMessage());
+            }
+        }
+
+        final Set<Area> modelAreas = new HashSet<>();
+        for (String area : areas) {
+            if (!Area.isValidArea(area)) {
+                throw new IllegalValueException(Area.MESSAGE_CONSTRAINTS);
+            }
+            modelAreas.add(new Area(area));
+        }
+
+        final Set<HousingType> modelHousingTypes = new HashSet<>();
+        for (String housingType : housingTypes) {
+            if (!HousingType.isValidHousingType(housingType)) {
+                throw new IllegalValueException(HousingType.MESSAGE_CONSTRAINTS);
+            }
+            modelHousingTypes.add(HousingType.fromString(housingType));
+        }
+
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelRole, modelTags);
+        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelRole, modelTags,
+                modelBudget, modelAskingPrice, modelAreas, modelHousingTypes);
+    }
+
+    /**
+     * Jackson-friendly version of a {@link Budget}.
+     */
+    static final class JsonAdaptedBudget {
+
+        private final Integer min;
+        private final Integer max;
+
+        @JsonCreator
+        JsonAdaptedBudget(@JsonProperty("min") Integer min, @JsonProperty("max") Integer max) {
+            this.min = min;
+            this.max = max;
+        }
+
+        JsonAdaptedBudget(Budget source) {
+            min = source.getMin().getValue();
+            max = source.getMax().getValue();
+        }
     }
 
 }
