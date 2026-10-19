@@ -24,9 +24,11 @@ import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.commands.RoleCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.ClientRole;
+import seedu.address.model.person.Note;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
@@ -104,6 +106,13 @@ public class AddressBookParserTest {
     public void parseCommand_list() throws Exception {
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+    }
+
+    @Test
+    public void parseCommand_note() throws Exception {
+        NoteCommand command = (NoteCommand) parser.parseCommand(
+                NoteCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased() + " Call next week");
+        assertEquals(new NoteCommand(INDEX_FIRST_PERSON, new Note("Call next week")), command);
     }
 
     @Test

@@ -180,6 +180,26 @@ Examples:
 For example, if the first displayed client is John Doe, `role 1 buyer` displays:
 `Role updated: John Doe is now marked as Buyer`
 
+### Adding or clearing a client note: `note`
+
+Sets or clears the note belonging to a displayed client.
+
+Format: `note INDEX TEXT`
+
+* `INDEX` must be a positive integer referring to a client in the displayed list.
+* `TEXT` can contain spaces and must be between 1 and 500 characters after surrounding whitespace is removed.
+* Type the two characters `\n` where a line break should appear in the note.
+* The exact lowercase word `clear` clears the note.
+* `CLEAR` and sentences containing the word `clear` are stored as ordinary note text.
+* The currently displayed client filter remains active after setting or clearing a note.
+
+Examples:
+
+* `note 1 Call again next Monday` adds or replaces the first displayed client's note.
+* `note 2 First line\nSecond line` stores a note containing two lines.
+* `note 3 clear` clears the third displayed client's note.
+* `note 3 Please clear the outstanding paperwork` stores the full sentence as a note.
+
 ### Finding clients: `find`
 
 Finds clients by name, phone number, or email address.
@@ -324,6 +344,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find Alicia`, `find 81234567`, `find alicia.tan@example.com`
+**Note** | `note INDEX TEXT`<br> e.g., `note 1 Call next week`, `note 1 clear`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
 **List** | `list`
 **Help** | `help`
