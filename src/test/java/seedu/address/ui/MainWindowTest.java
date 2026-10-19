@@ -176,6 +176,37 @@ public class MainWindowTest {
     }
 
     @Test
+    public void execute_clearThenEmptyEnterThenSpace_staysPendingThenCancels() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+
+                enterCommand(window, commandBox, "clear");
+                assertPendingState(commandBox, feedback, true);
+
+                // An empty command box is not an input, so the confirmation stays pending.
+                enterCommand(window, commandBox, "");
+                assertEquals(ClearCommand.MESSAGE_WARNING_ONE_CLIENT, feedback.getText());
+                assertPendingState(commandBox, feedback, true);
+                assertEquals(List.of(AMY), personList.getItems());
+
+                // A single space is an input, so it cancels the confirmation without deleting anyone.
+                enterCommand(window, commandBox, " ");
+                assertEquals(ClearCommand.MESSAGE_CANCELLED, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertEquals(List.of(AMY), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
     public void execute_clearConfirmWithoutPendingClear_showsErrorNotPendingState() throws Exception {
         runOnFxThread(() -> {
             ModelManager model = new ModelManager();
