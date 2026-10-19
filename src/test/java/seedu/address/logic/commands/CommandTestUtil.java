@@ -3,7 +3,11 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_AREA;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ASKING_PRICE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_HOUSING_TYPE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
@@ -35,6 +39,14 @@ public class CommandTestUtil {
     public static final String VALID_ADDRESS_BOB = "Block 123, Bobby Street 3";
     public static final String VALID_TAG_HUSBAND = "husband";
     public static final String VALID_TAG_FRIEND = "friend";
+    public static final String VALID_BUDGET_AMY = "1,000-2,000";
+    public static final String VALID_BUDGET_BOB = "2,000-3,000";
+    public static final String VALID_ASKING_PRICE_AMY = "1,500";
+    public static final String VALID_ASKING_PRICE_BOB = "2,500";
+    public static final String VALID_AREA_AMY = "Bukit Timah";
+    public static final String VALID_AREA_BOB = "Orchard";
+    public static final String VALID_HOUSING_TYPE_AMY = "HDB";
+    public static final String VALID_HOUSING_TYPE_BOB = "Condo";
 
     public static final String NAME_DESC_AMY = " " + PREFIX_NAME + VALID_NAME_AMY;
     public static final String NAME_DESC_BOB = " " + PREFIX_NAME + VALID_NAME_BOB;
@@ -46,12 +58,25 @@ public class CommandTestUtil {
     public static final String ADDRESS_DESC_BOB = " " + PREFIX_ADDRESS + VALID_ADDRESS_BOB;
     public static final String TAG_DESC_FRIEND = " " + PREFIX_TAG + VALID_TAG_FRIEND;
     public static final String TAG_DESC_HUSBAND = " " + PREFIX_TAG + VALID_TAG_HUSBAND;
+    public static final String BUDGET_DESC_AMY = " " + PREFIX_BUDGET + VALID_BUDGET_AMY;
+    public static final String BUDGET_DESC_BOB = " " + PREFIX_BUDGET + VALID_BUDGET_BOB;
+    public static final String ASKING_PRICE_DESC_AMY = " " + PREFIX_ASKING_PRICE + VALID_ASKING_PRICE_AMY;
+    public static final String ASKING_PRICE_DESC_BOB = " " + PREFIX_ASKING_PRICE + VALID_ASKING_PRICE_BOB;
+    public static final String AREA_DESC_AMY = " " + PREFIX_AREA + VALID_AREA_AMY;
+    public static final String AREA_DESC_BOB = " " + PREFIX_AREA + VALID_AREA_BOB;
+    public static final String HOUSING_TYPE_DESC_AMY = " " + PREFIX_HOUSING_TYPE + VALID_HOUSING_TYPE_AMY;
+    public static final String HOUSING_TYPE_DESC_BOB = " " + PREFIX_HOUSING_TYPE + VALID_HOUSING_TYPE_BOB;
 
     public static final String INVALID_NAME_DESC = " " + PREFIX_NAME + "James&"; // '&' not allowed in names
     public static final String INVALID_PHONE_DESC = " " + PREFIX_PHONE + "911a"; // 'a' not allowed in phones
     public static final String INVALID_EMAIL_DESC = " " + PREFIX_EMAIL + "bob!yahoo"; // missing '@' symbol
     public static final String INVALID_ADDRESS_DESC = " " + PREFIX_ADDRESS; // empty string not allowed for addresses
     public static final String INVALID_TAG_DESC = " " + PREFIX_TAG + "hubby*"; // '*' not allowed in tags
+    public static final String INVALID_BUDGET_DESC = " " + PREFIX_BUDGET + "2000-1000"; // min exceeds max
+    public static final String INVALID_BUDGET_MONEY_DESC = " " + PREFIX_BUDGET + "not-a-price";
+    public static final String INVALID_PRICE_DESC = " " + PREFIX_ASKING_PRICE + "0"; // price must be at least 1
+    public static final String INVALID_AREA_DESC = " " + PREFIX_AREA + "Atlantis";
+    public static final String INVALID_HOUSING_TYPE_DESC = " " + PREFIX_HOUSING_TYPE + "Apartment";
 
     public static final String PREAMBLE_WHITESPACE = "\t  \r  \n";
     public static final String PREAMBLE_NON_EMPTY = "NonEmptyPreamble";

@@ -6,10 +6,14 @@ import java.util.stream.Stream;
 
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.model.person.Address;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Price;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -37,6 +41,18 @@ public class EditPersonDescriptorBuilder {
         descriptor.setEmail(person.getEmail());
         descriptor.setAddress(person.getAddress());
         descriptor.setTags(person.getTags());
+        if (person.getBudget() != null) {
+            descriptor.setBudget(person.getBudget());
+        }
+        if (person.getAskingPrice() != null) {
+            descriptor.setAskingPrice(person.getAskingPrice());
+        }
+        if (!person.getAreas().isEmpty()) {
+            descriptor.setAreas(person.getAreas());
+        }
+        if (!person.getHousingTypes().isEmpty()) {
+            descriptor.setHousingTypes(person.getHousingTypes());
+        }
     }
 
     /**
@@ -68,6 +84,38 @@ public class EditPersonDescriptorBuilder {
      */
     public EditPersonDescriptorBuilder withAddress(String address) {
         descriptor.setAddress(new Address(address));
+        return this;
+    }
+
+    /**
+     * Sets the {@code Budget} of the {@code EditPersonDescriptor} that we are building.
+     */
+    public EditPersonDescriptorBuilder withBudget(Budget budget) {
+        descriptor.setBudget(budget);
+        return this;
+    }
+
+    /**
+     * Sets the asking {@code Price} of the {@code EditPersonDescriptor} that we are building.
+     */
+    public EditPersonDescriptorBuilder withAskingPrice(Price askingPrice) {
+        descriptor.setAskingPrice(askingPrice);
+        return this;
+    }
+
+    /**
+     * Sets the {@code Area} set of the {@code EditPersonDescriptor} that we are building.
+     */
+    public EditPersonDescriptorBuilder withAreas(Set<Area> areas) {
+        descriptor.setAreas(areas);
+        return this;
+    }
+
+    /**
+     * Sets the {@code HousingType} set of the {@code EditPersonDescriptor} that we are building.
+     */
+    public EditPersonDescriptorBuilder withHousingTypes(Set<HousingType> housingTypes) {
+        descriptor.setHousingTypes(housingTypes);
         return this;
     }
 

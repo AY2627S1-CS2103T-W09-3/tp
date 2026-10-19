@@ -10,6 +10,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,11 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Price;
 import seedu.address.testutil.PersonBuilder;
 
 public class AddCommandTest {
@@ -36,6 +41,23 @@ public class AddCommandTest {
     public void execute_personAcceptedByModel_addSuccessful() throws Exception {
         ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
         Person validPerson = new PersonBuilder().build();
+
+        CommandResult commandResult = new AddCommand(validPerson).execute(modelStub);
+
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+                commandResult.getFeedbackToUser());
+        assertEquals(List.of(validPerson), modelStub.personsAdded);
+    }
+
+    @Test
+    public void execute_personWithRequirementsAcceptedByModel_addSuccessful() throws Exception {
+        ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded();
+        Person validPerson = new PersonBuilder()
+                .withBudget(new Budget(new Price("1000"), new Price("2000")))
+                .withAskingPrice(new Price("1500"))
+                .withAreas(Set.of(new Area("Orchard")))
+                .withHousingTypes(Set.of(HousingType.CONDO))
+                .build();
 
         CommandResult commandResult = new AddCommand(validPerson).execute(modelStub);
 
