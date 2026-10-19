@@ -11,6 +11,7 @@ import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -70,7 +71,9 @@ public class JsonAddressBookStorageTest {
     public void readAndSaveAddressBook_legacyFile_preservesPerson() throws Exception {
         ReadOnlyAddressBook legacyAddressBook = readAddressBook("legacyAddressBook.json").get();
         AddressBook expectedAddressBook = new AddressBook();
-        expectedAddressBook.addPerson(new PersonBuilder(ALICE).build());
+        expectedAddressBook.addPerson(new PersonBuilder(ALICE).withRole(null)
+                .withBudget(null).withAskingPrice(null).withAreas(Set.of()).withHousingTypes(Set.of())
+                .build());
         assertEquals(expectedAddressBook, legacyAddressBook);
 
         JsonAddressBookStorage storage = new JsonAddressBookStorage(testFolder.resolve("migratedAddressBook.json"));

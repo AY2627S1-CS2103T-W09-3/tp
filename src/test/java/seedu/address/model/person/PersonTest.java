@@ -17,6 +17,7 @@ import static seedu.address.testutil.TypicalPersons.BOB;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.model.util.SampleDataUtil;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonTest {
@@ -24,14 +25,17 @@ public class PersonTest {
     @Test
     public void constructor_nullRole_isAllowed() {
         Person personWithNoRole = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(),
-                ALICE.getAddress(), null, ALICE.getNote(), ALICE.getTags());
+                ALICE.getAddress(), null, ALICE.getNote(), ALICE.getTags(),
+                ALICE.getBudget(), ALICE.getAskingPrice(),
+                ALICE.getAreas(), ALICE.getHousingTypes());
         assertNull(personWithNoRole.getRole());
     }
 
     @Test
     public void constructor_nullNote_isAllowed() {
         Person personWithNoNote = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(),
-                ALICE.getAddress(), ALICE.getRole(), null, ALICE.getTags());
+                ALICE.getAddress(), ALICE.getRole(), null, ALICE.getTags(),
+                ALICE.getBudget(), ALICE.getAskingPrice(), ALICE.getAreas(), ALICE.getHousingTypes());
         assertNull(personWithNoNote.getNote());
     }
 
@@ -125,7 +129,7 @@ public class PersonTest {
         assertFalse(ALICE.equals(editedAlice));
 
         // different role -> different details, but still the same person
-        editedAlice = new PersonBuilder(ALICE).withRole(ClientRole.BUYER).build();
+        editedAlice = new PersonBuilder(ALICE).withRole(ClientRole.SELLER).build();
         assertFalse(ALICE.equals(editedAlice));
         assertTrue(ALICE.isSamePerson(editedAlice));
 
@@ -133,6 +137,25 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withNote("Call after 6 PM").build();
         assertFalse(ALICE.equals(editedAlice));
         assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // different budget -> returns false
+        editedAlice = new PersonBuilder(ALICE)
+                .withBudget(new Budget(new Price("900000"), new Price("1000000"))).build();
+        assertFalse(ALICE.equals(editedAlice));
+
+        // different asking price -> returns false
+        editedAlice = new PersonBuilder(ALICE).withAskingPrice(new Price("900000")).build();
+        assertFalse(ALICE.equals(editedAlice));
+
+        // different areas -> returns false
+        editedAlice = new PersonBuilder(ALICE)
+                .withAreas(SampleDataUtil.getAreaSet("Bedok")).build();
+        assertFalse(ALICE.equals(editedAlice));
+
+        // different housing types -> returns false
+        editedAlice = new PersonBuilder(ALICE)
+                .withHousingTypes(SampleDataUtil.getHousingTypeSet("EC")).build();
+        assertFalse(ALICE.equals(editedAlice));
     }
 
     @Test
@@ -140,7 +163,9 @@ public class PersonTest {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
                 + ", role=" + ALICE.getRole() + ", note=" + ALICE.getNote()
-                + ", tags=" + ALICE.getTags() + "}";
+                + ", tags=" + ALICE.getTags()
+                + ", budget=" + ALICE.getBudget() + ", askingPrice=" + ALICE.getAskingPrice()
+                + ", areas=" + ALICE.getAreas() + ", housingTypes=" + ALICE.getHousingTypes() + "}";
         assertEquals(expected, ALICE.toString());
     }
 }
