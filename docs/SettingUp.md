@@ -25,6 +25,7 @@ If you plan to use IntelliJ IDEA (highly recommended):
 1. **Verify the setup**:
    1. Run `seedu.address.Main` and try a few commands.
    1. [Run the tests](Testing.md) to ensure they all pass.
+1. **Enable assertions in IntelliJ IDEA**: Open **Run | Edit Configurations**, select the configuration for `seedu.address.Main`, and add `-ea` to **VM options**. The Gradle `run` task enables assertions automatically; this flag is only needed when launching the app directly from IDEA.
 
 --------------------------------------------------------------------------------------------------------------------
 
