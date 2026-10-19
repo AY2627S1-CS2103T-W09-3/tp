@@ -21,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -110,6 +111,51 @@ public class MainWindowTest {
 
                 enterCommand(window, commandBox, "list");
                 assertEquals(List.of(AMY, BOB), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clientListChanges_updatesFooterCount() throws Exception {
+        runOnFxThread(() -> {
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            try {
+                window.fillInnerParts();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                Label count = (Label) window.getRoot().getScene().lookup("#clientCountStatus");
+                Label saveLocation = (Label) window.getRoot().getScene().lookup("#saveLocationStatus");
+
+                assertEquals(dataFile.toString(), saveLocation.getText());
+                assertEquals("0 clients", count.getText());
+
+                enterCommand(window, commandBox,
+                        "add n/Alicia Tan p/81234567 e/alicia.tan@example.com a/Bishan");
+                assertEquals("1 clients", count.getText());
+
+                enterCommand(window, commandBox,
+                        "add n/Benjamin Lim p/82345678 e/benjamin.lim@example.com a/Tampines");
+                assertEquals("2 clients", count.getText());
+
+                enterCommand(window, commandBox, "find Alicia");
+                assertEquals("1 clients", count.getText());
+
+                enterCommand(window, commandBox, "find Nobody");
+                assertEquals("0 clients", count.getText());
+
+                enterCommand(window, commandBox, "list");
+                assertEquals("2 clients", count.getText());
+
+                enterCommand(window, commandBox, "delete 1");
+                assertEquals("1 clients", count.getText());
+
+                enterCommand(window, commandBox, "clear");
+                assertEquals("0 clients", count.getText());
+                assertEquals(dataFile.toString(), saveLocation.getText());
             } finally {
                 window.getRoot().close();
             }
