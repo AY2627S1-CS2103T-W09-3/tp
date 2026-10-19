@@ -173,6 +173,15 @@ public class DetailPaneTest {
 
     @Test
     public void layout_longValuesInNarrowPanel_wrapsAndScrollsToLastRow() throws Exception {
+        assertLongValuesWrapAndScrollToLastRow("");
+    }
+
+    @Test
+    public void layout_largeTagFont_wrapsAndScrollsToLastRow() throws Exception {
+        assertLongValuesWrapAndScrollToLastRow("-fx-font-family: 'Arial'; -fx-font-size: 20px;");
+    }
+
+    private static void assertLongValuesWrapAndScrollToLastRow(String tagStyle) throws Exception {
         runOnFxThread(() -> {
             DetailPane pane = new DetailPane();
             Person person = new PersonBuilder().withName("A very long client name ".repeat(5).trim())
@@ -187,6 +196,9 @@ public class DetailPaneTest {
                     "HDB, Condo", noteText);
             // A 380-wide detail pane must fit within the 853 x 480 logical-pixel target window.
             layout(pane, 380, 280);
+            FlowPane tags = (FlowPane) pane.getRoot().lookup("#tags");
+            tags.getChildren().forEach(tag -> tag.setStyle(tagStyle));
+            layout(pane, 380, 280);
 
             ScrollPane scroll = (ScrollPane) pane.getRoot().lookup("#detailScroll");
             VBox rows = (VBox) scroll.getContent();
@@ -198,6 +210,10 @@ public class DetailPaneTest {
                 assertTrue(value.isWrapText());
                 assertTrue(value.getHeight() >= value.prefHeight(value.getWidth()) - 1, id + " is clipped");
                 assertTrue(value.getHeight() > 25, id + " did not wrap");
+            }
+            for (Node tag : tags.getChildren()) {
+                assertTrue(tag.getBoundsInParent().getMaxY() <= tags.getHeight() + 1,
+                        "A wrapped tag exceeds its row height");
             }
             Node viewport = scroll.lookup(".viewport");
             Bounds viewportBounds = viewport.localToScene(viewport.getBoundsInLocal());
@@ -235,7 +251,11 @@ public class DetailPaneTest {
         }
         pane.getRoot().resize(width, height);
         pane.getRoot().applyCss();
-        pane.getRoot().layout();
+        // Wrapping and the scrollbar can change the available width and request another layout pass.
+        for (int pass = 0; pass < 10 && pane.getRoot().isNeedsLayout(); pass++) {
+            pane.getRoot().layout();
+        }
+        assertFalse(pane.getRoot().isNeedsLayout(), "The detail panel layout did not settle");
     }
 
     private static void runOnFxThread(Runnable action) throws Exception {
