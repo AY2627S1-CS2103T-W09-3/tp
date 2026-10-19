@@ -6,14 +6,20 @@ import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
+import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.DANIEL;
+import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
+import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
@@ -22,7 +28,11 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.RoleCommand;
+import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
+import seedu.address.model.UserPrefs;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
@@ -94,6 +104,33 @@ public class AddressBookParserTest {
         RoleCommand command = (RoleCommand) parser.parseCommand(
                 RoleCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased() + " buyer");
         assertEquals(new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BUYER), command);
+    }
+
+    @Test
+    public void parseCommand_view() throws Exception {
+        ViewCommand command = (ViewCommand) parser.parseCommand("view 2");
+
+        assertEquals(new ViewCommand(INDEX_SECOND_PERSON), command);
+    }
+
+    @Test
+    public void parseCommand_viewAfterFind_returnsDisplayedClient() throws Exception {
+        Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+        parser.parseCommand("find Meier").execute(model);
+
+        CommandResult result = parser.parseCommand("view 2").execute(model);
+
+        assertEquals("Showing Daniel Meier.", result.getFeedbackToUser());
+        assertEquals(Optional.of(INDEX_SECOND_PERSON), result.getViewIndex());
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+        assertEquals(getTypicalAddressBook(), model.getAddressBook());
+    }
+
+    @Test
+    public void parseCommand_viewWithExtraArguments_throwsParseException() {
+        assertThrows(ParseException.class, ViewCommand.MESSAGE_INVALID_FORMAT, () -> {
+            parser.parseCommand("view 1 extra");
+        });
     }
 
     @Test
