@@ -151,7 +151,7 @@ public class LogicManagerTest {
         logic.execute("list");
         assertEquals(3, model.getFilteredPersonList().size());
     }
-    
+
     @Test
     public void execute_clearThenConfirm_warnsThenClears() throws Exception {
         model.addPerson(AMY);
