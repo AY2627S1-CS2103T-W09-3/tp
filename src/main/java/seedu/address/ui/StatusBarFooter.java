@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.IntegerBinding;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -29,7 +30,10 @@ public class StatusBarFooter extends UiPart<Region> {
     public StatusBarFooter(Path saveLocation, ObservableList<Person> displayedClients) {
         super(FXML);
         saveLocationStatus.setText(Paths.get(".").resolve(saveLocation).toString());
-        clientCountStatus.textProperty().bind(Bindings.size(displayedClients).asString("%d clients"));
+        IntegerBinding clientCount = Bindings.size(displayedClients);
+        clientCountStatus.textProperty().bind(Bindings.when(clientCount.isEqualTo(1))
+                .then("1 client")
+                .otherwise(clientCount.asString("%d clients")));
     }
 
 }

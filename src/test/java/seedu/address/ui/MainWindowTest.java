@@ -204,14 +204,14 @@ public class MainWindowTest {
 
                 enterCommand(window, commandBox,
                         "add n/Alicia Tan p/81234567 e/alicia.tan@example.com a/Bishan");
-                assertEquals("1 clients", count.getText());
+                assertEquals("1 client", count.getText());
 
                 enterCommand(window, commandBox,
                         "add n/Benjamin Lim p/82345678 e/benjamin.lim@example.com a/Tampines");
                 assertEquals("2 clients", count.getText());
 
                 enterCommand(window, commandBox, "find Alicia");
-                assertEquals("1 clients", count.getText());
+                assertEquals("1 client", count.getText());
 
                 enterCommand(window, commandBox, "find Nobody");
                 assertEquals("0 clients", count.getText());
@@ -220,7 +220,7 @@ public class MainWindowTest {
                 assertEquals("2 clients", count.getText());
 
                 enterCommand(window, commandBox, "delete 1");
-                assertEquals("1 clients", count.getText());
+                assertEquals("1 client", count.getText());
 
                 enterCommand(window, commandBox, "clear");
                 assertEquals("0 clients", count.getText());
