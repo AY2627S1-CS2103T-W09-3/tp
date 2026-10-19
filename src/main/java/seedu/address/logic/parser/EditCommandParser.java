@@ -113,7 +113,7 @@ public class EditCommandParser implements Parser<EditCommand> {
      * {@code Set<Area>} containing zero areas.
      */
     private Optional<Set<Area>> parseAreasForEdit(Collection<String> areas) throws ParseException {
-        assert areas != null;
+        requireNonNull(areas);
 
         if (areas.isEmpty()) {
             return Optional.empty();
@@ -129,7 +129,7 @@ public class EditCommandParser implements Parser<EditCommand> {
      */
     private Optional<Set<HousingType>> parseHousingTypesForEdit(Collection<String> housingTypes)
             throws ParseException {
-        assert housingTypes != null;
+        requireNonNull(housingTypes);
 
         if (housingTypes.isEmpty()) {
             return Optional.empty();
@@ -146,7 +146,7 @@ public class EditCommandParser implements Parser<EditCommand> {
      * {@code Set<Tag>} containing zero tags.
      */
     private Optional<Set<Tag>> parseTagsForEdit(Collection<String> tags) throws ParseException {
-        assert tags != null;
+        requireNonNull(tags);
 
         if (tags.isEmpty()) {
             return Optional.empty();

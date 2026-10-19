@@ -11,9 +11,15 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
+import seedu.address.model.person.HousingType;
+import seedu.address.model.person.Price;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 
 public class EditPersonDescriptorTest {
@@ -55,6 +61,67 @@ public class EditPersonDescriptorTest {
         // different tags -> returns false
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(DESC_AMY.equals(editedAmy));
+
+        // different budget -> returns false
+        EditPersonDescriptor editedBudget = new EditPersonDescriptorBuilder(DESC_AMY)
+                .withBudget(new Budget(new Price("1000"), new Price("2000")))
+                .build();
+        assertFalse(DESC_AMY.equals(editedBudget));
+        assertFalse(editedBudget.equals(DESC_AMY));
+
+        // same non-null budget -> returns true
+        EditPersonDescriptor budgetOne = new EditPersonDescriptorBuilder()
+                .withBudget(new Budget(new Price("1000"), new Price("2000")))
+                .build();
+        EditPersonDescriptor budgetTwo = new EditPersonDescriptorBuilder()
+                .withBudget(new Budget(new Price("1000"), new Price("2000")))
+                .build();
+        assertTrue(budgetOne.equals(budgetTwo));
+        EditPersonDescriptor differentBudget = new EditPersonDescriptorBuilder()
+                .withBudget(new Budget(new Price("3000"), new Price("4000")))
+                .build();
+        assertFalse(budgetOne.equals(differentBudget));
+
+        // budget edited flag differs even when both values are null -> returns false
+        EditPersonDescriptor clearedBudget = new EditPersonDescriptorBuilder(DESC_AMY).withBudget(null).build();
+        assertFalse(DESC_AMY.equals(clearedBudget));
+
+        // different asking price -> returns false
+        EditPersonDescriptor editedPrice = new EditPersonDescriptorBuilder(DESC_AMY)
+                .withAskingPrice(new Price("1500"))
+                .build();
+        assertFalse(DESC_AMY.equals(editedPrice));
+        assertFalse(editedPrice.equals(DESC_AMY));
+
+        // same non-null asking price -> returns true
+        EditPersonDescriptor priceOne = new EditPersonDescriptorBuilder()
+                .withAskingPrice(new Price("1500"))
+                .build();
+        EditPersonDescriptor priceTwo = new EditPersonDescriptorBuilder()
+                .withAskingPrice(new Price("1500"))
+                .build();
+        assertTrue(priceOne.equals(priceTwo));
+        EditPersonDescriptor differentPrice = new EditPersonDescriptorBuilder()
+                .withAskingPrice(new Price("2500"))
+                .build();
+        assertFalse(priceOne.equals(differentPrice));
+
+        // asking price edited flag differs even when both values are null -> returns false
+        EditPersonDescriptor clearedPrice = new EditPersonDescriptorBuilder(DESC_AMY)
+                .withAskingPrice(null).build();
+        assertFalse(DESC_AMY.equals(clearedPrice));
+
+        // different areas -> returns false
+        EditPersonDescriptor editedAreas = new EditPersonDescriptorBuilder(DESC_AMY)
+                .withAreas(Set.of(new Area("Orchard")))
+                .build();
+        assertFalse(DESC_AMY.equals(editedAreas));
+
+        // different housing types -> returns false
+        EditPersonDescriptor editedHousingTypes = new EditPersonDescriptorBuilder(DESC_AMY)
+                .withHousingTypes(Set.of(HousingType.CONDO))
+                .build();
+        assertFalse(DESC_AMY.equals(editedHousingTypes));
     }
 
     @Test
