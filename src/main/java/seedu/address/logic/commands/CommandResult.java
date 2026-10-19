@@ -19,13 +19,25 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
+    /** The user must confirm before the command takes effect. */
+    private final boolean awaitingConfirmation;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
-    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
+    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean awaitingConfirmation) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
+        this.awaitingConfirmation = awaitingConfirmation;
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with the specified {@code feedbackToUser}, {@code showHelp} and
+     * {@code exit}, and {@code awaitingConfirmation} set to false.
+     */
+    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
+        this(feedbackToUser, showHelp, exit, false);
     }
 
     /**
@@ -48,6 +60,10 @@ public class CommandResult {
         return exit;
     }
 
+    public boolean isAwaitingConfirmation() {
+        return awaitingConfirmation;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -61,12 +77,13 @@ public class CommandResult {
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
-                && exit == otherCommandResult.exit;
+                && exit == otherCommandResult.exit
+                && awaitingConfirmation == otherCommandResult.awaitingConfirmation;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit);
+        return Objects.hash(feedbackToUser, showHelp, exit, awaitingConfirmation);
     }
 
     @Override
@@ -75,6 +92,7 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", showHelp)
                 .add("exit", exit)
+                .add("awaitingConfirmation", awaitingConfirmation)
                 .toString();
     }
 
