@@ -1,6 +1,8 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -9,16 +11,19 @@ import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -27,6 +32,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
@@ -83,8 +89,172 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_filterThenAdd_keepsFilterAndHidesClientThatDoesNotMatch() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter t/urgent");
+        assertEquals(List.of(clients[0], clients[1]), model.getFilteredPersonList());
+
+        logic.execute("add n/Dan Ho p/84444444 e/dan@example.com a/1 Test Road t/weekend");
+        assertEquals(List.of(clients[0], clients[1]), model.getFilteredPersonList());
+        assertEquals(4, model.getAddressBook().getPersonList().size());
+
+        logic.execute("add n/Eve Ong p/85555555 e/eve@example.com a/2 Test Road t/urgent");
+        assertEquals(3, model.getFilteredPersonList().size());
+        assertEquals("Eve Ong", model.getFilteredPersonList().get(2).getName().fullName);
+    }
+
+    @Test
+    public void execute_filterThenDelete_keepsFilterAndUsesFilteredIndex() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter r/buyer");
+        assertEquals(List.of(clients[0], clients[2]), model.getFilteredPersonList());
+
+        // Index 2 is the second client shown, not the second client in the address book.
+        logic.execute("delete 2");
+
+        assertEquals(List.of(clients[0]), model.getFilteredPersonList());
+        assertEquals(List.of(clients[0], clients[1]), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_filterThenRole_keepsFilterAndClientLeavesWhenNoLongerMatching() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter r/buyer");
+
+        logic.execute("role 1 seller");
+
+        assertEquals(List.of(clients[2]), model.getFilteredPersonList());
+        assertEquals(3, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_filterThenEdit_keepsFilterAndClientLeavesWhenNoLongerMatching() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter t/urgent");
+
+        logic.execute("edit 1 t/weekend");
+
+        assertEquals(List.of(clients[1]), model.getFilteredPersonList());
+        assertEquals(3, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_filterThenMutations_stayFilteredUntilList() throws Exception {
+        addFilterTestClients();
+        logic.execute("filter r/buyer");
+
+        logic.execute("role 1 both");
+        logic.execute("edit 1 p/86666666");
+
+        assertEquals(2, model.getFilteredPersonList().size());
+
+        logic.execute("list");
+        assertEquals(3, model.getFilteredPersonList().size());
+    }
+
+    @Test
+    public void execute_clearThenConfirm_warnsThenClears() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+
+        CommandResult warning = logic.execute("clear");
+        assertEquals("This will delete all 2 clients. Type clear confirm to proceed.", warning.getFeedbackToUser());
+        assertTrue(warning.isAwaitingConfirmation());
+        assertEquals(2, model.getAddressBook().getPersonList().size());
+
+        CommandResult cleared = logic.execute("clear confirm");
+        assertEquals(ClearCommand.MESSAGE_SUCCESS, cleared.getFeedbackToUser());
+        assertFalse(cleared.isAwaitingConfirmation());
+        assertTrue(model.getAddressBook().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_clearThenOtherCommand_cancelsWithoutExecutingIt() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("clear");
+
+        CommandResult cancelled = logic.execute("delete 1");
+
+        assertEquals(ClearCommand.MESSAGE_CANCELLED, cancelled.getFeedbackToUser());
+        assertFalse(cancelled.isAwaitingConfirmation());
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+    }
+
+    @Test
+    public void execute_clearThenUnparseableInput_cancelsWithoutError() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("clear");
+
+        CommandResult cancelled = logic.execute("uicfhmowqewca");
+
+        assertEquals(ClearCommand.MESSAGE_CANCELLED, cancelled.getFeedbackToUser());
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+    }
+
+    @Test
+    public void execute_clearThenClear_cancelsThenWarnsAgain() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("clear");
+
+        assertEquals(ClearCommand.MESSAGE_CANCELLED, logic.execute("clear").getFeedbackToUser());
+
+        CommandResult warning = logic.execute("clear");
+        assertEquals(ClearCommand.MESSAGE_WARNING_ONE_CLIENT, warning.getFeedbackToUser());
+        assertTrue(warning.isAwaitingConfirmation());
+    }
+
+    @Test
+    public void execute_clearConfirmWithoutPendingClear_throwsCommandException() {
+        model.addPerson(AMY);
+
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_clearOnEmptyAddressBook_doesNotStartPendingClear() throws Exception {
+        CommandResult result = logic.execute("clear");
+
+        assertEquals(ClearCommand.MESSAGE_EMPTY, result.getFeedbackToUser());
+        assertFalse(result.isAwaitingConfirmation());
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+    }
+
+    @Test
+    public void execute_storageFailsAfterClearWarning_doesNotStartPendingClear() throws Exception {
+        model.addPerson(AMY);
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
+
+        assertCommandException("clear", String.format(
+                LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
+        assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    /**
+     * Adds an urgent buyer, an urgent seller and a buyer tagged weekend to the model, in that order,
+     * and returns them.
+     */
+    private Person[] addFilterTestClients() {
+        Person[] clients = {
+            new PersonBuilder().withName("Alice Tan").withPhone("81111111").withEmail("alice@example.com")
+                    .withRole(ClientRole.BUYER).withTags("urgent").build(),
+            new PersonBuilder().withName("Ben Lim").withPhone("82222222").withEmail("ben@example.com")
+                    .withRole(ClientRole.SELLER).withTags("urgent").build(),
+            new PersonBuilder().withName("Cara Goh").withPhone("83333333").withEmail("cara@example.com")
+                    .withRole(ClientRole.BUYER).withTags("weekend").build()
+        };
+        for (Person client : clients) {
+            model.addPerson(client);
+        }
+        return clients;
     }
 
     /**
@@ -147,9 +317,24 @@ public class LogicManagerTest {
      * @param expectedMessage the message expected inside exception thrown by the Logic component
      */
     private void assertCommandFailureForExceptionFromStorage(IOException e, String expectedMessage) {
+        logic = new LogicManager(model, createStorageThatFailsToSave(e));
+
+        // Triggers the saveAddressBook method by executing an add command
+        String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
+                + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
+        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
+        ModelManager expectedModel = new ModelManager();
+        expectedModel.addPerson(expectedPerson);
+        assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+    }
+
+    /**
+     * Returns a {@code StorageManager} whose address book storage throws {@code e} when saving.
+     */
+    private StorageManager createStorageThatFailsToSave(IOException e) {
         Path prefPath = temporaryFolder.resolve("ExceptionUserPrefs.json");
 
-        // Inject LogicManager with a JsonAddressBookStorage that throws the IOException e when saving
+        // Inject a JsonAddressBookStorage that throws the IOException e when saving
         JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(prefPath) {
             @Override
             public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
@@ -159,16 +344,6 @@ public class LogicManagerTest {
 
         JsonUserPrefsStorage userPrefsStorage =
                 new JsonUserPrefsStorage(temporaryFolder.resolve("ExceptionUserPrefs.json"));
-        StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
-
-        logic = new LogicManager(model, storage);
-
-        // Triggers the saveAddressBook method by executing an add command
-        String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
-                + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
-        ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
-        assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+        return new StorageManager(addressBookStorage, userPrefsStorage);
     }
 }

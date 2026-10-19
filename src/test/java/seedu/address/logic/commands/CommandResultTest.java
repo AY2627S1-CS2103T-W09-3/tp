@@ -19,6 +19,7 @@ public class CommandResultTest {
         assertEquals("feedback", feedbackResult.getFeedbackToUser());
         assertFalse(feedbackResult.isShowHelp());
         assertFalse(feedbackResult.isExit());
+        assertFalse(feedbackResult.isAwaitingConfirmation());
         assertTrue(feedbackResult.getViewIndex().isEmpty());
 
         CommandResult helpResult = new CommandResult("help", true, false);
@@ -30,6 +31,12 @@ public class CommandResultTest {
         assertFalse(exitResult.isShowHelp());
         assertTrue(exitResult.isExit());
         assertTrue(exitResult.getViewIndex().isEmpty());
+
+        CommandResult pendingResult = new CommandResult("Confirm clear", false, false, true);
+        assertTrue(pendingResult.isAwaitingConfirmation());
+        assertFalse(pendingResult.isShowHelp());
+        assertFalse(pendingResult.isExit());
+        assertTrue(pendingResult.getViewIndex().isEmpty());
     }
 
     @Test
@@ -38,6 +45,7 @@ public class CommandResultTest {
 
         assertEquals("Showing Alice.", result.getFeedbackToUser());
         assertEquals(Optional.of(Index.fromOneBased(2)), result.getViewIndex());
+        assertFalse(result.isAwaitingConfirmation());
         assertFalse(result.isShowHelp());
         assertFalse(result.isExit());
     }
@@ -46,6 +54,7 @@ public class CommandResultTest {
     public void constructor_nullArguments_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new CommandResult(null));
         assertThrows(NullPointerException.class, () -> new CommandResult(null, false, false));
+        assertThrows(NullPointerException.class, () -> new CommandResult(null, false, false, true));
         assertThrows(NullPointerException.class, () -> new CommandResult(null, Index.fromOneBased(1)));
         assertThrows(NullPointerException.class, () -> new CommandResult("feedback", (Index) null));
     }
@@ -57,6 +66,7 @@ public class CommandResultTest {
         // same values -> returns true
         assertTrue(commandResult.equals(new CommandResult("feedback")));
         assertTrue(commandResult.equals(new CommandResult("feedback", false, false)));
+        assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false)));
 
         // same object -> returns true
         assertTrue(commandResult.equals(commandResult));
@@ -75,6 +85,9 @@ public class CommandResultTest {
 
         // different exit value -> returns false
         assertFalse(commandResult.equals(new CommandResult("feedback", false, true)));
+
+        // different awaitingConfirmation value -> returns false
+        assertFalse(commandResult.equals(new CommandResult("feedback", false, false, true)));
     }
 
     @Test
@@ -104,6 +117,9 @@ public class CommandResultTest {
 
         // different exit value -> returns different hashcode
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, true).hashCode());
+
+        // different awaitingConfirmation value -> returns different hashcode
+        assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, false, true).hashCode());
     }
 
     @Test
@@ -120,7 +136,8 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
-                + ", exit=" + commandResult.isExit() + ", viewIndex=null}";
+                + ", exit=" + commandResult.isExit() + ", viewIndex=null"
+                + ", awaitingConfirmation=" + commandResult.isAwaitingConfirmation() + "}";
         assertEquals(expected, commandResult.toString());
     }
 
@@ -129,8 +146,8 @@ public class CommandResultTest {
         Index viewIndex = Index.fromOneBased(2);
         CommandResult commandResult = new CommandResult("feedback", viewIndex);
         String expected = CommandResult.class.getCanonicalName()
-                + "{feedbackToUser=feedback, showHelp=false, exit=false, viewIndex=" + viewIndex + "}";
-
+                + "{feedbackToUser=feedback, showHelp=false, exit=false, viewIndex=" + viewIndex
+                + ", awaitingConfirmation=false}";
         assertEquals(expected, commandResult.toString());
     }
 }

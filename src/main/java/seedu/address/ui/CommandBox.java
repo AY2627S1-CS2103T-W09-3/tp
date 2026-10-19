@@ -4,6 +4,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -14,9 +15,13 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class CommandBox extends UiPart<Region> {
 
     public static final String ERROR_STYLE_CLASS = "error";
+    public static final String PENDING_STYLE_CLASS = "pending";
+    public static final String PENDING_PROMPT_TEXT = "Pending confirmation: type " + ClearCommand.COMMAND_WORD + " "
+            + ClearCommand.CONFIRM_WORD + " to proceed, or any other non-empty input to cancel.";
     private static final String FXML = "CommandBox.fxml";
 
     private final CommandExecutor commandExecutor;
+    private String defaultPromptText;
 
     @FXML
     private TextField commandTextField;
@@ -29,6 +34,7 @@ public class CommandBox extends UiPart<Region> {
         this.commandExecutor = commandExecutor;
         // calls #setStyleToDefault() whenever there is a change to the text of the command box.
         commandTextField.textProperty().addListener((unused1, unused2, unused3) -> setStyleToDefault());
+        defaultPromptText = commandTextField.getPromptText();
     }
 
     /**
@@ -42,9 +48,11 @@ public class CommandBox extends UiPart<Region> {
         }
 
         try {
-            commandExecutor.execute(commandText);
+            CommandResult commandResult = commandExecutor.execute(commandText);
             commandTextField.setText("");
+            setPendingConfirmationStyle(commandResult.isAwaitingConfirmation());
         } catch (CommandException | ParseException e) {
+            setPendingConfirmationStyle(false);
             setStyleToIndicateCommandFailure();
         }
     }
@@ -54,6 +62,21 @@ public class CommandBox extends UiPart<Region> {
      */
     private void setStyleToDefault() {
         commandTextField.getStyleClass().remove(ERROR_STYLE_CLASS);
+    }
+
+    /**
+     * Shows or hides the style and prompt text that indicate a confirmation is pending.
+     */
+    private void setPendingConfirmationStyle(boolean isPending) {
+        ObservableList<String> styleClass = commandTextField.getStyleClass();
+        styleClass.remove(PENDING_STYLE_CLASS);
+
+        if (isPending) {
+            styleClass.add(PENDING_STYLE_CLASS);
+            commandTextField.setPromptText(PENDING_PROMPT_TEXT);
+        } else {
+            commandTextField.setPromptText(defaultPromptText);
+        }
     }
 
     /**

@@ -2,7 +2,6 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
-import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.List;
 
@@ -50,10 +49,11 @@ public class RoleCommand extends Command {
         Person clientToEdit = lastShownList.get(index.getZeroBased());
         Person editedClient = new Person(
                 clientToEdit.getName(), clientToEdit.getPhone(), clientToEdit.getEmail(),
-                clientToEdit.getAddress(), role, clientToEdit.getTags());
+                clientToEdit.getAddress(), role, clientToEdit.getNote(), clientToEdit.getTags(),
+                clientToEdit.getBudget(), clientToEdit.getAskingPrice(), clientToEdit.getAreas(),
+                clientToEdit.getHousingTypes());
 
         model.setPerson(clientToEdit, editedClient);
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
 
         return new CommandResult(String.format(MESSAGE_SUCCESS,
                 editedClient.getName(), role.getDisplayValue()));

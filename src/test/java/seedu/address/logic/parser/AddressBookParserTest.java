@@ -7,12 +7,15 @@ import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
+import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
@@ -35,7 +39,9 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
+import seedu.address.model.tag.Tag;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
@@ -53,8 +59,11 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_clear() throws Exception {
-        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD) instanceof ClearCommand);
-        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " 3") instanceof ClearCommand);
+        assertEquals(new ClearCommand(false), parser.parseCommand(ClearCommand.COMMAND_WORD));
+        assertEquals(new ClearCommand(true),
+                parser.parseCommand(ClearCommand.COMMAND_WORD + " " + ClearCommand.CONFIRM_WORD));
+        assertThrows(ParseException.class, ClearCommand.MESSAGE_INVALID_FORMAT, ()
+                -> parser.parseCommand(ClearCommand.COMMAND_WORD + " 3"));
     }
 
     @Test
@@ -85,6 +94,15 @@ public class AddressBookParserTest {
         FindCommand command = (FindCommand) parser.parseCommand(
                 FindCommand.COMMAND_WORD + " " + keywords.stream().collect(Collectors.joining(" ")));
         assertEquals(new FindCommand(new PersonMatchesSearchTermsPredicate(keywords)), command);
+    }
+
+    @Test
+    public void parseCommand_filter() throws Exception {
+        FilterCommand command = (FilterCommand) parser.parseCommand(
+                FilterCommand.COMMAND_WORD + " r/buyer t/urgent");
+        PersonMatchesFilterPredicate predicate =
+                new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of(new Tag("urgent")));
+        assertEquals(new FilterCommand(predicate), command);
     }
 
     @Test
@@ -123,6 +141,19 @@ public class AddressBookParserTest {
         assertEquals("Showing Daniel Meier.", result.getFeedbackToUser());
         assertEquals(Optional.of(INDEX_SECOND_PERSON), result.getViewIndex());
         assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+        assertEquals(getTypicalAddressBook(), model.getAddressBook());
+    }
+
+    @Test
+    public void parseCommand_viewAfterFilter_returnsDisplayedClient() throws Exception {
+        Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+        parser.parseCommand("filter r/buyer").execute(model);
+
+        CommandResult result = parser.parseCommand("view 2").execute(model);
+
+        assertEquals("Showing Carl Kurz.", result.getFeedbackToUser());
+        assertEquals(Optional.of(INDEX_SECOND_PERSON), result.getViewIndex());
+        assertEquals(List.of(ALICE, CARL), model.getFilteredPersonList());
         assertEquals(getTypicalAddressBook(), model.getAddressBook());
     }
 
