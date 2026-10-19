@@ -13,6 +13,7 @@ public class ResultDisplay extends UiPart<Region> {
 
     private static final String FXML = "ResultDisplay.fxml";
     private static final String ERROR_STYLE_CLASS = "error";
+    private static final String PENDING_STYLE_CLASS = "pending";
 
     @FXML
     private TextArea resultDisplay;
@@ -22,12 +23,20 @@ public class ResultDisplay extends UiPart<Region> {
     }
 
     /**
-     * Displays successful feedback and clears previous error styling.
+     * Displays successful feedback and clears previous error and pending styling.
      */
     public void setFeedbackToUser(String feedbackToUser) {
         requireNonNull(feedbackToUser);
         resultDisplay.setText(feedbackToUser);
-        resultDisplay.getStyleClass().remove(ERROR_STYLE_CLASS);
+        resultDisplay.getStyleClass().removeAll(ERROR_STYLE_CLASS, PENDING_STYLE_CLASS);
+    }
+
+    /**
+     * Displays feedback that asks the user to confirm, with styling that shows the confirmation is pending.
+     */
+    public void setPendingFeedbackToUser(String feedbackToUser) {
+        setFeedbackToUser(feedbackToUser);
+        resultDisplay.getStyleClass().add(PENDING_STYLE_CLASS);
     }
 
     /**
