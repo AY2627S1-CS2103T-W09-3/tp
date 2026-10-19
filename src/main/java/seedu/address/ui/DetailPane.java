@@ -3,6 +3,7 @@ package seedu.address.ui;
 import java.util.Comparator;
 import java.util.List;
 
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -98,8 +99,11 @@ public class DetailPane extends UiPart<Region> {
                     Label tagLabel = new Label(tag.tagName);
                     tagLabel.setWrapText(true);
                     tagLabel.setMinWidth(0);
-                    tagLabel.setMinHeight(Region.USE_PREF_SIZE);
                     tagLabel.maxWidthProperty().bind(tags.widthProperty());
+                    // FlowPane measures preferred height without a width; reserve the wrapped height explicitly.
+                    tagLabel.minHeightProperty().bind(Bindings.createDoubleBinding(() ->
+                            tagLabel.prefHeight(tags.getWidth()), tags.widthProperty(),
+                            tagLabel.fontProperty(), tagLabel.insetsProperty()));
                     tags.getChildren().add(tagLabel);
                 });
         setShown(tagsRow, !person.getTags().isEmpty());
