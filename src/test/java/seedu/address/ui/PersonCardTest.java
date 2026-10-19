@@ -17,10 +17,12 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Bounds;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.OverrunStyle;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
@@ -69,7 +71,8 @@ public class PersonCardTest {
             VBox content = (VBox) root.lookup("#cardContent");
             HBox identity = (HBox) root.lookup("#identityRow");
             HBox contact = (HBox) root.lookup("#contactRow");
-            FlowPane tags = (FlowPane) root.lookup("#tags");
+            StackPane tags = (StackPane) root.lookup("#tags");
+            HBox tagRow = (HBox) tags.lookup("#tagRow");
 
             assertEquals(List.of(identity, contact, tags), content.getChildren());
             assertEquals(List.of(root.lookup("#id"), root.lookup("#name"), root.lookup("#role")),
@@ -81,7 +84,8 @@ public class PersonCardTest {
             assertEquals(person.getPhone().value, ((Label) root.lookup("#phone")).getText());
             assertEquals("·", ((Label) root.lookup("#contactSeparator")).getText());
             assertEquals(person.getEmail().value, ((Label) root.lookup("#email")).getText());
-            assertEquals(List.of("firsttime", "urgent"), tags.getChildren().stream()
+            assertEquals(List.of("firsttime", "urgent"), tagRow.getChildren().stream()
+                    .filter(tag -> !"tagOverflow".equals(tag.getId()))
                     .map(tag -> ((Label) tag).getText()).toList());
             assertNull(root.lookup("#address"));
             return null;
@@ -120,6 +124,154 @@ public class PersonCardTest {
             }
             assertEquals(person.getName().fullName, name.getText());
             assertEquals(person.getEmail().value, email.getText());
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    @Test
+    public void layout_optionalFields_keepsEveryCardAtSeventyPixels()
+            throws ExecutionException, InterruptedException {
+        List<Person> clients = List.of(
+                new PersonBuilder().withName("Alicia Tan").withRole(ClientRole.BUYER).withTags("firsttime").build(),
+                new PersonBuilder().withName("Priya Nair").withRole(ClientRole.SELLER).withTags().build(),
+                new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
+                        .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH)
+                        .withTags("urgent").build(),
+                new PersonBuilder().withName("Ravi Kumar").withTags().build());
+        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+            Region root = new PersonListPanel(FXCollections.observableArrayList(clients)).getRoot();
+            Scene scene = new Scene(root, 318, 320);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            root.resize(318, 320);
+            root.applyCss();
+            root.layout();
+
+            ListView<?> personList = (ListView<?>) root.lookup("#personListView");
+            personList.getSelectionModel().select(0);
+            root.applyCss();
+            root.layout();
+
+            List<Region> cards = root.lookupAll("#cardPane").stream().map(node -> (Region) node).toList();
+            assertEquals(clients.size(), cards.size());
+            for (Region card : cards) {
+                assertEquals(70, card.getHeight(), 0.01);
+                assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().size());
+                Bounds cardBounds = card.localToScene(card.getLayoutBounds());
+                for (String id : List.of("identityRow", "contactRow", "tags")) {
+                    Bounds bounds = card.lookup("#" + id).localToScene(card.lookup("#" + id).getLayoutBounds());
+                    assertTrue(bounds.getMinY() >= cardBounds.getMinY());
+                    assertTrue(bounds.getMaxY() <= cardBounds.getMaxY());
+                }
+            }
+            return null;
+        });
+        Platform.runLater(checkCards);
+        checkCards.get();
+    }
+
+    @Test
+    public void layout_compactViewport_showsThreeCompleteCards()
+            throws ExecutionException, InterruptedException {
+        List<Person> clients = List.of(
+                new PersonBuilder().withName("Alicia Tan").withRole(ClientRole.BUYER).withTags("firsttime").build(),
+                new PersonBuilder().withName("Benjamin Lim").withRole(ClientRole.BUYER).withTags("urgent").build(),
+                new PersonBuilder().withName("Priya Nair").withRole(ClientRole.SELLER).withTags().build(),
+                new PersonBuilder().withName("Ravi Kumar").withRole(ClientRole.BOTH).withTags("upgrader").build());
+        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+            // A conservative list-only viewport within the smallest planned window layout.
+            Region root = new PersonListPanel(FXCollections.observableArrayList(clients)).getRoot();
+            Scene scene = new Scene(root, 318, 220);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            root.resize(318, 220);
+            root.applyCss();
+            root.layout();
+
+            List<ListCell<?>> firstThree = root.lookupAll(".list-cell").stream()
+                    .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < 3)
+                    .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
+            assertEquals(3, firstThree.size());
+            for (ListCell<?> cell : firstThree) {
+                Bounds bounds = cell.localToScene(cell.getLayoutBounds());
+                assertTrue(bounds.getMinY() >= 0);
+                assertTrue(bounds.getMaxY() <= 220);
+                assertEquals(70, cell.getGraphic().getLayoutBounds().getHeight(), 0.01);
+            }
+            return null;
+        });
+        Platform.runLater(checkCards);
+        checkCards.get();
+    }
+
+    @Test
+    public void layout_tagOverflow_showsCountAndRestoresTagsWhenWidened()
+            throws ExecutionException, InterruptedException {
+        List<String> tagNames = List.of("buyer", "firsttime", "investment", "nearMrt", "urgent");
+        Person person = new PersonBuilder().withTags(tagNames.toArray(String[]::new)).build();
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region root = new PersonCard(person, 1).getRoot();
+            Scene scene = new Scene(root, 180, 70);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            root.resize(180, 70);
+            root.applyCss();
+            root.layout();
+
+            HBox tagRow = (HBox) root.lookup("#tagRow");
+            Label overflow = (Label) root.lookup("#tagOverflow");
+            // Repeating layout must settle instead of continuously invalidating the row.
+            root.layout();
+            root.layout();
+            assertFalse(tagRow.isNeedsLayout());
+            List<Label> visibleTags = tagRow.getChildren().stream().filter(node -> node != overflow && node.isVisible())
+                    .map(node -> (Label) node).toList();
+            int hidden = tagNames.size() - visibleTags.size();
+            assertTrue(hidden > 0);
+            assertTrue(overflow.isVisible());
+            assertEquals("+" + hidden, overflow.getText());
+            assertEquals("Additional tags: " + String.join(", ", tagNames.subList(visibleTags.size(), tagNames.size())),
+                    overflow.getTooltip().getText());
+            Bounds tagBounds = tagRow.localToScene(tagRow.getLayoutBounds());
+            for (javafx.scene.Node tag : tagRow.getChildren()) {
+                if (tag.isVisible()) {
+                    Bounds bounds = tag.localToScene(tag.getLayoutBounds());
+                    assertTrue(bounds.getMaxX() <= tagBounds.getMaxX() + 1);
+                    assertEquals(tagBounds.getMinY(), bounds.getMinY(), 1);
+                }
+            }
+
+            root.resize(700, 70);
+            root.layout();
+            assertFalse(overflow.isVisible());
+            assertFalse(overflow.isManaged());
+            assertEquals(tagNames, tagRow.getChildren().stream().filter(node -> node != overflow && node.isVisible())
+                    .map(node -> ((Label) node).getText()).toList());
+            assertEquals(70, root.getHeight(), 0.01);
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    @Test
+    public void layout_singleOversizedTag_keepsOneRowAndExposesFullTagInTooltip()
+            throws ExecutionException, InterruptedException {
+        String tagName = "averylongtagthatcannotfitwithinthenarrowcard";
+        Person person = new PersonBuilder().withTags(tagName).build();
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region root = new PersonCard(person, 1).getRoot();
+            Scene scene = new Scene(root, 180, 70);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            root.resize(180, 70);
+            root.applyCss();
+            root.layout();
+
+            Label overflow = (Label) root.lookup("#tagOverflow");
+            assertTrue(overflow.isVisible());
+            assertEquals("+1", overflow.getText());
+            assertEquals("Additional tags: " + tagName, overflow.getTooltip().getText());
+            assertEquals(70, root.getHeight(), 0.01);
+            assertEquals(16, ((StackPane) root.lookup("#tags")).getHeight(), 0.01);
             return null;
         });
         Platform.runLater(checkCard);
