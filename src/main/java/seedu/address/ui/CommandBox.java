@@ -17,7 +17,7 @@ public class CommandBox extends UiPart<Region> {
     public static final String ERROR_STYLE_CLASS = "error";
     public static final String PENDING_STYLE_CLASS = "pending";
     public static final String PENDING_PROMPT_TEXT = "Pending confirmation: type " + ClearCommand.COMMAND_WORD + " "
-            + ClearCommand.CONFIRM_WORD + " to proceed, or anything else to cancel.";
+            + ClearCommand.CONFIRM_WORD + " to proceed, or any other non-empty input to cancel.";
     private static final String FXML = "CommandBox.fxml";
 
     private final CommandExecutor commandExecutor;
