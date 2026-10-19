@@ -222,14 +222,27 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from EstateBookUltraProMax.
+Deletes every client from EstateBookUltraProMax after you confirm.
 
-Format: `clear`
+Format: `clear`, then `clear confirm`
+
+1. Enter `clear`. Nothing is deleted yet. The result box shows a warning, the command box is outlined in amber and its prompt asks you to confirm, to show that a confirmation is pending.
+   * For one client: `This will delete the only client. Type clear confirm to proceed.`
+   * For two or more clients: `This will delete all N clients. Type clear confirm to proceed.`
+2. Enter `clear confirm` to delete all clients. The result box shows `Client book has been cleared!`
+3. Enter anything else to cancel. The result box shows `Clear cancelled.` and nothing is deleted.
+
+* `N` is the total number of clients, including clients hidden by a search filter.
+* The input that cancels is not run as a command. For example, entering `exit` while a confirmation is
+  pending cancels it but does not exit, so enter `exit` again. Entering `clear` again also cancels.
+* If there are no clients, `clear` shows `The client book is already empty.` and no confirmation is pending.
+* `clear confirm` only works straight after `clear`. Otherwise it shows `No clear is pending. Type clear first.`
+* Any other word after `clear` shows `Invalid command format. Use: clear.`
+* A pending confirmation is not saved, so closing the app cancels it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Warning:**
-`clear` deletes every client, including clients hidden by a search
-filter. It runs immediately without confirmation and cannot be undone within
-the app. Back up your data before using it.
+`clear confirm` deletes every client, including clients hidden by a search filter. This cannot be undone
+because undo is not available in v1.4. Back up your data before using it.
 </div>
 
 ### Exiting the program: `exit`
@@ -305,7 +318,7 @@ Restart the app from that working directory.
 Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear** | `clear`
+**Clear** | `clear`, then `clear confirm`<br> `clear` shows a warning and `clear confirm` deletes all clients
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find Alicia`, `find 81234567`, `find alicia.tan@example.com`
