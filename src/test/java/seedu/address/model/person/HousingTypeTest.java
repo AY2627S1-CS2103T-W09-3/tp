@@ -39,4 +39,18 @@ public class HousingTypeTest {
         assertEquals("EC", HousingType.EC.toString());
         assertEquals("Landed", HousingType.LANDED.toString());
     }
+
+    @Test
+    public void getDisplayValue_returnsDisplayValue() {
+        assertEquals("HDB", HousingType.HDB.getDisplayValue());
+        assertEquals("Condo", HousingType.CONDO.getDisplayValue());
+        assertEquals("EC", HousingType.EC.getDisplayValue());
+        assertEquals("Landed", HousingType.LANDED.getDisplayValue());
+    }
+
+    @Test
+    public void fromString_null_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, HousingType.MESSAGE_CONSTRAINTS, ()
+                -> HousingType.fromString(null));
+    }
 }

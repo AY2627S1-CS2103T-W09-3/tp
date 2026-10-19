@@ -38,6 +38,11 @@ public class AreaTest {
     }
 
     @Test
+    public void getValue_lowerCaseArea_returnsCanonicalValue() {
+        assertEquals("Bishan", new Area("bishan").getValue());
+    }
+
+    @Test
     public void equals() {
         Area area = new Area("Bishan");
 
