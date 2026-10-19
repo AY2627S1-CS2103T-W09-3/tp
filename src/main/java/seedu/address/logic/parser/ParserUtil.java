@@ -10,9 +10,13 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Address;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Price;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -78,6 +82,101 @@ public class ParserUtil {
             throw new ParseException(Address.MESSAGE_CONSTRAINTS);
         }
         return new Address(trimmedAddress);
+    }
+
+    /**
+     * Parses a {@code String budget} in the form {@code MIN-MAX} into a {@code Budget}.
+     * Leading and trailing whitespaces, including those around the hyphen, will be trimmed.
+     *
+     * @throws ParseException if either price is invalid or the minimum exceeds the maximum.
+     */
+    public static Budget parseBudget(String budget) throws ParseException {
+        requireNonNull(budget);
+        String[] range = budget.trim().split("-", -1);
+        if (range.length != 2) {
+            throw new ParseException(Price.MESSAGE_CONSTRAINTS);
+        }
+
+        Price min = parsePrice(range[0]);
+        Price max = parsePrice(range[1]);
+        try {
+            return new Budget(min, max);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException(Budget.MESSAGE_CONSTRAINTS, e);
+        }
+    }
+
+    /**
+     * Parses a {@code String price} into a {@code Price}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws ParseException if the given {@code price} is invalid.
+     */
+    public static Price parsePrice(String price) throws ParseException {
+        requireNonNull(price);
+        String trimmedPrice = price.trim();
+        if (!Price.isValidPrice(trimmedPrice)) {
+            throw new ParseException(Price.MESSAGE_CONSTRAINTS);
+        }
+        return new Price(trimmedPrice);
+    }
+
+    /**
+     * Parses a {@code String area} into an {@code Area}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws ParseException if the given {@code area} is not supported.
+     */
+    public static Area parseArea(String area) throws ParseException {
+        requireNonNull(area);
+        String trimmedArea = area.trim();
+        if (!Area.isValidArea(trimmedArea)) {
+            throw new ParseException(Area.MESSAGE_CONSTRAINTS);
+        }
+        return new Area(trimmedArea);
+    }
+
+    /**
+     * Parses {@code Collection<String> areas} into a {@code Set<Area>}.
+     *
+     * @throws ParseException if any area is not supported.
+     */
+    public static Set<Area> parseAreas(Collection<String> areas) throws ParseException {
+        requireNonNull(areas);
+        final Set<Area> areaSet = new HashSet<>();
+        for (String area : areas) {
+            areaSet.add(parseArea(area));
+        }
+        return areaSet;
+    }
+
+    /**
+     * Parses a {@code String housingType} into a {@code HousingType}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws ParseException if the given {@code housingType} is not supported.
+     */
+    public static HousingType parseHousingType(String housingType) throws ParseException {
+        requireNonNull(housingType);
+        String trimmedHousingType = housingType.trim();
+        if (!HousingType.isValidHousingType(trimmedHousingType)) {
+            throw new ParseException(HousingType.MESSAGE_CONSTRAINTS);
+        }
+        return HousingType.fromString(trimmedHousingType);
+    }
+
+    /**
+     * Parses {@code Collection<String> housingTypes} into a {@code Set<HousingType>}.
+     *
+     * @throws ParseException if any housing type is not supported.
+     */
+    public static Set<HousingType> parseHousingTypes(Collection<String> housingTypes) throws ParseException {
+        requireNonNull(housingTypes);
+        final Set<HousingType> housingTypeSet = new HashSet<>();
+        for (String housingType : housingTypes) {
+            housingTypeSet.add(parseHousingType(housingType));
+        }
+        return housingTypeSet;
     }
 
     /**
