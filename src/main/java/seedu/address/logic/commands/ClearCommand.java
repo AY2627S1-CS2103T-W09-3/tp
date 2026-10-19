@@ -17,6 +17,8 @@ public class ClearCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "Client book has been cleared!";
     public static final String MESSAGE_EMPTY = "The client book is already empty.";
+    public static final String MESSAGE_CANCELLED = "Clear cancelled.";
+    public static final String MESSAGE_NO_CLEAR_PENDING = "No clear is pending. Type " + COMMAND_WORD + " first.";
     public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: " + COMMAND_WORD + ".";
     public static final String MESSAGE_WARNING_ONE_CLIENT = "This will delete the only client. Type "
             + COMMAND_WORD + " " + CONFIRM_WORD + " to proceed.";
@@ -30,6 +32,10 @@ public class ClearCommand extends Command {
      */
     public ClearCommand(boolean isConfirmed) {
         this.isConfirmed = isConfirmed;
+    }
+
+    public boolean isConfirmed() {
+        return isConfirmed;
     }
 
     @Override
