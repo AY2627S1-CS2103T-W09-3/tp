@@ -7,6 +7,7 @@ import static seedu.address.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORM
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -192,7 +193,8 @@ public class JsonAdaptedPersonTest {
     public void toModelType_invalidBudget_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, null,
-                        VALID_TAGS, new JsonAdaptedPerson.JsonAdaptedBudget(2000, 1000), null, null, null);
+                        VALID_TAGS, new JsonAdaptedPerson.JsonAdaptedBudget(
+                                BigDecimal.valueOf(2000), BigDecimal.valueOf(1000)), null, null, null);
         assertThrows(IllegalValueException.class, Budget.MESSAGE_CONSTRAINTS, person::toModelType);
     }
 
@@ -200,8 +202,8 @@ public class JsonAdaptedPersonTest {
     public void toModelType_budgetMissingMin_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, null,
-                        VALID_TAGS, new JsonAdaptedPerson.JsonAdaptedBudget(null, 1200000),
-                        null, null, null);
+                        VALID_TAGS, new JsonAdaptedPerson.JsonAdaptedBudget(
+                                null, BigDecimal.valueOf(1200000)), null, null, null);
         String expectedMessage = String.format(MISSING_FIELD_MESSAGE_FORMAT, Budget.class.getSimpleName());
         assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
     }
@@ -210,8 +212,8 @@ public class JsonAdaptedPersonTest {
     public void toModelType_budgetMissingMax_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, null,
-                        VALID_TAGS, new JsonAdaptedPerson.JsonAdaptedBudget(800000, null),
-                        null, null, null);
+                        VALID_TAGS, new JsonAdaptedPerson.JsonAdaptedBudget(
+                                BigDecimal.valueOf(800000), null), null, null, null);
         String expectedMessage = String.format(MISSING_FIELD_MESSAGE_FORMAT, Budget.class.getSimpleName());
         assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
     }
@@ -220,7 +222,68 @@ public class JsonAdaptedPersonTest {
     public void toModelType_invalidAskingPrice_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, null,
-                        VALID_TAGS, null, 0, null, null);
+                        VALID_TAGS, null, BigDecimal.ZERO, null, null);
+        assertThrows(IllegalValueException.class, Price.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_fractionalAskingPrice_throwsIllegalValueException() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, null,
+                        VALID_TAGS, null, new BigDecimal("100.99"), null, null);
+        assertThrows(IllegalValueException.class, Price.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_fractionalJsonAskingPrice_throwsIllegalValueException() throws Exception {
+        String json = """
+                {
+                  "name": "%s",
+                  "phone": "%s",
+                  "email": "%s",
+                  "address": "%s",
+                  "askingPrice": 100.99
+                }
+                """.formatted(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS);
+        JsonAdaptedPerson person = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+        assertThrows(IllegalValueException.class, Price.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_fractionalBudgetMin_throwsIllegalValueException() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, null,
+                        VALID_TAGS, new JsonAdaptedPerson.JsonAdaptedBudget(
+                                new BigDecimal("800000.99"), BigDecimal.valueOf(1200000)),
+                        null, null, null);
+        assertThrows(IllegalValueException.class, Price.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_fractionalBudgetMax_throwsIllegalValueException() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, null,
+                        VALID_TAGS, new JsonAdaptedPerson.JsonAdaptedBudget(
+                                BigDecimal.valueOf(800000), new BigDecimal("1200000.99")),
+                        null, null, null);
+        assertThrows(IllegalValueException.class, Price.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_fractionalJsonBudget_throwsIllegalValueException() throws Exception {
+        String json = """
+                {
+                  "name": "%s",
+                  "phone": "%s",
+                  "email": "%s",
+                  "address": "%s",
+                  "budget": {
+                    "min": 800000.99,
+                    "max": 1200000
+                  }
+                }
+                """.formatted(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS);
+        JsonAdaptedPerson person = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
         assertThrows(IllegalValueException.class, Price.MESSAGE_CONSTRAINTS, person::toModelType);
     }
 

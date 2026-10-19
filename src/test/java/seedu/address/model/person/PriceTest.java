@@ -45,6 +45,18 @@ public class PriceTest {
     }
 
     @Test
+    public void isValidPrice_oversizedNumber_returnsFalse() {
+        assertFalse(Price.isValidPrice("10000000000"));
+        assertFalse(Price.isValidPrice("999999999999999999999"));
+    }
+
+    @Test
+    public void constructor_oversizedPrice_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, Price.MESSAGE_CONSTRAINTS, ()
+                -> new Price("999999999999999999999"));
+    }
+
+    @Test
     public void toString_returnsDollarAmountWithCommas() {
         assertEquals("$1", new Price("1").toString());
         assertEquals("$1,000,000", new Price("1,000,000").toString());

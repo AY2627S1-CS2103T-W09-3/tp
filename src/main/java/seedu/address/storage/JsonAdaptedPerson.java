@@ -1,5 +1,6 @@
 package seedu.address.storage;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +54,7 @@ class JsonAdaptedPerson {
      * Absent when the client has no asking price, in which case the key is left out of the data file.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private final Integer askingPrice;
+    private final BigDecimal askingPrice;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private final List<String> areas = new ArrayList<>();
@@ -70,7 +71,7 @@ class JsonAdaptedPerson {
             @JsonProperty("role") String role,
             @JsonProperty("tags") List<JsonAdaptedTag> tags,
             @JsonProperty("budget") JsonAdaptedBudget budget,
-            @JsonProperty("askingPrice") Integer askingPrice,
+            @JsonProperty("askingPrice") BigDecimal askingPrice,
             @JsonProperty("areas") List<String> areas,
             @JsonProperty("housingTypes") List<String> housingTypes) {
         this.name = name;
@@ -104,7 +105,8 @@ class JsonAdaptedPerson {
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
         budget = source.getBudget() == null ? null : new JsonAdaptedBudget(source.getBudget());
-        askingPrice = source.getAskingPrice() == null ? null : source.getAskingPrice().getValue();
+        askingPrice = source.getAskingPrice() == null ? null
+                : BigDecimal.valueOf(source.getAskingPrice().getValue());
         areas.addAll(source.getAreas().stream()
                 .map(Area::toString)
                 .collect(Collectors.toList()));
@@ -176,8 +178,7 @@ class JsonAdaptedPerson {
                         Budget.class.getSimpleName()));
             }
             try {
-                modelBudget = new Budget(new Price(String.valueOf(budget.min)),
-                        new Price(String.valueOf(budget.max)));
+                modelBudget = new Budget(toPrice(budget.min), toPrice(budget.max));
             } catch (IllegalArgumentException e) {
                 throw new IllegalValueException(e.getMessage());
             }
@@ -187,11 +188,7 @@ class JsonAdaptedPerson {
         if (askingPrice == null) {
             modelAskingPrice = null;
         } else {
-            try {
-                modelAskingPrice = new Price(String.valueOf(askingPrice));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalValueException(e.getMessage());
-            }
+            modelAskingPrice = toPrice(askingPrice);
         }
 
         final Set<Area> modelAreas = new HashSet<>();
@@ -216,22 +213,38 @@ class JsonAdaptedPerson {
     }
 
     /**
+     * Converts a JSON price to a {@code Price}, rejecting fractional values.
+     *
+     * @throws IllegalValueException if the value is null, fractional or outside the price range.
+     */
+    private static Price toPrice(BigDecimal value) throws IllegalValueException {
+        if (value == null || value.stripTrailingZeros().scale() > 0) {
+            throw new IllegalValueException(Price.MESSAGE_CONSTRAINTS);
+        }
+        try {
+            return new Price(value.toBigIntegerExact().toString());
+        } catch (ArithmeticException | IllegalArgumentException e) {
+            throw new IllegalValueException(Price.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    /**
      * Jackson-friendly version of a {@link Budget}.
      */
     static final class JsonAdaptedBudget {
 
-        private final Integer min;
-        private final Integer max;
+        private final BigDecimal min;
+        private final BigDecimal max;
 
         @JsonCreator
-        JsonAdaptedBudget(@JsonProperty("min") Integer min, @JsonProperty("max") Integer max) {
+        JsonAdaptedBudget(@JsonProperty("min") BigDecimal min, @JsonProperty("max") BigDecimal max) {
             this.min = min;
             this.max = max;
         }
 
         JsonAdaptedBudget(Budget source) {
-            min = source.getMin().getValue();
-            max = source.getMax().getValue();
+            min = BigDecimal.valueOf(source.getMin().getValue());
+            max = BigDecimal.valueOf(source.getMax().getValue());
         }
     }
 

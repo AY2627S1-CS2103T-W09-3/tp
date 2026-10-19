@@ -17,6 +17,7 @@ public class Price {
     public static final String VALIDATION_REGEX = "(?:[1-9]\\d{0,2}(?:,\\d{3})+|[1-9]\\d*)";
 
     private static final long MAX_PRICE = 1_000_000_000L;
+    private static final int MAX_PRICE_DIGITS = Long.toString(MAX_PRICE).length();
 
     private final int value;
 
@@ -38,7 +39,11 @@ public class Price {
         if (test == null || !test.matches(VALIDATION_REGEX)) {
             return false;
         }
-        long parsed = Long.parseLong(test.replace(",", ""));
+        String digits = test.replace(",", "");
+        if (digits.length() > MAX_PRICE_DIGITS) {
+            return false;
+        }
+        long parsed = Long.parseLong(digits);
         return parsed >= 1 && parsed <= MAX_PRICE;
     }
 
