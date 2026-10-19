@@ -17,6 +17,7 @@ public class ClearCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "Client book has been cleared!";
     public static final String MESSAGE_EMPTY = "The client book is already empty.";
+    public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: " + COMMAND_WORD + ".";
     public static final String MESSAGE_WARNING_ONE_CLIENT = "This will delete the only client. Type "
             + COMMAND_WORD + " " + CONFIRM_WORD + " to proceed.";
     public static final String MESSAGE_WARNING_MULTIPLE_CLIENTS = "This will delete all %1$d clients. Type "
