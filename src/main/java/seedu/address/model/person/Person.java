@@ -13,7 +13,7 @@ import seedu.address.model.tag.Tag;
 /**
  * Represents a Person in the address book.
  * Guarantees: details are present and not null, field values are validated, immutable,
- * except for the role, budget and asking price, which may be absent.
+ * except for the role, note, budget and asking price, which may be absent.
  */
 public class Person {
 
@@ -25,6 +25,7 @@ public class Person {
     // Data fields
     private final Address address;
     private final ClientRole role;
+    private final Note note;
     private final Set<Tag> tags = new HashSet<>();
     private final Budget budget;
     private final Price askingPrice;
@@ -32,11 +33,11 @@ public class Person {
     private final Set<HousingType> housingTypes = new HashSet<>();
 
     /**
-     * Every field must be present and not null, except {@code role}, {@code budget}
-     * and {@code askingPrice}, which are null when the client has not supplied them.
+     * Every field must be present and not null, except {@code role}, {@code note},
+     * {@code budget} and {@code askingPrice}, which are null when the client has not supplied them.
      */
     public Person(Name name, Phone phone, Email email, Address address, ClientRole role,
-            Set<Tag> tags, Budget budget, Price askingPrice, Set<Area> areas,
+            Note note, Set<Tag> tags, Budget budget, Price askingPrice, Set<Area> areas,
             Set<HousingType> housingTypes) {
         requireAllNonNull(name, phone, email, address, tags, areas, housingTypes);
         this.name = name;
@@ -44,6 +45,7 @@ public class Person {
         this.email = email;
         this.address = address;
         this.role = role;
+        this.note = note;
         this.tags.addAll(tags);
         this.budget = budget;
         this.askingPrice = askingPrice;
@@ -72,6 +74,13 @@ public class Person {
      */
     public ClientRole getRole() {
         return role;
+    }
+
+    /**
+     * Returns the client's note, or null if no note has been added yet.
+     */
+    public Note getNote() {
+        return note;
     }
 
     /**
@@ -146,6 +155,7 @@ public class Person {
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
                 && Objects.equals(role, otherPerson.role)
+                && Objects.equals(note, otherPerson.note)
                 && tags.equals(otherPerson.tags)
                 && Objects.equals(budget, otherPerson.budget)
                 && Objects.equals(askingPrice, otherPerson.askingPrice)
@@ -156,7 +166,7 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, role, tags, budget, askingPrice, areas, housingTypes);
+        return Objects.hash(name, phone, email, address, role, note, tags, budget, askingPrice, areas, housingTypes);
     }
 
     @Override
@@ -167,6 +177,7 @@ public class Person {
                 .add("email", email)
                 .add("address", address)
                 .add("role", role)
+                .add("note", note)
                 .add("tags", tags)
                 .add("budget", budget)
                 .add("askingPrice", askingPrice)

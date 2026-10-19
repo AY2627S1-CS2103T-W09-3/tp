@@ -25,9 +25,18 @@ public class PersonTest {
     @Test
     public void constructor_nullRole_isAllowed() {
         Person personWithNoRole = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(),
-                ALICE.getAddress(), null, ALICE.getTags(), ALICE.getBudget(), ALICE.getAskingPrice(),
+                ALICE.getAddress(), null, ALICE.getNote(), ALICE.getTags(),
+                ALICE.getBudget(), ALICE.getAskingPrice(),
                 ALICE.getAreas(), ALICE.getHousingTypes());
         assertNull(personWithNoRole.getRole());
+    }
+
+    @Test
+    public void constructor_nullNote_isAllowed() {
+        Person personWithNoNote = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(),
+                ALICE.getAddress(), ALICE.getRole(), null, ALICE.getTags(),
+                ALICE.getBudget(), ALICE.getAskingPrice(), ALICE.getAreas(), ALICE.getHousingTypes());
+        assertNull(personWithNoNote.getNote());
     }
 
     @Test
@@ -124,6 +133,11 @@ public class PersonTest {
         assertFalse(ALICE.equals(editedAlice));
         assertTrue(ALICE.isSamePerson(editedAlice));
 
+        // different note -> different details, but still the same person
+        editedAlice = new PersonBuilder(ALICE).withNote("Call after 6 PM").build();
+        assertFalse(ALICE.equals(editedAlice));
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
         // different budget -> returns false
         editedAlice = new PersonBuilder(ALICE)
                 .withBudget(new Budget(new Price("900000"), new Price("1000000"))).build();
@@ -148,7 +162,8 @@ public class PersonTest {
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
-                + ", role=" + ALICE.getRole() + ", tags=" + ALICE.getTags()
+                + ", role=" + ALICE.getRole() + ", note=" + ALICE.getNote()
+                + ", tags=" + ALICE.getTags()
                 + ", budget=" + ALICE.getBudget() + ", askingPrice=" + ALICE.getAskingPrice()
                 + ", areas=" + ALICE.getAreas() + ", housingTypes=" + ALICE.getHousingTypes() + "}";
         assertEquals(expected, ALICE.toString());

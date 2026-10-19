@@ -38,6 +38,8 @@ public class TypicalPersons {
     public static final Person BENSON = new PersonBuilder().withName("Benson Meier")
             .withAddress("311, Clementi Ave 2, #02-25")
             .withEmail("johnd@example.com").withPhone("98765432")
+            .withNote("Interested in upgrading to a larger property.\n"
+                    + "Prefers weekend viewings after 2 PM.")
             .withTags("owesMoney", "friends")
             .withRole(ClientRole.SELLER)
             .withAskingPrice(new Price("950000")).build();

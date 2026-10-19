@@ -10,6 +10,7 @@ import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.Note;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Price;
@@ -31,6 +32,7 @@ public class PersonBuilder {
     private Email email;
     private Address address;
     private ClientRole role;
+    private Note note;
     private Set<Tag> tags;
     private Budget budget;
     private Price askingPrice;
@@ -46,6 +48,7 @@ public class PersonBuilder {
         email = new Email(DEFAULT_EMAIL);
         address = new Address(DEFAULT_ADDRESS);
         role = null; // a client has no role until one is assigned
+        note = null;
         tags = new HashSet<>();
         budget = null;
         askingPrice = null;
@@ -62,6 +65,7 @@ public class PersonBuilder {
         email = personToCopy.getEmail();
         address = personToCopy.getAddress();
         role = personToCopy.getRole();
+        note = personToCopy.getNote();
         tags = new HashSet<>(personToCopy.getTags());
         budget = personToCopy.getBudget();
         askingPrice = personToCopy.getAskingPrice();
@@ -118,6 +122,14 @@ public class PersonBuilder {
     }
 
     /**
+     * Sets the {@code Note} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withNote(String note) {
+        this.note = new Note(note);
+        return this;
+    }
+
+    /**
      * Sets the {@code Budget} of the {@code Person} that we are building.
      */
     public PersonBuilder withBudget(Budget budget) {
@@ -150,7 +162,7 @@ public class PersonBuilder {
     }
 
     public Person build() {
-        return new Person(name, phone, email, address, role, tags, budget, askingPrice, areas, housingTypes);
+        return new Person(name, phone, email, address, role, note, tags, budget, askingPrice, areas, housingTypes);
     }
 
 }

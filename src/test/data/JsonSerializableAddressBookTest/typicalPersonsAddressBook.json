@@ -20,6 +20,7 @@
     "email" : "johnd@example.com",
     "address" : "311, Clementi Ave 2, #02-25",
     "role" : "seller",
+    "note" : "Interested in upgrading to a larger property.\nPrefers weekend viewings after 2 PM.",
     "askingPrice" : 950000,
     "remark" : "He can't take beer!",
     "tags" : [ "owesMoney", "friends" ]
