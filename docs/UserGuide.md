@@ -230,19 +230,21 @@ Format: `clear`, then `clear confirm`
    * For one client: `This will delete the only client. Type clear confirm to proceed.`
    * For two or more clients: `This will delete all N clients. Type clear confirm to proceed.`
 2. Enter `clear confirm` to delete all clients. The result box shows `Client book has been cleared!`
-3. Enter anything else to cancel. The result box shows `Clear cancelled.` and nothing is deleted.
+3. Enter any other non-empty input to cancel. The result box shows `Clear cancelled.` and nothing is deleted.
 
 * `N` is the total number of clients, including clients hidden by a search filter.
 * The input that cancels is not run as a command. For example, entering `exit` while a confirmation is
-  pending cancels it but does not exit, so enter `exit` again. Entering `clear` again also cancels.
+  pending cancels it but does not exit, so enter `exit` again.
+* Pressing Enter on a completely empty command box does nothing and the confirmation stays pending.
+  A single space counts as input and cancels.
 * If there are no clients, `clear` shows `The client book is already empty.` and no confirmation is pending.
 * `clear confirm` only works straight after `clear`. Otherwise it shows `No clear is pending. Type clear first.`
 * Any other word after `clear` shows `Invalid command format. Use: clear.`
 * A pending confirmation is not saved, so closing the app cancels it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Warning:**
-`clear confirm` deletes every client, including clients hidden by a search filter. This cannot be undone
-because undo is not available in v1.4. Back up your data before using it.
+`clear confirm` deletes every client. This cannot be undone because undo is not available in v1.4.
+Back up your data before using it.
 </div>
 
 ### Exiting the program: `exit`

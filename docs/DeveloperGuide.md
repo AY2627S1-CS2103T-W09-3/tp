@@ -232,6 +232,8 @@ A client's role is a dedicated `ClientRole` field on `Person`, not a tag. `Clien
 * `clear confirm` runs the confirmed `ClearCommand`.
 * Any other input, including input that cannot be parsed, clears the flag without being executed and shows `Clear cancelled.`.
 
+A completely empty Enter never reaches `Logic`, because `CommandBox` ignores an empty command box, so a pending clear stays pending. Input that is only spaces is sent on, cannot be parsed, and so cancels like any other input.
+
 When nothing is pending, `clear confirm` is rejected with `No clear is pending. Type clear first.`, so the confirmation cannot be skipped. The flag is not written to the data file, so restarting the app cancels it.
 
 **Showing the pending state.** `CommandBox` and `MainWindow` read `CommandResult#isAwaitingConfirmation()` from each result. While it is true, the command box gets the `pending` style class and a prompt asking the user to confirm, and `ResultDisplay` shows the warning with the same style class. The next result removes both, so the indicator is always the same as the state held by `LogicManager`.
