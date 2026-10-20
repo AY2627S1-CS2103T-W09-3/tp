@@ -55,6 +55,12 @@ public class NoteCommandParserTest {
     }
 
     @Test
+    public void parse_tooLongAfterNewlineDecode_failure() {
+        // 249 + 1 (decoded \n) + 252 = 502 characters, exceeding the 500-character limit.
+        assertParseFailure(parser, "1 " + "a".repeat(249) + "\\n" + "b".repeat(252), Note.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_missingIndex_failure() {
         assertParseFailure(parser, "", NoteCommand.MESSAGE_INVALID_COMMAND_FORMAT);
     }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 
 import seedu.address.commons.core.index.Index;
+import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
@@ -21,8 +22,9 @@ public class NoteCommand extends Command {
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Sets or clears the note of the client identified by the index number used in the displayed list.\n"
-            + "Parameters: INDEX NOTE\n"
-            + "Example: " + COMMAND_WORD + " 1 Prefers a corner unit";
+            + "Parameters: INDEX TEXT | INDEX clear\n"
+            + "Example: " + COMMAND_WORD + " 1 Prefers a corner unit\n"
+            + "Example: " + COMMAND_WORD + " 1 clear";
 
     public static final String MESSAGE_INVALID_COMMAND_FORMAT =
             String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, MESSAGE_USAGE);
@@ -79,5 +81,18 @@ public class NoteCommand extends Command {
         return other instanceof NoteCommand otherNoteCommand
                 && index.equals(otherNoteCommand.index)
                 && Objects.equals(note, otherNoteCommand.note);
+    }
+
+    @Override
+    public int hashCode() {
+        return index.hashCode() + Objects.hashCode(note);
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .add("index", index)
+                .add("note", note)
+                .toString();
     }
 }

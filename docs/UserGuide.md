@@ -187,7 +187,7 @@ Sets or clears the note belonging to a displayed client.
 Format: `note INDEX TEXT`
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
-* `TEXT` can contain spaces and must be between 1 and 500 characters after surrounding whitespace is removed.
+* `TEXT` can contain spaces and must be between 1 and 500 characters after surrounding whitespace is removed. The limit is counted after `\n` is decoded, so each `\n` counts as one character.
 * Type the two characters `\n` where a line break should appear in the note.
 * The exact lowercase word `clear` clears the note.
 * `CLEAR` and sentences containing the word `clear` are stored as ordinary note text.
