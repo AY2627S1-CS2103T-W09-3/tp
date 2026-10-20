@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
@@ -21,13 +22,18 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.geometry.Bounds;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.ModelManager;
@@ -36,7 +42,7 @@ import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
 
 /**
- * Tests error feedback, recovery, and the displayed client list through the command box.
+ * Tests the main window layout, startup focus, and command-box feedback.
  */
 public class MainWindowTest {
 
@@ -57,6 +63,74 @@ public class MainWindowTest {
             Platform.runLater(initialise);
         }
         assertTrue(ready.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void show_commandBoxHasInitialFocus() throws Exception {
+        FutureTask<MainWindow> createWindow = new FutureTask<>(() -> {
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            window.show();
+            window.fillInnerParts();
+            return window;
+        });
+        Platform.runLater(createWindow);
+        MainWindow window = createWindow.get(10, TimeUnit.SECONDS);
+        try {
+            runOnFxThread(() -> {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                assertSame(commandBox, window.getRoot().getScene().getFocusOwner());
+                assertTrue(commandBox.isFocused());
+            });
+        } finally {
+            runOnFxThread(() -> window.getRoot().close());
+        }
+    }
+
+    @Test
+    public void layout_supportedLogicalViewports_keepsMainRegionsVisible() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            try {
+                window.fillInnerParts();
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                root.applyCss();
+
+                // Check logical viewport sizes only; this does not change the display scale or font metrics.
+                // Actual display-scaling checks are listed in docs/Testing.md.
+                int[][] logicalSizes = {{1920, 1080}, {1536, 864}, {853, 480}, {820, 440}};
+                for (int[] size : logicalSizes) {
+                    root.resize(size[0], size[1]);
+                    root.layout();
+                    for (String id : List.of("menuBar", "commandTextField", "resultDisplayPlaceholder",
+                            "personList", "personListView", "detailPanePlaceholder", "detailPlaceholderMessage",
+                            "statusbarPlaceholder", "saveLocationStatus", "clientCountStatus")) {
+                        assertInsideViewport(root.lookup("#" + id), size[0], size[1]);
+                    }
+
+                    assertEquals(340, root.lookup("#personList").getLayoutBounds().getWidth(), 1);
+                    assertTrue(root.lookup("#detailPanePlaceholder").getLayoutBounds().getWidth() >= 380);
+                    Label placeholder = (Label) root.lookup("#detailPlaceholderMessage");
+                    assertEquals("Select a client to see details.", placeholder.getText());
+                    Label count = (Label) root.lookup("#clientCountStatus");
+                    assertEquals("2 clients", count.getText());
+                    assertTrue(count.getWidth() >= count.prefWidth(-1) - 1);
+                    Node saveLocation = root.lookup("#saveLocationStatus");
+                    assertTrue(saveLocation.localToScene(saveLocation.getLayoutBounds()).getMaxX()
+                            <= count.localToScene(count.getLayoutBounds()).getMinX() + 1);
+                }
+            } finally {
+                window.getRoot().close();
+            }
+        });
     }
 
     @Test
@@ -116,6 +190,163 @@ public class MainWindowTest {
         });
     }
 
+    @Test
+    public void execute_clientListChanges_updatesFooterCount() throws Exception {
+        runOnFxThread(() -> {
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            try {
+                window.fillInnerParts();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                Label count = (Label) window.getRoot().getScene().lookup("#clientCountStatus");
+                Label saveLocation = (Label) window.getRoot().getScene().lookup("#saveLocationStatus");
+
+                assertEquals(dataFile.toString(), saveLocation.getText());
+                assertEquals("0 clients", count.getText());
+
+                enterCommand(window, commandBox,
+                        "add n/Alicia Tan p/81234567 e/alicia.tan@example.com a/Bishan");
+                assertEquals("1 client", count.getText());
+
+                enterCommand(window, commandBox,
+                        "add n/Benjamin Lim p/82345678 e/benjamin.lim@example.com a/Tampines");
+                assertEquals("2 clients", count.getText());
+
+                enterCommand(window, commandBox, "find Alicia");
+                assertEquals("1 client", count.getText());
+
+                enterCommand(window, commandBox, "find Nobody");
+                assertEquals("0 clients", count.getText());
+
+                enterCommand(window, commandBox, "list");
+                assertEquals("2 clients", count.getText());
+
+                enterCommand(window, commandBox, "delete 1");
+                assertEquals("1 client", count.getText());
+
+                enterCommand(window, commandBox, "clear");
+                assertEquals("1 client", count.getText());
+                enterCommand(window, commandBox, "clear confirm");
+                assertEquals("0 clients", count.getText());
+                assertEquals(dataFile.toString(), saveLocation.getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearThenConfirm_showsPendingStateUntilConfirmed() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+                assertPendingState(commandBox, feedback, false);
+
+                enterCommand(window, commandBox, "clear");
+                assertEquals("This will delete all 2 clients. Type clear confirm to proceed.", feedback.getText());
+                assertPendingState(commandBox, feedback, true);
+                assertFeedbackFill(feedback, Color.web("#e0a526"));
+                assertEquals(List.of(AMY, BOB), personList.getItems());
+
+                enterCommand(window, commandBox, "clear confirm");
+                assertEquals(ClearCommand.MESSAGE_SUCCESS, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertFeedbackFill(feedback, Color.WHITE);
+                assertEquals(List.of(), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearThenOtherInput_cancelsPendingState() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+
+                enterCommand(window, commandBox, "clear");
+                assertPendingState(commandBox, feedback, true);
+
+                commandBox.setText("something else");
+                assertPendingState(commandBox, feedback, true);
+
+                enterCommand(window, commandBox, "something else");
+                assertEquals(ClearCommand.MESSAGE_CANCELLED, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertFeedbackFill(feedback, Color.WHITE);
+                assertEquals(List.of(AMY), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearThenEmptyEnterThenSpace_staysPendingThenCancels() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
+
+                enterCommand(window, commandBox, "clear");
+                assertPendingState(commandBox, feedback, true);
+
+                // An empty command box is not an input, so the confirmation stays pending.
+                enterCommand(window, commandBox, "");
+                assertEquals(ClearCommand.MESSAGE_WARNING_ONE_CLIENT, feedback.getText());
+                assertPendingState(commandBox, feedback, true);
+                assertEquals(List.of(AMY), personList.getItems());
+
+                // A single space is an input, so it cancels the confirmation without deleting anyone.
+                enterCommand(window, commandBox, " ");
+                assertEquals(ClearCommand.MESSAGE_CANCELLED, feedback.getText());
+                assertPendingState(commandBox, feedback, false);
+                assertEquals(List.of(AMY), personList.getItems());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void execute_clearConfirmWithoutPendingClear_showsErrorNotPendingState() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+
+                enterCommand(window, commandBox, "clear confirm");
+
+                assertEquals("Error: " + ClearCommand.MESSAGE_NO_CLEAR_PENDING, feedback.getText());
+                assertTrue(feedback.getStyleClass().contains("error"));
+                assertPendingState(commandBox, feedback, false);
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
     private void assertFailureAndRecovery(String command, String expectedError) throws Exception {
         runOnFxThread(() -> {
             Path dataFile = temporaryFolder.resolve("addressbook.json");
@@ -142,6 +373,38 @@ public class MainWindowTest {
                 window.getRoot().close();
             }
         });
+    }
+
+    private static void assertInsideViewport(Node node, double width, double height) {
+        Bounds bounds = node.localToScene(node.getLayoutBounds());
+        String context = node.getId() + " at " + width + "x" + height;
+        assertTrue(bounds.getWidth() > 0 && bounds.getHeight() > 0, context + " is collapsed");
+        assertTrue(bounds.getMinX() >= -1 && bounds.getMinY() >= -1
+                && bounds.getMaxX() <= width + 1 && bounds.getMaxY() <= height + 1,
+                context + " extends beyond the viewport");
+    }
+
+    private MainWindow openWindow(ModelManager model) {
+        Path dataFile = temporaryFolder.resolve("addressbook.json");
+        StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+        MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+        window.fillInnerParts();
+        return window;
+    }
+
+    /**
+     * Verifies that the command box and result display either both show the pending style or both do not.
+     */
+    private static void assertPendingState(TextField commandBox, TextArea feedback, boolean isPending) {
+        assertEquals(isPending, commandBox.getStyleClass().contains("pending"));
+        assertEquals(isPending, feedback.getStyleClass().contains("pending"));
+        assertEquals(isPending ? CommandBox.PENDING_PROMPT_TEXT : "Enter command here...",
+                commandBox.getPromptText());
+    }
+
+    private static void assertFeedbackFill(TextArea feedback, Color expectedFill) {
+        assertEquals(expectedFill, ((Text) feedback.lookup(".text")).getFill());
     }
 
     private static void enterCommand(MainWindow window, TextField commandBox, String command) {

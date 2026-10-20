@@ -3,7 +3,9 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
+import java.util.Optional;
 
+import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
 
 /**
@@ -19,13 +21,36 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
+    /** Index of the client to view, or null if no view is requested. */
+    private final Index viewIndex;
+
+    /** The user must confirm before the command takes effect. */
+    private final boolean awaitingConfirmation;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
+        this(feedbackToUser, showHelp, exit, false);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with an explicit confirmation state.
+     */
+    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean awaitingConfirmation) {
+        this(feedbackToUser, showHelp, exit, awaitingConfirmation, null);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with all result fields.
+     */
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit,
+            boolean awaitingConfirmation, Index viewIndex) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
+        this.awaitingConfirmation = awaitingConfirmation;
+        this.viewIndex = viewIndex;
     }
 
     /**
@@ -34,6 +59,14 @@ public class CommandResult {
      */
     public CommandResult(String feedbackToUser) {
         this(feedbackToUser, false, false);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} requesting a view of the client at {@code viewIndex}.
+     * The index must not be null and refers to the currently displayed client list.
+     */
+    public CommandResult(String feedbackToUser, Index viewIndex) {
+        this(feedbackToUser, false, false, false, requireNonNull(viewIndex));
     }
 
     public String getFeedbackToUser() {
@@ -46,6 +79,17 @@ public class CommandResult {
 
     public boolean isExit() {
         return exit;
+    }
+
+    /**
+     * Returns the requested client index, or an empty optional if no view is requested.
+     */
+    public Optional<Index> getViewIndex() {
+        return Optional.ofNullable(viewIndex);
+    }
+
+    public boolean isAwaitingConfirmation() {
+        return awaitingConfirmation;
     }
 
     @Override
@@ -61,12 +105,16 @@ public class CommandResult {
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
-                && exit == otherCommandResult.exit;
+                && exit == otherCommandResult.exit
+                && Objects.equals(viewIndex, otherCommandResult.viewIndex)
+                && awaitingConfirmation == otherCommandResult.awaitingConfirmation;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit);
+        // Index defines value equality but does not override hashCode, so hash its numeric value.
+        Integer viewIndexValue = viewIndex == null ? null : viewIndex.getZeroBased();
+        return Objects.hash(feedbackToUser, showHelp, exit, viewIndexValue, awaitingConfirmation);
     }
 
     @Override
@@ -75,6 +123,8 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", showHelp)
                 .add("exit", exit)
+                .add("viewIndex", viewIndex)
+                .add("awaitingConfirmation", awaitingConfirmation)
                 .toString();
     }
 
