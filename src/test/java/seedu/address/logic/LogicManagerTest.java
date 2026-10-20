@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,8 +33,12 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Price;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -74,6 +79,28 @@ public class LogicManagerTest {
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
+    }
+
+    @Test
+    public void execute_addWithAllRequirements_savesAndReloadsAllFields() throws Exception {
+        String addCommand = "add n/John Doe p/98765432 e/john@example.com a/311 Clementi Ave 2 "
+                + "b/100000-200000 s/150000 l/Bukit Timah l/Orchard h/Condo h/HDB";
+        logic.execute(addCommand);
+
+        Person expectedPerson = new PersonBuilder()
+                .withName("John Doe")
+                .withPhone("98765432")
+                .withEmail("john@example.com")
+                .withAddress("311 Clementi Ave 2")
+                .withBudget(new Budget(new Price("100000"), new Price("200000")))
+                .withAskingPrice(new Price("150000"))
+                .withAreas(Set.of(new Area("Bukit Timah"), new Area("Orchard")))
+                .withHousingTypes(Set.of(HousingType.CONDO, HousingType.HDB))
+                .build();
+
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        ReadOnlyAddressBook reloadedAddressBook = storage.readAddressBook().orElseThrow();
+        assertEquals(List.of(expectedPerson), reloadedAddressBook.getPersonList());
     }
 
     @Test

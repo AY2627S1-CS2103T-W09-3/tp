@@ -14,7 +14,10 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +28,11 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Price;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 
@@ -88,6 +95,56 @@ public class EditCommandTest {
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(personWithNote, editedPerson);
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_requirementsSpecifiedUnfilteredList_success() {
+        Person personToEdit = model.getFilteredPersonList().get(INDEX_THIRD_PERSON.getZeroBased());
+        Person editedPerson = new PersonBuilder(personToEdit)
+                .withBudget(new Budget(new Price("1000"), new Price("2000")))
+                .withAskingPrice(new Price("1500"))
+                .withAreas(Set.of(new Area("Orchard")))
+                .withHousingTypes(Set.of(HousingType.CONDO))
+                .build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withBudget(new Budget(new Price("1000"), new Price("2000")))
+                .withAskingPrice(new Price("1500"))
+                .withAreas(Set.of(new Area("Orchard")))
+                .withHousingTypes(Set.of(HousingType.CONDO))
+                .build();
+        EditCommand editCommand = new EditCommand(INDEX_THIRD_PERSON, descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        expectedModel.setPerson(personToEdit, editedPerson);
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_clearRequirementsUnfilteredList_success() {
+        Person personToEdit = model.getFilteredPersonList().get(INDEX_THIRD_PERSON.getZeroBased());
+        Person editedPerson = new PersonBuilder(personToEdit)
+                .withBudget(null)
+                .withAskingPrice(null)
+                .withAreas(Set.of())
+                .withHousingTypes(Set.of())
+                .build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withBudget(null)
+                .withAskingPrice(null)
+                .withAreas(Set.of())
+                .withHousingTypes(Set.of())
+                .build();
+        EditCommand editCommand = new EditCommand(INDEX_THIRD_PERSON, descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        expectedModel.setPerson(personToEdit, editedPerson);
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
     }
