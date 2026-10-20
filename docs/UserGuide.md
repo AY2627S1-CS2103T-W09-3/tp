@@ -196,7 +196,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Use `list` to show all clients again.
 * The result line shows how many clients are displayed out of all clients, e.g. `Showing 2 of 5 clients.`.
   It says `clients` even when the number is 1, e.g. `Showing 1 of 5 clients.`.
-* If no clients match, the result shows `Showing 0 of 5 clients.`.
+* If no clients match, the result shows 0 clients out of the total, for example `Showing 0 of 5 clients.`.
 
 Examples using the sample clients:
 
