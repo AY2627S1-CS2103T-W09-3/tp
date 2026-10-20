@@ -8,8 +8,8 @@ import seedu.address.model.Model;
 import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
 
 /**
- * Finds and lists all clients whose name, phone or email matches any of the argument keywords.
- * Names match whole words and emails match in full, both ignoring case. Phone numbers must match exactly.
+ * Finds and lists all clients whose name, phone or email contains any of the argument keywords,
+ * ignoring case.
  */
 public class FindCommand extends Command {
 

@@ -82,18 +82,6 @@ public class PersonMatchesSearchTermsPredicateTest {
         predicate = new PersonMatchesSearchTermsPredicate(List.of("Carol"));
         assertFalse(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
 
-        // Partial name words do not match
-        predicate = new PersonMatchesSearchTermsPredicate(List.of("Ali", "lice"));
-        assertFalse(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
-
-        // Partial phone does not match
-        predicate = new PersonMatchesSearchTermsPredicate(List.of("9123"));
-        assertFalse(predicate.test(new PersonBuilder().withName("Alice").withPhone("91234567").build()));
-
-        // Partial email does not match
-        predicate = new PersonMatchesSearchTermsPredicate(List.of("alice@", "email.com"));
-        assertFalse(predicate.test(new PersonBuilder().withName("Bob").withEmail("alice@email.com").build()));
-
         // Keywords match address only
         predicate = new PersonMatchesSearchTermsPredicate(List.of("Main", "Street"));
         assertFalse(predicate.test(new PersonBuilder().withName("Alice").withAddress("Main Street").build()));

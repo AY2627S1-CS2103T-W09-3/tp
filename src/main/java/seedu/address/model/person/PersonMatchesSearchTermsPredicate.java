@@ -1,15 +1,14 @@
 package seedu.address.model.person;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Predicate;
 
-import seedu.address.commons.util.StringUtil;
 import seedu.address.commons.util.ToStringBuilder;
 
 /**
  * Tests that a {@code Person}'s {@code Name}, {@code Phone} or {@code Email} matches any of the search terms given.
- * A name matches if a term equals one of its words, ignoring case. A phone matches if a term equals it exactly.
- * An email matches if a term equals it, ignoring case.
+ * A field matches if it contains a term anywhere, ignoring case.
  */
 public class PersonMatchesSearchTermsPredicate implements Predicate<Person> {
     private final List<String> searchTerms;
@@ -21,9 +20,13 @@ public class PersonMatchesSearchTermsPredicate implements Predicate<Person> {
     @Override
     public boolean test(Person person) {
         return searchTerms.stream().anyMatch(term ->
-                StringUtil.containsWordIgnoreCase(person.getName().fullName, term)
-                        || person.getPhone().value.equals(term)
-                        || person.getEmail().value.equalsIgnoreCase(term));
+                containsIgnoreCase(person.getName().fullName, term)
+                        || containsIgnoreCase(person.getPhone().value, term)
+                        || containsIgnoreCase(person.getEmail().value, term));
+    }
+
+    private static boolean containsIgnoreCase(String field, String term) {
+        return field.toLowerCase(Locale.ROOT).contains(term.toLowerCase(Locale.ROOT));
     }
 
     @Override
