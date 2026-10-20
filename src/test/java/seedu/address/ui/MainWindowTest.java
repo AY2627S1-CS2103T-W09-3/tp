@@ -8,6 +8,7 @@ import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
+import static seedu.address.ui.PersonCardTestUtil.assertCardContentFits;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -179,7 +180,7 @@ public class MainWindowTest {
                     assertTrue(bounds.getMaxY() <= listBounds.getMaxY());
                     Region card = (Region) cell.getGraphic();
                     Label name = (Label) card.lookup("#name");
-                    assertEquals(70, card.getHeight(), 0.01);
+                    assertCardContentFits(card);
                     assertEquals(clients.get(cell.getIndex()).getName().fullName, name.getText());
                     assertFalse(name.isWrapText());
                     assertFalse(((Label) card.lookup("#email")).isWrapText());
@@ -237,7 +238,9 @@ public class MainWindowTest {
                     assertTrue(bounds.getMinY() >= viewportBounds.getMinY() - 1);
                     assertTrue(bounds.getMaxY() <= viewportBounds.getMaxY() + 1);
                     Region card = (Region) cell.getGraphic();
-                    assertTrue(card.getHeight() > 70 && card.getHeight() <= 90);
+                    assertTrue(card.getHeight() <= 90,
+                            "Default-font requirement card is " + card.getHeight() + "px tall");
+                    assertCardContentFits(card);
                     assertTrue(card.lookup("#requirementsSummary").isVisible());
                     assertEquals(4, ((VBox) card.lookup("#cardContent")).getChildren().stream()
                             .filter(Node::isManaged).count());

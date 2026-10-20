@@ -14,7 +14,8 @@
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <VBox fx:id="cardContent" alignment="CENTER_LEFT" spacing="2" minWidth="0" minHeight="68" HBox.hgrow="ALWAYS">
     <padding>
-      <Insets top="4" right="10" bottom="4" left="15" />
+      <!-- Keep taller platform fonts compact without limiting their computed height. -->
+      <Insets top="2" right="10" bottom="2" left="15" />
     </padding>
     <HBox fx:id="identityRow" spacing="4" alignment="CENTER_LEFT" minWidth="0"
           minHeight="22">
