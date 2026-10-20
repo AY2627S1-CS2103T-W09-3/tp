@@ -13,6 +13,7 @@ end box
 
 box Model MODEL_COLOR_T1
 participant "<<class>>\nNote" as Note MODEL_COLOR
+participant "n:Note" as NoteInstance MODEL_COLOR
 participant "m:Model" as Model MODEL_COLOR
 participant "editedClient:Person" as Person MODEL_COLOR
 end box
@@ -52,11 +53,11 @@ activate Note
 Note --> NoteCommandParser : true
 deactivate Note
 
-NoteCommandParser -> Note : new Note("Call at 6 PM\non Monday")
-activate Note
+NoteCommandParser -> NoteInstance ** : new Note("Call at 6 PM\non Monday")
+activate NoteInstance
 
-Note --> NoteCommandParser : n
-deactivate Note
+NoteInstance --> NoteCommandParser : n
+deactivate NoteInstance
 
 create NoteCommand
 NoteCommandParser -> NoteCommand
