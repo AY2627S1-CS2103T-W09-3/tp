@@ -13,7 +13,7 @@ import seedu.address.model.tag.Tag;
 /**
  * Represents a Person in the address book.
  * Guarantees: details are present and not null, field values are validated, immutable,
- * except for the role, which may be absent.
+ * except for the role, note, budget and asking price, which may be absent.
  */
 public class Person {
 
@@ -25,21 +25,32 @@ public class Person {
     // Data fields
     private final Address address;
     private final ClientRole role;
+    private final Note note;
     private final Set<Tag> tags = new HashSet<>();
+    private final Budget budget;
+    private final Price askingPrice;
+    private final Set<Area> areas = new HashSet<>();
+    private final Set<HousingType> housingTypes = new HashSet<>();
 
     /**
-     * Every field must be present and not null, except {@code role}, which is null
-     * when no role has been assigned to the client.
+     * Every field must be present and not null, except {@code role}, {@code note},
+     * {@code budget} and {@code askingPrice}, which are null when the client has not supplied them.
      */
     public Person(Name name, Phone phone, Email email, Address address, ClientRole role,
-            Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, tags);
+            Note note, Set<Tag> tags, Budget budget, Price askingPrice, Set<Area> areas,
+            Set<HousingType> housingTypes) {
+        requireAllNonNull(name, phone, email, address, tags, areas, housingTypes);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
         this.role = role;
+        this.note = note;
         this.tags.addAll(tags);
+        this.budget = budget;
+        this.askingPrice = askingPrice;
+        this.areas.addAll(areas);
+        this.housingTypes.addAll(housingTypes);
     }
 
     public Name getName() {
@@ -66,11 +77,48 @@ public class Person {
     }
 
     /**
+     * Returns the client's note, or null if no note has been added yet.
+     */
+    public Note getNote() {
+        return note;
+    }
+
+    /**
      * Returns an immutable tag set, which throws {@code UnsupportedOperationException}
      * if modification is attempted.
      */
     public Set<Tag> getTags() {
         return Collections.unmodifiableSet(tags);
+    }
+
+    /**
+     * Returns the client's budget, or null if none has been supplied.
+     */
+    public Budget getBudget() {
+        return budget;
+    }
+
+    /**
+     * Returns the client's asking price, or null if none has been supplied.
+     */
+    public Price getAskingPrice() {
+        return askingPrice;
+    }
+
+    /**
+     * Returns an immutable set of areas, which throws {@code UnsupportedOperationException}
+     * if modification is attempted.
+     */
+    public Set<Area> getAreas() {
+        return Collections.unmodifiableSet(areas);
+    }
+
+    /**
+     * Returns an immutable set of housing types, which throws {@code UnsupportedOperationException}
+     * if modification is attempted.
+     */
+    public Set<HousingType> getHousingTypes() {
+        return Collections.unmodifiableSet(housingTypes);
     }
 
     /**
@@ -107,13 +155,18 @@ public class Person {
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
                 && Objects.equals(role, otherPerson.role)
-                && tags.equals(otherPerson.tags);
+                && Objects.equals(note, otherPerson.note)
+                && tags.equals(otherPerson.tags)
+                && Objects.equals(budget, otherPerson.budget)
+                && Objects.equals(askingPrice, otherPerson.askingPrice)
+                && areas.equals(otherPerson.areas)
+                && housingTypes.equals(otherPerson.housingTypes);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, role, tags);
+        return Objects.hash(name, phone, email, address, role, note, tags, budget, askingPrice, areas, housingTypes);
     }
 
     @Override
@@ -124,7 +177,12 @@ public class Person {
                 .add("email", email)
                 .add("address", address)
                 .add("role", role)
+                .add("note", note)
                 .add("tags", tags)
+                .add("budget", budget)
+                .add("askingPrice", askingPrice)
+                .add("areas", areas)
+                .add("housingTypes", housingTypes)
                 .toString();
     }
 

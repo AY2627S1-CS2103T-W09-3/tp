@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -31,6 +32,9 @@ public class LogicManager implements Logic {
     private final Storage storage;
     private final AddressBookParser addressBookParser;
 
+    /** Whether the previous command was a {@code clear} that is waiting for {@code clear confirm}. */
+    private boolean isClearPending;
+
     /**
      * Constructs a {@code LogicManager} with the given {@code Model} and {@code Storage}.
      */
@@ -44,9 +48,22 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        CommandResult commandResult;
-        Command command = addressBookParser.parseCommand(commandText);
-        commandResult = command.execute(model);
+        Command command;
+        if (isClearPending) {
+            isClearPending = false;
+            command = parseClearConfirmation(commandText);
+            if (command == null) {
+                logger.info("Pending clear cancelled by: " + commandText);
+                return new CommandResult(ClearCommand.MESSAGE_CANCELLED);
+            }
+        } else {
+            command = addressBookParser.parseCommand(commandText);
+            if (command instanceof ClearCommand clearCommand && clearCommand.isConfirmed()) {
+                throw new CommandException(ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+            }
+        }
+
+        CommandResult commandResult = command.execute(model);
 
         try {
             storage.saveAddressBook(model.getAddressBook());
@@ -56,7 +73,24 @@ public class LogicManager implements Logic {
             throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
         }
 
+        isClearPending = commandResult.isAwaitingConfirmation();
         return commandResult;
+    }
+
+    /**
+     * Returns the confirmed {@code ClearCommand} if {@code commandText} is {@code clear confirm},
+     * or null if it is any other input, including input that cannot be parsed.
+     */
+    private Command parseClearConfirmation(String commandText) {
+        try {
+            Command command = addressBookParser.parseCommand(commandText);
+            if (command instanceof ClearCommand clearCommand && clearCommand.isConfirmed()) {
+                return clearCommand;
+            }
+        } catch (ParseException e) {
+            // Input that cannot be parsed cancels the pending clear like any other input.
+        }
+        return null;
     }
 
     @Override

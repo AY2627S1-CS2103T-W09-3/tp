@@ -35,7 +35,7 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 
    * `delete 3` : Deletes the 3rd client shown in the current list.
 
-   * `clear` : Deletes all clients.
+   * `clear` : Shows a warning and deletes nothing. Enter `clear confirm` next to delete all clients.
 
    * `exit` : Exits the app.
 
@@ -61,7 +61,7 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 * Prefixed fields in `add` and `edit` can appear in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
+* Extraneous parameters for commands that take no parameters, such as `help`, `list` and `exit`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -152,7 +152,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`
 * Existing values will be updated to the input values.
 * When editing tags, all of the client's existing tags are removed; adding tags is not cumulative.
 * To remove all of a client's tags, enter `t/` without a tag after it.
-* After a successful edit, the list shows all clients again.
+* After a successful edit, the current search or filter stays active. The edited client leaves the list if it no longer matches. Enter `list` to show all clients.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st client to be `91234567` and `johndoe@example.com` respectively.
@@ -169,7 +169,7 @@ Format: `role INDEX ROLE`
 * The client card displays `Buyer`, `Seller`, or `Buyer, Seller`.
 * Newly added clients have no role assigned.
 * Assigning a role replaces any existing role.
-* After a successful role change, the list shows all clients again.
+* After a successful role change, the current search or filter stays active. The client leaves the list if the new role no longer matches it. Enter `list` to show all clients.
 
 Examples:
 
@@ -222,14 +222,29 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from EstateBookUltraProMax.
+Deletes every client from EstateBookUltraProMax after you confirm.
 
-Format: `clear`
+Format: `clear`, then `clear confirm`
+
+1. Enter `clear`. Nothing is deleted yet. The result box shows a warning, the command box is outlined in amber and its prompt asks you to confirm, to show that a confirmation is pending.
+   * For one client: `This will delete the only client. Type clear confirm to proceed.`
+   * For two or more clients: `This will delete all N clients. Type clear confirm to proceed.`
+2. Enter `clear confirm` to delete all clients. The result box shows `Client book has been cleared!`
+3. Enter any other non-empty input to cancel. The result box shows `Clear cancelled.` and nothing is deleted.
+
+* `N` is the total number of clients, including clients hidden by a search filter.
+* The input that cancels is not run as a command. For example, entering `exit` while a confirmation is
+  pending cancels it but does not exit, so enter `exit` again.
+* Pressing Enter on a completely empty command box does nothing and the confirmation stays pending.
+  A single space counts as input and cancels.
+* If there are no clients, `clear` shows `The client book is already empty.` and no confirmation is pending.
+* `clear confirm` only works straight after `clear`. Otherwise it shows `No clear is pending. Type clear first.`
+* When no clear is pending, any other word after `clear` shows `Invalid command format. Use: clear.`
+* A pending confirmation is not saved, so closing the app cancels it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Warning:**
-`clear` deletes every client, including clients hidden by a search
-filter. It runs immediately without confirmation and cannot be undone within
-the app. Back up your data before using it.
+`clear confirm` deletes every client. This cannot be undone because undo is not available in v1.4.
+Back up your data before using it.
 </div>
 
 ### Exiting the program: `exit`
@@ -305,7 +320,7 @@ Restart the app from that working directory.
 Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
-**Clear** | `clear`
+**Clear** | `clear`, then `clear confirm`<br> `clear` shows a warning and `clear confirm` deletes all clients
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find Alicia`, `find 81234567`, `find alicia.tan@example.com`
