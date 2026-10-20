@@ -184,13 +184,16 @@ For example, if the first displayed client is John Doe, `role 1 buyer` displays:
 
 Sets or clears the note belonging to a displayed client.
 
-Format: `note INDEX TEXT`
+Formats:
+
+* `note INDEX TEXT` to add or replace a note.
+* `note INDEX clear` to clear a note.
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
-* `TEXT` can contain spaces and must be between 1 and 500 characters after surrounding whitespace is removed. The limit is counted after `\n` is decoded, so each `\n` counts as one character.
+* `TEXT` can contain spaces and must contain between 1 and 500 characters after `\n` is decoded and surrounding whitespace is removed.
 * Type the two characters `\n` where a line break should appear in the note.
-* The exact lowercase word `clear` clears the note.
-* `CLEAR` and sentences containing the word `clear` are stored as ordinary note text.
+* Only the exact lowercase text `clear`, after surrounding whitespace is removed, clears the note.
+* Other capitalization and text containing `clear` are stored as ordinary note text.
 * The currently displayed client filter remains active after setting or clearing a note.
 
 Examples:
@@ -198,8 +201,9 @@ Examples:
 * `note 1 Call again next Monday` adds or replaces the first displayed client's note.
 * `note 2 First line\nSecond line` stores a note containing two lines.
 * `note 3 clear` clears the third displayed client's note.
-* `note 3 Please clear the outstanding paperwork` stores the full sentence as a note.
-* `note 1 CLEAR` stores `CLEAR` as ordinary note text; only the exact lowercase `clear` clears.
+* `note 1 Clear` stores `Clear` as ordinary note text.
+* `note 1 CLEAR` stores `CLEAR` as ordinary note text.
+* `note 1 Call to clear documents` stores the full sentence as ordinary note text.
 
 ### Finding clients: `find`
 
@@ -214,6 +218,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Multiple keywords use OR matching: a client appears if any keyword matches their name, phone number, or email.
 * Keyword order does not matter.
 * Entering `find` without keywords shows an error and leaves the displayed list unchanged.
+* Notes are not searched. A note is free-text working detail in which any word may appear, so matching it would return clients for the wrong reason.
 * Use `list` to show all clients again.
 * If no clients match, the result shows `No clients found`.
 * If one client matches, the result shows `1 client listed!`.
