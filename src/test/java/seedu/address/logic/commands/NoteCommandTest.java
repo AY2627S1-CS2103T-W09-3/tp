@@ -133,6 +133,23 @@ public class NoteCommandTest {
         assertFalse(firstNoteCommand.equals(new NoteCommand(INDEX_FIRST_PERSON)));
     }
 
+    @Test
+    public void hashCodeMethod() {
+        NoteCommand firstNoteCommand = new NoteCommand(INDEX_FIRST_PERSON, new Note("First note"));
+        assertEquals(firstNoteCommand.hashCode(),
+                new NoteCommand(INDEX_FIRST_PERSON, new Note("First note")).hashCode());
+        assertTrue(firstNoteCommand.hashCode() != new NoteCommand(INDEX_SECOND_PERSON).hashCode());
+    }
+
+    @Test
+    public void toStringMethod() {
+        Note note = new Note("First note");
+        NoteCommand noteCommand = new NoteCommand(INDEX_FIRST_PERSON, note);
+        String expected = NoteCommand.class.getCanonicalName()
+                + "{index=" + INDEX_FIRST_PERSON + ", note=" + note + "}";
+        assertEquals(expected, noteCommand.toString());
+    }
+
     private static Model modelContaining(Person person) {
         AddressBook addressBook = new AddressBook();
         addressBook.addPerson(person);
