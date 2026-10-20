@@ -119,6 +119,17 @@ public class FindCommandTest {
     }
 
     @Test
+    public void execute_oneCharacterKeyword_findsOnlyClientsContainingIt() {
+        // "z" appears in Kurz and Kunz, and in heinz@example.com
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("z");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "Showing 2 of 7 clients.", expectedModel);
+        assertEquals(List.of(CARL, FIONA), model.getFilteredPersonList());
+    }
+
+    @Test
     public void toStringMethod() {
         PersonMatchesSearchTermsPredicate predicate = new PersonMatchesSearchTermsPredicate(List.of("keyword"));
         FindCommand findCommand = new FindCommand(predicate);
