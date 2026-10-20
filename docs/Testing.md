@@ -75,20 +75,35 @@ Leave unavailable or untested configurations unverified.
 For each configuration:
 
 1. Use a separate test-data folder so that your normal client data is not changed.
-1. Launch the app and maximise its window within the available desktop area.
+1. Reopen the app and check both its opening layout and its maximised layout within the available desktop area.
 1. Check that the menu, command box, and result box are visible and usable.
 1. Check that the client list and detail pane appear side by side, with
    `Select a client to see details.` visible before selecting a client.
 1. Ensure there are enough test clients to scroll, then check that the last client can be reached.
 1. Check that the footer's data path and client count are visible without overlapping.
+   Confirm that the count updates after `add`, `find`, `list` and `delete`.
 1. Enter `list` and check that its result is readable. Confirm that no controls overlap or are cut off.
+1. Open the Help window and confirm that it and its controls are reachable.
 1. Record the app commit, operating system, screen resolution, actual display scale, pass/fail result,
    and a screenshot. Restore your usual display settings afterwards.
 
-The actual display-scaling checks for issue #88 are not yet verified:
+### Recorded manual results
 
-| Screen resolution | Actual display scale | Result |
-| ----------------- | -------------------- | ------ |
-| 1920 × 1080 | 100% | Not yet verified |
-| 1920 × 1080 | 125% | Not yet verified |
-| 1280 × 720 | 150% | Not yet verified |
+* **Tested build:** Original PR #112 test JAR, commit
+  [`4c0c4e47`](https://github.com/AY2627S1-CS2103T-W09-3/tp/commit/4c0c4e4785240e8734aa758de43c8de1eb18a3cd).
+* **Operating system:** Windows 11.
+* **Results confirmed:** 20 October 2026; teammates reported that all manual checks above passed.
+
+| Screen resolution | Actual display scale | Result for the tested build |
+| ----------------- | -------------------- | --------------------------- |
+| 1920 × 1080 | 100% | Pass |
+| 1920 × 1080 | 125% | Pass |
+| 1280 × 720 | 150% | Pass |
+
+The configurations and interactive-check results are teammate-reported; no failures were reported.
+The [test report and three labelled app screenshots](https://github.com/AY2627S1-CS2103T-W09-3/tp/issues/123#issuecomment-6288082959)
+are attached to issue #123. Display-settings screenshots were not supplied.
+
+These results apply only to the tested commit, not to later card or detail-panel changes.
+Repeat affected checks after later UI changes, including the final styling in
+[issue #102](https://github.com/AY2627S1-CS2103T-W09-3/tp/issues/102), and record the new tested commit.
