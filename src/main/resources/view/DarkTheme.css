@@ -153,6 +153,41 @@
     -fx-background-color: #7a2e91;
 }
 
+.detail-pane, .detail-pane .scroll-pane, .detail-pane .scroll-pane > .viewport {
+    -fx-background-color: #303030;
+}
+
+.detail-pane .scroll-pane {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.detail-pane .detail-name {
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 22px;
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.detail-pane .detail-caption {
+    -fx-font-size: 12px;
+    -fx-text-fill: #b9b9b9;
+    -fx-opacity: 1;
+}
+
+.detail-pane .detail-value {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.detail-pane .detail-empty-state {
+    -fx-font-size: 14px;
+    -fx-text-fill: #b9b9b9;
+    -fx-opacity: 1;
+}
+
 .stack-pane {
      -fx-background-color: derive(#1d1d1d, 20%);
 }

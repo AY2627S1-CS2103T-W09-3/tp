@@ -27,6 +27,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
@@ -116,15 +117,16 @@ public class MainWindowTest {
                     root.resize(size[0], size[1]);
                     root.layout();
                     for (String id : List.of("menuBar", "commandTextField", "resultDisplayPlaceholder",
-                            "personList", "personListView", "detailPanePlaceholder", "detailPlaceholderMessage",
+                            "personList", "personListView", "detailPanePlaceholder", "detailPane", "emptyState",
                             "statusbarPlaceholder", "saveLocationStatus", "clientCountStatus")) {
                         assertInsideViewport(root.lookup("#" + id), size[0], size[1]);
                     }
 
                     assertEquals(340, root.lookup("#personList").getLayoutBounds().getWidth(), 1);
                     assertTrue(root.lookup("#detailPanePlaceholder").getLayoutBounds().getWidth() >= 380);
-                    Label placeholder = (Label) root.lookup("#detailPlaceholderMessage");
+                    Label placeholder = (Label) root.lookup("#emptyState");
                     assertEquals("Select a client to see details.", placeholder.getText());
+                    assertSame(window.getDetailPane().getRoot(), root.lookup("#detailPane"));
                     Label count = (Label) root.lookup("#clientCountStatus");
                     assertEquals("2 clients", count.getText());
                     assertTrue(count.getWidth() >= count.prefWidth(-1) - 1);
@@ -132,6 +134,57 @@ public class MainWindowTest {
                     assertTrue(saveLocation.localToScene(saveLocation.getLayoutBounds()).getMaxX()
                             <= count.localToScene(count.getLayoutBounds()).getMinX() + 1);
                 }
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void layout_populatedDetailPaneAtSmallViewports_wrapsAndScrollsWithoutExpandingWindow() throws Exception {
+        runOnFxThread(() -> {
+            String noteText = "First line ".repeat(15) + "\n" + "Second line ".repeat(14) + "\n"
+                    + "Third line ".repeat(15).stripTrailing() + ".";
+            assertEquals(500, noteText.length());
+            Person person = new PersonBuilder().withNote(noteText).withTags("urgent").build();
+            ModelManager model = new ModelManager();
+            model.addPerson(person);
+            MainWindow window = openWindow(model);
+            try {
+                // Selection wiring belongs to #101; exercise the embedded panel through its public API.
+                window.getDetailPane().setPerson(person);
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                root.applyCss();
+                int[][] logicalSizes = {{853, 480}, {820, 440}};
+                for (int[] size : logicalSizes) {
+                    layoutWindow(root, size[0], size[1]);
+                    ScrollPane scroll = (ScrollPane) root.lookup("#detailScroll");
+                    VBox rows = (VBox) scroll.getContent();
+                    Label note = (Label) root.lookup("#note");
+                    assertInsideViewport(root.lookup("#detailPane"), size[0], size[1]);
+                    assertInsideViewport(root.lookup("#statusbarPlaceholder"), size[0], size[1]);
+                    assertTrue(rows.getHeight() > scroll.getViewportBounds().getHeight());
+                    assertTrue(rows.getWidth() <= scroll.getViewportBounds().getWidth() + 1);
+                    assertEquals(noteText, note.getText());
+                    assertTrue(note.getHeight() >= note.prefHeight(note.getWidth()) - 1);
+                    assertTrue(note.getHeight() > 25, "The note did not wrap");
+                    assertFalse(root.lookup("#emptyState").isVisible());
+
+                    scroll.setVvalue(1);
+                    layoutWindow(root, size[0], size[1]);
+                    Node viewport = scroll.lookup(".viewport");
+                    Bounds viewportBounds = viewport.localToScene(viewport.getBoundsInLocal());
+                    Node tagsRow = root.lookup("#tagsRow");
+                    Bounds lastRow = tagsRow.localToScene(tagsRow.getBoundsInLocal());
+                    assertTrue(lastRow.getMaxY() <= viewportBounds.getMaxY() + 1,
+                            "The final detail row is unreachable");
+                    assertTrue(lastRow.getMaxY() > viewportBounds.getMinY());
+                }
+
+                window.getDetailPane().setPerson(null);
+                assertTrue(root.lookup("#emptyState").isVisible());
+                assertFalse(root.lookup("#detailScroll").isManaged());
+                assertEquals("", ((Label) root.lookup("#note")).getText());
             } finally {
                 window.getRoot().close();
             }
@@ -184,10 +237,10 @@ public class MainWindowTest {
                     assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().size());
                 }
                 for (String id : List.of("commandTextField", "resultDisplayPlaceholder", "personList",
-                        "detailPanePlaceholder", "detailPlaceholderMessage", "clientCountStatus")) {
+                        "detailPanePlaceholder", "emptyState", "clientCountStatus")) {
                     assertInsideViewport(root.lookup("#" + id), 853, 480);
                 }
-                Label placeholder = (Label) root.lookup("#detailPlaceholderMessage");
+                Label placeholder = (Label) root.lookup("#emptyState");
                 assertEquals("Select a client to see details.", placeholder.getText());
                 assertEquals("5 clients", ((Label) root.lookup("#clientCountStatus")).getText());
             } finally {
@@ -482,6 +535,16 @@ public class MainWindowTest {
         assertTrue(bounds.getMinX() >= -1 && bounds.getMinY() >= -1
                 && bounds.getMaxX() <= width + 1 && bounds.getMaxY() <= height + 1,
                 context + " extends beyond the viewport");
+    }
+
+    private static void layoutWindow(Region root, double width, double height) {
+        root.resize(width, height);
+        root.applyCss();
+        // Wrapping and scrollbar visibility can request another layout pass.
+        for (int pass = 0; pass < 10 && root.isNeedsLayout(); pass++) {
+            root.layout();
+        }
+        assertFalse(root.isNeedsLayout(), "The main window layout did not settle");
     }
 
     private MainWindow openWindow(ModelManager model) {
