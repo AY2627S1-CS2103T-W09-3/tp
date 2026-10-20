@@ -254,6 +254,43 @@ public class MainWindowTest {
     }
 
     @Test
+    public void execute_findAndFilter_footerCountMatchesShowingMessage() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            try {
+                window.fillInnerParts();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                Label footer = (Label) window.getRoot().getScene().lookup("#clientCountStatus");
+
+                enterCommand(window, commandBox, "find aMY");
+                assertEquals("Showing 1 of 2 clients.", feedback.getText());
+                assertEquals("1 client", footer.getText());
+
+                enterCommand(window, commandBox, "find Nobody");
+                assertEquals("Showing 0 of 2 clients.", feedback.getText());
+                assertEquals("0 clients", footer.getText());
+
+                enterCommand(window, commandBox, "filter t/husband");
+                assertEquals("Showing 1 of 2 clients.", feedback.getText());
+                assertEquals("1 client", footer.getText());
+
+                enterCommand(window, commandBox, "filter t/friend");
+                assertEquals("Showing 2 of 2 clients.", feedback.getText());
+                assertEquals("2 clients", footer.getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
     public void execute_clientListChanges_updatesFooterCount() throws Exception {
         runOnFxThread(() -> {
             Path dataFile = temporaryFolder.resolve("addressbook.json");
