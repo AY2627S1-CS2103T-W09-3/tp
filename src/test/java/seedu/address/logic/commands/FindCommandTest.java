@@ -57,7 +57,7 @@ public class FindCommandTest {
 
     @Test
     public void execute_nonMatchingKeyword_noPersonFound() {
-        String expectedMessage = "No clients found";
+        String expectedMessage = "Showing 0 of 7 clients.";
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Nobody");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
@@ -71,13 +71,13 @@ public class FindCommandTest {
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
 
-        assertCommandSuccess(command, model, "1 client listed!", expectedModel);
+        assertCommandSuccess(command, model, "Showing 1 of 7 clients.", expectedModel);
         assertEquals(List.of(ELLE), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_multipleKeywords_multiplePersonsFound() {
-        String expectedMessage = "3 clients listed!";
+        String expectedMessage = "Showing 3 of 7 clients.";
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Kurz Elle Kunz");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
@@ -92,7 +92,7 @@ public class FindCommandTest {
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
 
-        assertCommandSuccess(command, model, "2 clients listed!", expectedModel);
+        assertCommandSuccess(command, model, "Showing 2 of 7 clients.", expectedModel);
         assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
     }
 
@@ -103,7 +103,7 @@ public class FindCommandTest {
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
 
-        assertCommandSuccess(command, model, "1 client listed!", expectedModel);
+        assertCommandSuccess(command, model, "Showing 1 of 7 clients.", expectedModel);
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
     }
 
@@ -114,7 +114,7 @@ public class FindCommandTest {
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
 
-        assertCommandSuccess(command, model, "7 clients listed!", expectedModel);
+        assertCommandSuccess(command, model, "Showing 7 of 7 clients.", expectedModel);
         assertEquals(7, model.getFilteredPersonList().size());
     }
 
