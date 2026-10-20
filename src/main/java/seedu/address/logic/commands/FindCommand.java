@@ -3,19 +3,19 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import seedu.address.commons.util.ToStringBuilder;
-import seedu.address.logic.Messages;
 import seedu.address.model.Model;
 import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
 
 /**
- * Finds and lists all clients whose name, phone or email matches any of the argument keywords.
- * Names match whole words and emails match in full, both ignoring case. Phone numbers must match exactly.
+ * Finds and lists all clients whose name, phone or email contains any of the argument keywords,
+ * ignoring case.
  */
 public class FindCommand extends Command {
 
     public static final String COMMAND_WORD = "find";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds clients by name, phone or email.\n"
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Finds clients whose name, phone or email contains any keyword.\n"
             + "Parameters: KEYWORD [MORE_KEYWORDS]\n"
             + "Example: " + COMMAND_WORD + " John";
 
@@ -30,17 +30,10 @@ public class FindCommand extends Command {
         requireNonNull(model);
         model.updateFilteredPersonList(predicate);
 
-        int count = model.getFilteredPersonList().size();
-        String message;
-        if (count == 0) {
-            message = Messages.MESSAGE_NO_CLIENTS_FOUND;
-        } else if (count == 1) {
-            message = Messages.MESSAGE_ONE_CLIENT_LISTED;
-        } else {
-            message = String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, count);
-        }
-
-        return new CommandResult(message);
+        // The total is the whole address book, not the filtered list.
+        int shownCount = model.getFilteredPersonList().size();
+        int totalCount = model.getAddressBook().getPersonList().size();
+        return new CommandResult(String.format(FilterCommand.MESSAGE_SHOWING, shownCount, totalCount));
     }
 
     @Override

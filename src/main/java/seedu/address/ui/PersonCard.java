@@ -1,12 +1,16 @@
 package seedu.address.ui;
 
 import java.util.Comparator;
+import java.util.List;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
 
@@ -38,11 +42,9 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label phone;
     @FXML
-    private Label address;
-    @FXML
     private Label email;
     @FXML
-    private FlowPane tags;
+    private StackPane tags;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -54,11 +56,12 @@ public class PersonCard extends UiPart<Region> {
         name.setText(person.getName().fullName);
         setRoleBadge(person.getRole());
         phone.setText(person.getPhone().value);
-        address.setText(person.getAddress().value);
         email.setText(person.getEmail().value);
-        person.getTags().stream()
+        List<String> tagNames = person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
-                .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+                .map(tag -> tag.tagName)
+                .toList();
+        tags.getChildren().add(new TagRow(tagNames));
     }
 
     private void setRoleBadge(ClientRole clientRole) {
@@ -78,5 +81,81 @@ public class PersonCard extends UiPart<Region> {
             case SELLER -> "role-seller";
             case BOTH -> "role-both";
         };
+    }
+
+    /**
+     * Keeps tags on a single row and exposes any overflow through a count and tooltip.
+     */
+    private static class TagRow extends HBox {
+        private final List<String> tagNames;
+        private final List<Label> tagLabels;
+        private final Label overflow = new Label();
+        private final Tooltip overflowTooltip = new Tooltip();
+        private final Text overflowMeasure = new Text();
+
+        TagRow(List<String> tagNames) {
+            super(7);
+            this.tagNames = tagNames;
+            setId("tagRow");
+            setMinWidth(0);
+            setPrefWidth(0);
+            setAlignment(Pos.CENTER_LEFT);
+            tagLabels = tagNames.stream().map(name -> {
+                Label label = new Label(name);
+                label.setMinWidth(Region.USE_PREF_SIZE);
+                return label;
+            }).toList();
+            overflow.setId("tagOverflow");
+            overflow.setMinWidth(0);
+            overflowTooltip.setWrapText(true);
+            overflowTooltip.setMaxWidth(300);
+            overflow.setTooltip(overflowTooltip);
+            getChildren().addAll(tagLabels);
+            getChildren().add(overflow);
+        }
+
+        @Override
+        protected void layoutChildren() {
+            int shown = tagLabels.size();
+            double labelWidth = tagLabels.stream().mapToDouble(label -> label.prefWidth(-1)).sum();
+            while (shown > 0) {
+                double requiredWidth = labelWidth + getSpacing() * (shown - 1);
+                if (shown < tagLabels.size()) {
+                    requiredWidth += getSpacing() + measureOverflowWidth(tagLabels.size() - shown);
+                }
+                if (requiredWidth <= getWidth()) {
+                    break;
+                }
+                shown--;
+                labelWidth -= tagLabels.get(shown).prefWidth(-1);
+            }
+
+            for (int i = 0; i < tagLabels.size(); i++) {
+                tagLabels.get(i).setVisible(i < shown);
+                tagLabels.get(i).setManaged(i < shown);
+            }
+            boolean hasOverflow = shown < tagLabels.size();
+            overflow.setVisible(hasOverflow);
+            overflow.setManaged(hasOverflow);
+            if (hasOverflow) {
+                String count = "+" + (tagLabels.size() - shown);
+                if (!count.equals(overflow.getText())) {
+                    overflow.setText(count);
+                }
+                String tooltip = "Additional tags: " + String.join(", ", tagNames.subList(shown, tagNames.size()));
+                if (!tooltip.equals(overflowTooltip.getText())) {
+                    overflowTooltip.setText(tooltip);
+                }
+            }
+            super.layoutChildren();
+        }
+
+        private double measureOverflowWidth(int count) {
+            overflowMeasure.setFont(overflow.getFont());
+            overflowMeasure.setText("+" + count);
+            return Math.ceil(overflowMeasure.getLayoutBounds().getWidth())
+                    + overflow.getInsets().getLeft() + overflow.getInsets().getRight()
+                    + overflow.getLabelPadding().getLeft() + overflow.getLabelPadding().getRight();
+        }
     }
 }

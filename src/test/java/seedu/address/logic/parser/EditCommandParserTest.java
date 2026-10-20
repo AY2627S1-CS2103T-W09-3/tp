@@ -3,12 +3,21 @@ package seedu.address.logic.parser;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.AREA_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.ASKING_PRICE_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.BUDGET_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.HOUSING_TYPE_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_ADDRESS_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_AREA_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_BUDGET_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_BUDGET_MONEY_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_EMAIL_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_HOUSING_TYPE_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_NAME_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_PHONE_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_PRICE_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_TAG_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
@@ -23,6 +32,8 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_FRIEND;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ASKING_PRICE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
@@ -32,6 +43,8 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
@@ -39,9 +52,13 @@ import seedu.address.logic.Messages;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.model.person.Address;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Price;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 
@@ -210,5 +227,131 @@ public class EditCommandParserTest {
         EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_requirementFieldsSpecified_success() {
+        Index targetIndex = INDEX_SECOND_PERSON;
+        String userInput = targetIndex.getOneBased() + BUDGET_DESC_AMY + ASKING_PRICE_DESC_AMY
+                + AREA_DESC_AMY + HOUSING_TYPE_DESC_AMY;
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withBudget(new Budget(new Price("1000"), new Price("2000")))
+                .withAskingPrice(new Price("1500"))
+                .withAreas(Set.of(new Area("Bukit Timah")))
+                .withHousingTypes(Set.of(HousingType.HDB))
+                .build();
+        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+
+        assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_repeatedAreaAndHousingType_success() {
+        Index targetIndex = INDEX_THIRD_PERSON;
+        String userInput = targetIndex.getOneBased() + " l/Orchard l/orchard h/Condo h/condo";
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withAreas(Set.of(new Area("Orchard")))
+                .withHousingTypes(Set.of(HousingType.CONDO))
+                .build();
+        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+
+        assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_clearRequirements_success() {
+        Index targetIndex = INDEX_FIRST_PERSON;
+        String userInput = targetIndex.getOneBased() + " b/ s/ l/ h/";
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withBudget(null)
+                .withAskingPrice(null)
+                .withAreas(Set.of())
+                .withHousingTypes(Set.of())
+                .build();
+        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+
+        assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_setEachRequirement_success() {
+        Index targetIndex = INDEX_FIRST_PERSON;
+
+        EditPersonDescriptor budgetDescriptor = new EditPersonDescriptorBuilder()
+                .withBudget(new Budget(new Price("1000"), new Price("2000")))
+                .build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + BUDGET_DESC_AMY,
+                new EditCommand(targetIndex, budgetDescriptor));
+
+        EditPersonDescriptor priceDescriptor = new EditPersonDescriptorBuilder()
+                .withAskingPrice(new Price("1500"))
+                .build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + ASKING_PRICE_DESC_AMY,
+                new EditCommand(targetIndex, priceDescriptor));
+
+        EditPersonDescriptor areaDescriptor = new EditPersonDescriptorBuilder()
+                .withAreas(Set.of(new Area("Bukit Timah")))
+                .build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + AREA_DESC_AMY,
+                new EditCommand(targetIndex, areaDescriptor));
+
+        EditPersonDescriptor housingDescriptor = new EditPersonDescriptorBuilder()
+                .withHousingTypes(Set.of(HousingType.HDB))
+                .build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + HOUSING_TYPE_DESC_AMY,
+                new EditCommand(targetIndex, housingDescriptor));
+    }
+
+    @Test
+    public void parse_clearEachRequirement_success() {
+        Index targetIndex = INDEX_FIRST_PERSON;
+
+        EditPersonDescriptor budgetDescriptor = new EditPersonDescriptorBuilder()
+                .withBudget(null)
+                .build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + " b/",
+                new EditCommand(targetIndex, budgetDescriptor));
+
+        EditPersonDescriptor priceDescriptor = new EditPersonDescriptorBuilder()
+                .withAskingPrice(null)
+                .build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + " s/",
+                new EditCommand(targetIndex, priceDescriptor));
+
+        EditPersonDescriptor areaDescriptor = new EditPersonDescriptorBuilder()
+                .withAreas(Set.of())
+                .build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + " l/",
+                new EditCommand(targetIndex, areaDescriptor));
+
+        EditPersonDescriptor housingDescriptor = new EditPersonDescriptorBuilder()
+                .withHousingTypes(Set.of())
+                .build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + " h/",
+                new EditCommand(targetIndex, housingDescriptor));
+    }
+
+    @Test
+    public void parse_invalidRequirement_failure() {
+        assertParseFailure(parser, "1" + INVALID_BUDGET_MONEY_DESC, Price.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1" + INVALID_BUDGET_DESC, Budget.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1" + INVALID_PRICE_DESC, Price.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1" + INVALID_AREA_DESC, Area.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1" + INVALID_HOUSING_TYPE_DESC, HousingType.MESSAGE_CONSTRAINTS);
+
+        // an empty prefix may clear a field, but it cannot be combined with a value
+        assertParseFailure(parser, "1 l/ l/Orchard", Area.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 h/ h/HDB", HousingType.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_repeatedBudgetOrPrice_failure() {
+        assertParseFailure(parser, "1" + BUDGET_DESC_AMY + BUDGET_DESC_AMY,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_BUDGET));
+        assertParseFailure(parser, "1" + ASKING_PRICE_DESC_AMY + ASKING_PRICE_DESC_AMY,
+                Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ASKING_PRICE));
     }
 }

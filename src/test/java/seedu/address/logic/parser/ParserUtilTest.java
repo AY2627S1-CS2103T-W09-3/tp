@@ -13,9 +13,13 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Address;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Price;
 import seedu.address.model.tag.Tag;
 
 public class ParserUtilTest {
@@ -31,6 +35,14 @@ public class ParserUtilTest {
     private static final String VALID_EMAIL = "rachel@example.com";
     private static final String VALID_TAG_1 = "friend";
     private static final String VALID_TAG_2 = "neighbour";
+    private static final String VALID_BUDGET = "1,000-2,000";
+    private static final String VALID_PRICE = "1,500";
+    private static final String VALID_AREA = "Bukit Timah";
+    private static final String VALID_HOUSING_TYPE = "hdb";
+    private static final String INVALID_BUDGET = "2000-1000";
+    private static final String INVALID_PRICE = "0";
+    private static final String INVALID_AREA = "Atlantis";
+    private static final String INVALID_HOUSING_TYPE = "Apartment";
 
     private static final String WHITESPACE = " \t\r\n";
 
@@ -190,5 +202,105 @@ public class ParserUtilTest {
         Set<Tag> expectedTagSet = Set.of(new Tag(VALID_TAG_1), new Tag(VALID_TAG_2));
 
         assertEquals(expectedTagSet, actualTagSet);
+    }
+
+    @Test
+    public void parseBudget_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseBudget(null));
+    }
+
+    @Test
+    public void parseBudget_invalidMoney_throwsParseException() {
+        assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBudget("1000"));
+        assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBudget("1000-2000-3000"));
+    }
+
+    @Test
+    public void parseBudget_reversedRange_throwsParseException() {
+        assertThrows(ParseException.class, Budget.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBudget(INVALID_BUDGET));
+    }
+
+    @Test
+    public void parseBudget_validRange_returnsBudget() throws Exception {
+        Budget expectedBudget = new Budget(new Price("1000"), new Price("2000"));
+        assertEquals(expectedBudget, ParserUtil.parseBudget(VALID_BUDGET));
+        assertEquals(expectedBudget, ParserUtil.parseBudget(WHITESPACE + "1000 - 2000" + WHITESPACE));
+    }
+
+    @Test
+    public void parsePrice_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parsePrice(null));
+    }
+
+    @Test
+    public void parsePrice_invalidValue_throwsParseException() {
+        assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parsePrice(INVALID_PRICE));
+    }
+
+    @Test
+    public void parsePrice_validValue_returnsPrice() throws Exception {
+        assertEquals(new Price("1500"), ParserUtil.parsePrice(VALID_PRICE));
+        assertEquals(new Price("1500"), ParserUtil.parsePrice(WHITESPACE + VALID_PRICE + WHITESPACE));
+    }
+
+    @Test
+    public void parseArea_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseArea(null));
+    }
+
+    @Test
+    public void parseArea_invalidValue_throwsParseException() {
+        assertThrows(ParseException.class, Area.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseArea(INVALID_AREA));
+    }
+
+    @Test
+    public void parseArea_validValue_returnsArea() throws Exception {
+        assertEquals(new Area(VALID_AREA), ParserUtil.parseArea(VALID_AREA.toLowerCase()));
+        assertEquals(new Area(VALID_AREA), ParserUtil.parseArea(WHITESPACE + VALID_AREA + WHITESPACE));
+    }
+
+    @Test
+    public void parseAreas_collectionWithValidAreas_returnsDeduplicatedSet() throws Exception {
+        Set<Area> actualAreas = ParserUtil.parseAreas(List.of("Orchard", "orchard", VALID_AREA));
+        Set<Area> expectedAreas = Set.of(new Area("Orchard"), new Area(VALID_AREA));
+
+        assertEquals(expectedAreas, actualAreas);
+    }
+
+    @Test
+    public void parseAreas_collectionWithInvalidArea_throwsParseException() {
+        assertThrows(ParseException.class, Area.MESSAGE_CONSTRAINTS, ()
+                -> ParserUtil.parseAreas(List.of(VALID_AREA, INVALID_AREA)));
+    }
+
+    @Test
+    public void parseHousingType_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseHousingType(null));
+    }
+
+    @Test
+    public void parseHousingType_invalidValue_throwsParseException() {
+        assertThrows(ParseException.class, HousingType.MESSAGE_CONSTRAINTS, ()
+                -> ParserUtil.parseHousingType(INVALID_HOUSING_TYPE));
+    }
+
+    @Test
+    public void parseHousingType_validValue_returnsHousingType() throws Exception {
+        assertEquals(HousingType.HDB, ParserUtil.parseHousingType(VALID_HOUSING_TYPE));
+        assertEquals(HousingType.HDB, ParserUtil.parseHousingType(WHITESPACE + "HDB" + WHITESPACE));
+    }
+
+    @Test
+    public void parseHousingTypes_collectionWithValidTypes_returnsDeduplicatedSet() throws Exception {
+        Set<HousingType> actualTypes = ParserUtil.parseHousingTypes(List.of("hdb", "HDB", "Condo"));
+        Set<HousingType> expectedTypes = Set.of(HousingType.HDB, HousingType.CONDO);
+
+        assertEquals(expectedTypes, actualTypes);
+    }
+
+    @Test
+    public void parseHousingTypes_collectionWithInvalidType_throwsParseException() {
+        assertThrows(ParseException.class, HousingType.MESSAGE_CONSTRAINTS, ()
+                -> ParserUtil.parseHousingTypes(List.of("HDB", INVALID_HOUSING_TYPE)));
     }
 }

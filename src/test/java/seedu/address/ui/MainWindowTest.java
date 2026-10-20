@@ -25,6 +25,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
@@ -39,6 +40,7 @@ import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.ModelManager;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
@@ -190,6 +192,64 @@ public class MainWindowTest {
     }
 
     @Test
+    public void layout_compactMainWindow_showsThreeCompleteClientCards() throws Exception {
+        runOnFxThread(() -> {
+            List<Person> clients = List.of(
+                    new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
+                            .withPhone("90000001").withEmail("alexandra.elizabeth.montgomery@example.com")
+                            .withRole(ClientRole.BOTH)
+                            .withTags("firsttime", "urgent").build(),
+                    new PersonBuilder().withName("Alicia Tan").withPhone("90000002")
+                            .withEmail("alicia@example.com").withRole(ClientRole.BUYER)
+                            .withTags("firsttime").build(),
+                    new PersonBuilder().withName("Priya Nair").withPhone("90000003")
+                            .withEmail("priya@example.com").withRole(ClientRole.SELLER).withTags().build(),
+                    new PersonBuilder().withName("Ravi Kumar").withPhone("90000004")
+                            .withEmail("ravi@example.com").withRole(ClientRole.BUYER).build(),
+                    new PersonBuilder().withName("Cheryl Goh").withPhone("90000005")
+                            .withEmail("cheryl@example.com").withRole(ClientRole.BOTH).build());
+            ModelManager model = new ModelManager();
+            clients.forEach(model::addPerson);
+            MainWindow window = openWindow(model);
+            try {
+                // Exercise the complete window at a compact logical size, not actual OS display scaling.
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                root.resize(853, 480);
+                root.applyCss();
+                root.layout();
+
+                ListView<?> personList = (ListView<?>) root.lookup("#personListView");
+                Bounds listBounds = personList.localToScene(personList.getLayoutBounds());
+                List<ListCell<?>> firstThree = personList.lookupAll(".list-cell").stream()
+                        .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < 3)
+                        .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
+                assertEquals(3, firstThree.size());
+                for (ListCell<?> cell : firstThree) {
+                    Bounds bounds = cell.localToScene(cell.getLayoutBounds());
+                    assertTrue(bounds.getMinY() >= listBounds.getMinY());
+                    assertTrue(bounds.getMaxY() <= listBounds.getMaxY());
+                    Region card = (Region) cell.getGraphic();
+                    Label name = (Label) card.lookup("#name");
+                    assertEquals(70, card.getHeight(), 0.01);
+                    assertEquals(clients.get(cell.getIndex()).getName().fullName, name.getText());
+                    assertFalse(name.isWrapText());
+                    assertFalse(((Label) card.lookup("#email")).isWrapText());
+                    assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().size());
+                }
+                for (String id : List.of("commandTextField", "resultDisplayPlaceholder", "personList",
+                        "detailPanePlaceholder", "emptyState", "clientCountStatus")) {
+                    assertInsideViewport(root.lookup("#" + id), 853, 480);
+                }
+                Label placeholder = (Label) root.lookup("#emptyState");
+                assertEquals("Select a client to see details.", placeholder.getText());
+                assertEquals("5 clients", ((Label) root.lookup("#clientCountStatus")).getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
     public void execute_parseFailureThenSuccess_resetsErrorFeedback() throws Exception {
         assertFailureAndRecovery("find", String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
     }
@@ -216,7 +276,7 @@ public class MainWindowTest {
                 ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
 
                 enterCommand(window, commandBox, "find aMY");
-                assertEquals("1 client listed!", feedback.getText());
+                assertEquals("Showing 1 of 2 clients.", feedback.getText());
                 assertEquals(List.of(AMY), personList.getItems());
 
                 String expectedError = "Error: "
@@ -234,7 +294,7 @@ public class MainWindowTest {
                 assertFalse(feedback.getStyleClass().contains("error"));
 
                 enterCommand(window, commandBox, "find Nobody");
-                assertEquals("No clients found", feedback.getText());
+                assertEquals("Showing 0 of 2 clients.", feedback.getText());
                 assertFalse(feedback.getStyleClass().contains("error"));
                 assertEquals(List.of(), personList.getItems());
 
