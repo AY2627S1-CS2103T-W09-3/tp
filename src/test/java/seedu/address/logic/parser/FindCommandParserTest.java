@@ -17,7 +17,7 @@ public class FindCommandParserTest {
     @Test
     public void parse_emptyArg_throwsParseException() {
         String expectedMessage = "Invalid command format!\n"
-                + "find: Finds clients by name, phone or email.\n"
+                + "find: Finds clients whose name, phone or email contains any keyword.\n"
                 + "Parameters: KEYWORD [MORE_KEYWORDS]\n"
                 + "Example: find John";
         assertParseFailure(parser, "", expectedMessage);

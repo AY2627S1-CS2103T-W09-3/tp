@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
+import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
+import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.ELLE;
 import static seedu.address.testutil.TypicalPersons.FIONA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
@@ -54,7 +57,7 @@ public class FindCommandTest {
 
     @Test
     public void execute_nonMatchingKeyword_noPersonFound() {
-        String expectedMessage = "No clients found";
+        String expectedMessage = "Showing 0 of 7 clients.";
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Nobody");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
@@ -63,23 +66,67 @@ public class FindCommandTest {
     }
 
     @Test
-    public void execute_oneMatchingClient_usesSingularFeedback() {
+    public void execute_oneMatchingClient_showsCount() {
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Elle");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
 
-        assertCommandSuccess(command, model, "1 client listed!", expectedModel);
+        assertCommandSuccess(command, model, "Showing 1 of 7 clients.", expectedModel);
         assertEquals(List.of(ELLE), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_multipleKeywords_multiplePersonsFound() {
-        String expectedMessage = "3 clients listed!";
+        String expectedMessage = "Showing 3 of 7 clients.";
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Kurz Elle Kunz");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
         assertEquals(List.of(CARL, ELLE, FIONA), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_partialNameKeyword_findsClientsContainingIt() {
+        // "eie" appears inside Meier only
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("eie");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "Showing 2 of 7 clients.", expectedModel);
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_partialPhoneKeyword_findsClientsContainingIt() {
+        // "9435" appears inside Alice's phone only
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("9435");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "Showing 1 of 7 clients.", expectedModel);
+        assertEquals(List.of(ALICE), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_partialEmailKeyword_findsClientsContainingIt() {
+        // every typical client has an example.com address
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("example");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "Showing 7 of 7 clients.", expectedModel);
+        assertEquals(7, model.getFilteredPersonList().size());
+    }
+
+    @Test
+    public void execute_oneCharacterKeyword_findsOnlyClientsContainingIt() {
+        // "z" appears in Kurz and Kunz, and in heinz@example.com
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("z");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "Showing 2 of 7 clients.", expectedModel);
+        assertEquals(List.of(CARL, FIONA), model.getFilteredPersonList());
     }
 
     @Test
