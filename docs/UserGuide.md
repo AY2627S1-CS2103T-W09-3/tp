@@ -182,29 +182,30 @@ For example, if the first displayed client is John Doe, `role 1 buyer` displays:
 
 ### Finding clients: `find`
 
-Finds clients by name, phone number, or email address.
+Finds clients whose name, phone number, or email address contains a keyword.
 
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
-* Name searches match whole words, ignoring case. For example, `john` matches `John Doe`, but `Joh` does not.
-* Phone searches require the complete phone number.
-* Email searches require the complete email address, ignoring case.
-* Partial phone numbers and partial email addresses do not match.
-* Multiple keywords use OR matching: a client appears if any keyword matches their name, phone number, or email.
+* A keyword matches any part of a name, phone number, or email address, ignoring case. The part can be at the start, in the middle, or at the end.
+  For example, `ali` matches `Alicia Tan`, `8456` matches `84567890`, and `raj.k` matches `raj.kumar@example.com`.
+* Multiple keywords use OR matching: a client appears if any keyword matches their name, phone number, or email address.
 * Keyword order does not matter.
+* Short keywords match many clients. For example, `a` appears in every sample client's email address, so it shows all of them.
+  Check the count in the result line, and type more of the name, phone number, or email address to narrow the list.
 * Entering `find` without keywords shows an error and leaves the displayed list unchanged.
 * Use `list` to show all clients again.
-* If no clients match, the result shows `No clients found`.
-* If one client matches, the result shows `1 client listed!`.
-* If multiple clients match, the result shows the number of matches,
-  e.g. `2 clients listed!`.
+* The result line shows how many clients are displayed out of all clients, e.g. `Showing 2 of 5 clients.`.
+  It says `clients` even when the number is 1, e.g. `Showing 1 of 5 clients.`.
+* If no clients match, the result shows `Showing 0 of 5 clients.`.
 
 Examples using the sample clients:
 
-* `find Alicia` finds Alicia Tan by name.
-* `find 81234567` finds Alicia Tan by her complete phone number.
-* `find alicia.tan@example.com` finds Alicia Tan by her complete email address.
+* `find ali` finds Alicia Tan by part of her name.
+* `find 8456` finds Raj Kumar by part of his phone number, `84567890`.
+* `find raj.k` finds Raj Kumar by part of his email address, `raj.kumar@example.com`.
 * `find Alicia 82345678` finds Alicia Tan by name and Benjamin Lim by phone number.
+* `find 5678` finds Benjamin Lim, Nur Aisyah, Raj Kumar and Cheryl Goh, because all four phone numbers contain `5678`.
+  The result shows `Showing 4 of 5 clients.`.
 
 ### Deleting a client: `delete`
 
