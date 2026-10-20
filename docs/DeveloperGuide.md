@@ -287,8 +287,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | property agent | view a selected client's full details | quickly understand the client's information and requirements |
 | `* * *` | property agent | edit a client's contact details | keep the client's record accurate when their details change |
 | `* * *` | property agent | delete a wrongly created contact | remove records that should not exist |
-| `* * *` | property agent | find a client using one or more whole words from the client's name | locate the client's details without going through the entire list |
-| `* * *` | property agent | find a client using their phone number or email address | identify an incoming caller or message quickly |
+| `* * *` | property agent | find a client using any part of the client's name | locate the client's details without going through the entire list |
+| `* * *` | property agent | find a client using any part of their phone number or email address | identify an incoming caller or message quickly |
 | `* * *` | property agent | record whether a client is a buyer, seller, or both | understand my relationship with the client at a glance |
 | `* * *` | property agent | record a client's address | retain the client's important contact information |
 | `* * *` | property agent | record a buyer's budget range | avoid proposing properties outside the buyer's means |
@@ -376,7 +376,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 **MSS**
 
-1. Agent requests to find a client using one or more whole words from the client's name.
+1. Agent requests to find a client using one or more keywords that match part of the client's name, phone number or email address.
 2. EstateBookUltraProMax displays a list of matching clients.
 3. Agent identifies a client from the displayed results and requests changes to the client's contact details.
 4. EstateBookUltraProMax updates the specified details and displays the updated client.
@@ -646,7 +646,7 @@ testers are expected to do more *exploratory* testing.
 1. Changing the role of a client in filtered results
 
    1. Test case: `find Benjamin`<br>
-      Expected: Only `Benjamin Lim` is displayed, at index 1. The result box shows `1 client listed!`.
+      Expected: Only `Benjamin Lim` is displayed, at index 1. The result box shows `Showing 1 of 5 clients.`.
 
    1. Test case: `role 1 seller`<br>
       Expected: Benjamin's badge changes to `Seller`, even though he is client 2 in the full list. The search stays active,
