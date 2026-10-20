@@ -50,6 +50,17 @@ inside the viewport and that the detail pane displays `Select a client to see de
 This is a logical-size check, **not an operating-system display-scaling check**. Resizing the root does not
 change the display scale or font metrics. The manual checks below are still required.
 
+### Detail panel checks
+
+Run `./gradlew test --tests seedu.address.ui.DetailPaneTest --tests seedu.address.ui.MainWindowTest`.
+The panel tests use real client fields to check formatting, optional-row visibility, switching clients,
+clearing the panel, and wrapping and scrolling a 500-character note.
+The main-window tests check the embedded panel at 853 × 480 and 820 × 440 logical pixels.
+
+These tests populate the panel through `setPerson`; row-click and `view` selection wiring belongs to issue #101.
+Actual operating-system display-scaling verification is tracked in
+[issue #123](https://github.com/AY2627S1-CS2103T-W09-3/tp/issues/123) and remains unverified.
+
 ### Manual display-scaling checks
 
 Use a display and operating system that support each configuration below. Set the actual screen resolution
@@ -70,7 +81,7 @@ For each configuration:
 1. Record the app commit, operating system, screen resolution, actual display scale, pass/fail result,
    and a screenshot. Restore your usual display settings afterwards.
 
-The actual display-scaling checks for issue #88 are not yet verified:
+The actual display-scaling checks tracked in issue #123 are not yet verified:
 
 | Screen resolution | Actual display scale | Result |
 | ----------------- | -------------------- | ------ |

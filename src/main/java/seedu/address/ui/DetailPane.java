@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
@@ -11,7 +12,9 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import seedu.address.model.person.Area;
 import seedu.address.model.person.ClientRole;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
 
 /**
@@ -77,10 +80,8 @@ public class DetailPane extends UiPart<Region> {
         tags.getChildren().clear();
         setShown(tagsRow, false);
 
-        // TODO: Supply the real Person values once the model changes in #87 and #93 are integrated.
-        setAdditionalDetails(null, null, null, null, null);
-
         if (person == null) {
+            setAdditionalDetails(null, null, null, null, null);
             for (Label label : List.of(name, phone, email, address)) {
                 label.setText("");
             }
@@ -93,6 +94,13 @@ public class DetailPane extends UiPart<Region> {
         email.setText(person.getEmail().value);
         address.setText(person.getAddress().value);
         setRole(person.getRole());
+        setAdditionalDetails(
+                person.getBudget() == null ? null : person.getBudget().toString(),
+                person.getAskingPrice() == null ? null : person.getAskingPrice().getDisplayValue(),
+                person.getAreas().stream().map(Area::getValue).sorted().collect(Collectors.joining(", ")),
+                person.getHousingTypes().stream().map(HousingType::getDisplayValue).sorted()
+                        .collect(Collectors.joining(", ")),
+                person.getNote() == null ? null : person.getNote().value);
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> {
@@ -110,10 +118,10 @@ public class DetailPane extends UiPart<Region> {
     }
 
     /**
-     * Renders formatted optional values. This also allows layout previews while the model changes are pending.
+     * Renders formatted optional values.
      * Null or blank values hide their entire row; note line breaks are preserved.
      */
-    void setAdditionalDetails(String budgetText, String askingPriceText, String areasText,
+    private void setAdditionalDetails(String budgetText, String askingPriceText, String areasText,
             String housingTypesText, String noteText) {
         setRow(budgetRow, budget, budgetText);
         setRow(askingPriceRow, askingPrice, askingPriceText);

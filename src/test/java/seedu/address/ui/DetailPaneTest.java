@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -20,12 +21,16 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Price;
 import seedu.address.testutil.PersonBuilder;
 
 /**
- * Tests the standalone detail panel before the model and main-window dependencies are integrated.
+ * Tests client data, empty states and wrapping in the detail panel.
  */
 public class DetailPaneTest {
     @BeforeAll
@@ -103,20 +108,23 @@ public class DetailPaneTest {
     }
 
     @Test
-    public void setAdditionalDetails_previewValues_showsRowsInOrder() throws Exception {
+    public void setPerson_allFields_showsFormattedRowsInOrder() throws Exception {
         runOnFxThread(() -> {
             DetailPane pane = new DetailPane();
-            pane.setPerson(new PersonBuilder().withTags("urgent", "buyer").build());
-            pane.setAdditionalDetails("$800,000 – $1,200,000", "$950,000", "Bishan, Toa Payoh",
-                    "HDB, Condo", "Call after work.\nPrefers weekend viewings.");
+            pane.setPerson(new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent", "buyer")
+                    .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                    .withAskingPrice(new Price("950000"))
+                    .withAreas(Set.of(new Area("Toa Payoh"), new Area("Bishan")))
+                    .withHousingTypes(Set.of(HousingType.HDB, HousingType.CONDO))
+                    .withNote("Call after work.\nPrefers weekend viewings.").build());
             layout(pane, 380, 400);
 
             assertEquals(List.of("nameRow", "phoneRow", "emailRow", "addressRow", "budgetRow", "askingPriceRow",
                     "preferredAreasRow", "housingTypesRow", "noteRow", "tagsRow"), visibleRows(pane));
-            assertEquals("$800,000 – $1,200,000", label(pane, "budget").getText());
+            assertEquals("$800,000 to $1,200,000", label(pane, "budget").getText());
             assertEquals("$950,000", label(pane, "askingPrice").getText());
             assertEquals("Bishan, Toa Payoh", label(pane, "preferredAreas").getText());
-            assertEquals("HDB, Condo", label(pane, "housingTypes").getText());
+            assertEquals("Condo, HDB", label(pane, "housingTypes").getText());
             assertEquals("Call after work.\nPrefers weekend viewings.", label(pane, "note").getText());
             FlowPane tags = (FlowPane) pane.getRoot().lookup("#tags");
             assertEquals(List.of("buyer", "urgent"), tags.getChildren().stream()
@@ -125,15 +133,15 @@ public class DetailPaneTest {
     }
 
     @Test
-    public void setAdditionalDetails_missingValues_hidesEntireRows() throws Exception {
+    public void setPerson_someOptionalFields_showsOnlyPopulatedRows() throws Exception {
         runOnFxThread(() -> {
             DetailPane pane = new DetailPane();
-            pane.setPerson(new PersonBuilder().build());
-            pane.setAdditionalDetails(null, "", "   ", "HDB", "\n ");
+            pane.setPerson(new PersonBuilder().withHousingTypes(Set.of(HousingType.HDB)).build());
             layout(pane, 380, 400);
 
             assertEquals(List.of("nameRow", "phoneRow", "emailRow", "addressRow", "housingTypesRow"),
                     visibleRows(pane));
+            assertEquals("HDB", label(pane, "housingTypes").getText());
             for (String row : List.of("budgetRow", "askingPriceRow", "preferredAreasRow", "noteRow", "tagsRow")) {
                 assertShown(pane.getRoot().lookup("#" + row), false);
             }
@@ -144,8 +152,12 @@ public class DetailPaneTest {
     public void setPerson_switchAndClear_removesPreviousDetailsAndResetsScroll() throws Exception {
         runOnFxThread(() -> {
             DetailPane pane = new DetailPane();
-            pane.setPerson(new PersonBuilder().withRole(ClientRole.BUYER).withTags("urgent").build());
-            pane.setAdditionalDetails("$800,000", "$950,000", "Bishan", "HDB", "Private note.\n".repeat(30));
+            Person fullClient = new PersonBuilder().withRole(ClientRole.BUYER).withTags("urgent")
+                    .withBudget(new Budget(new Price("800000"), new Price("800000")))
+                    .withAskingPrice(new Price("950000"))
+                    .withAreas(Set.of(new Area("Bishan"))).withHousingTypes(Set.of(HousingType.HDB))
+                    .withNote("Private note.\n".repeat(30)).build();
+            pane.setPerson(fullClient);
             layout(pane, 380, 280);
             ScrollPane scroll = (ScrollPane) pane.getRoot().lookup("#detailScroll");
             scroll.setVvalue(1);
@@ -164,10 +176,22 @@ public class DetailPaneTest {
                 assertEquals("", label(pane, value).getText());
             }
 
+            pane.setPerson(fullClient);
+            layout(pane, 380, 280);
+            scroll.setVvalue(1);
             pane.setPerson(null);
             assertShown(scroll, false);
             assertShown(pane.getRoot().lookup("#emptyState"), true);
-            assertEquals("", label(pane, "name").getText());
+            assertEquals(0, scroll.getVvalue());
+            assertTrue(((FlowPane) pane.getRoot().lookup("#tags")).getChildren().isEmpty());
+            for (String value : List.of("name", "phone", "email", "address", "role", "budget", "askingPrice",
+                    "preferredAreas", "housingTypes", "note")) {
+                assertEquals("", label(pane, value).getText());
+            }
+            for (String row : List.of("budgetRow", "askingPriceRow", "preferredAreasRow",
+                    "housingTypesRow", "noteRow", "tagsRow")) {
+                assertShown(pane.getRoot().lookup("#" + row), false);
+            }
         });
     }
 
@@ -184,16 +208,19 @@ public class DetailPaneTest {
     private static void assertLongValuesWrapAndScrollToLastRow(String tagStyle) throws Exception {
         runOnFxThread(() -> {
             DetailPane pane = new DetailPane();
+            String noteText = "First line ".repeat(15) + "\n" + "Second line ".repeat(14) + "\n"
+                    + "Third line ".repeat(15).stripTrailing() + ".";
+            assertEquals(500, noteText.length());
             Person person = new PersonBuilder().withName("A very long client name ".repeat(5).trim())
                     .withRole(ClientRole.BOTH).withEmail("longemail".repeat(10) + "@example.com")
                     .withAddress("A long address with building and unit details ".repeat(8).trim())
-                    .withTags("urgent", "longtag".repeat(30)).build();
-            String noteText = "First line ".repeat(15) + "\n" + "Second line ".repeat(14) + "\n"
-                    + "Third line ".repeat(15);
-            assertEquals(500, noteText.length());
+                    .withTags("urgent", "longtag".repeat(30))
+                    .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                    .withAskingPrice(new Price("950000"))
+                    .withAreas(Set.of(new Area("Bishan"), new Area("Toa Payoh")))
+                    .withHousingTypes(Set.of(HousingType.HDB, HousingType.CONDO))
+                    .withNote(noteText).build();
             pane.setPerson(person);
-            pane.setAdditionalDetails("$800,000 – $1,200,000", "$950,000", "Bishan, Toa Payoh",
-                    "HDB, Condo", noteText);
             // A 380-wide detail pane must fit within the 853 x 480 logical-pixel target window.
             layout(pane, 380, 280);
             FlowPane tags = (FlowPane) pane.getRoot().lookup("#tags");
