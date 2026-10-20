@@ -1,0 +1,28 @@
+@startuml
+skin rose
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+start
+:User executes filter command;
+
+'Since the beta syntax does not support placing the condition outside the
+'diamond we place it as the true branch instead.
+
+if () then ([input is valid])
+    :Build predicate from the role and the tags;
+    :Replace the active predicate
+    (any earlier filter or find is discarded);
+    :Show "Showing X of Y clients.";
+else ([else])
+    :Show error;
+    stop
+endif
+
+:User executes add, edit, delete, role or note;
+:Change the address book;
+:Keep the active predicate;
+:Update the displayed list
+(a client who matches is shown,
+a client who does not match is hidden);
+stop
+@enduml
