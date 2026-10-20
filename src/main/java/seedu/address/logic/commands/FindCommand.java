@@ -14,7 +14,8 @@ public class FindCommand extends Command {
 
     public static final String COMMAND_WORD = "find";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds clients by name, phone or email.\n"
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Finds clients whose name, phone or email contains any keyword.\n"
             + "Parameters: KEYWORD [MORE_KEYWORDS]\n"
             + "Example: " + COMMAND_WORD + " John";
 
