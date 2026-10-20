@@ -58,8 +58,12 @@ clearing the panel, and wrapping and scrolling a 500-character note.
 The main-window tests check the embedded panel at 853 × 480 and 820 × 440 logical pixels.
 
 These tests populate the panel through `setPerson`; row-click and `view` selection wiring belongs to issue #101.
-Actual operating-system display-scaling verification is tracked in
-[issue #123](https://github.com/AY2627S1-CS2103T-W09-3/tp/issues/123) and remains unverified.
+The Windows display-scaling results in
+[issue #123](https://github.com/AY2627S1-CS2103T-W09-3/tp/issues/123) apply to the original PR #112 build,
+commit `4c0c4e47`, before this detail panel was added. They do not verify the populated panel.
+Before completing [issue #96](https://github.com/AY2627S1-CS2103T-W09-3/tp/issues/96), check that a
+500-character note wraps and scrolls without clipping at an actual 1280 × 720 resolution with 150% display scaling.
+Record the tested commit and results separately from the earlier build's results.
 
 ### Manual display-scaling checks
 
@@ -81,7 +85,7 @@ For each configuration:
 1. Record the app commit, operating system, screen resolution, actual display scale, pass/fail result,
    and a screenshot. Restore your usual display settings afterwards.
 
-The actual display-scaling checks tracked in issue #123 are not yet verified:
+The actual display-scaling checks for issue #88 are not yet verified:
 
 | Screen resolution | Actual display scale | Result |
 | ----------------- | -------------------- | ------ |

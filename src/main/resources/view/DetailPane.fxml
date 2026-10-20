@@ -73,7 +73,8 @@
       </VBox>
       <VBox fx:id="tagsRow" spacing="6" minHeight="-Infinity" visible="false" managed="false">
         <Label text="Tags" styleClass="detail-caption" />
-        <FlowPane fx:id="tags" minWidth="0" minHeight="-Infinity" prefWrapLength="0" />
+        <FlowPane fx:id="tags" minWidth="0" minHeight="-Infinity" prefWrapLength="0"
+                  hgap="7" vgap="3" />
       </VBox>
     </VBox>
   </ScrollPane>
