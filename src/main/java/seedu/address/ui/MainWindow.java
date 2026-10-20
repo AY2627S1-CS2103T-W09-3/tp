@@ -124,6 +124,8 @@ public class MainWindow extends UiPart<Stage> {
 
         detailPane = new DetailPane();
         detailPanePlaceholder.getChildren().add(detailPane.getRoot());
+        personListPanel.selectedPersonProperty().addListener((observable, oldPerson, newPerson) ->
+                detailPane.setPerson(newPerson));
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
@@ -192,6 +194,8 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
+            commandResult.getViewIndex().ifPresentOrElse(personListPanel::selectPerson,
+                    personListPanel::clearSelection);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             if (commandResult.isAwaitingConfirmation()) {
                 resultDisplay.setPendingFeedbackToUser(commandResult.getFeedbackToUser());

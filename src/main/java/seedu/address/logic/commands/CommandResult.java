@@ -21,7 +21,7 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
-    /** Index of the client to view, or null if no view is requested. */
+    /** Index in the post-command filtered list to select, or null to clear the selection. */
     private final Index viewIndex;
 
     /** The user must confirm before the command takes effect. */
@@ -63,7 +63,8 @@ public class CommandResult {
 
     /**
      * Constructs a {@code CommandResult} requesting a view of the client at {@code viewIndex}.
-     * The index must not be null and refers to the currently displayed client list.
+     * The index must not be null and refers to the filtered list after the command has finished.
+     * Mutation commands must locate the updated client in that list, rather than reuse its old index.
      */
     public CommandResult(String feedbackToUser, Index viewIndex) {
         this(feedbackToUser, false, false, false, requireNonNull(viewIndex));
@@ -82,7 +83,10 @@ public class CommandResult {
     }
 
     /**
-     * Returns the requested client index, or an empty optional if no view is requested.
+     * Returns the client index to select in the post-command filtered list.
+     * An empty optional instructs the UI to clear its selection and detail panel.
+     * After edit, note or role, the index identifies the updated client if it remains visible;
+     * otherwise it is empty, even if a different client now occupies the old index.
      */
     public Optional<Index> getViewIndex() {
         return Optional.ofNullable(viewIndex);

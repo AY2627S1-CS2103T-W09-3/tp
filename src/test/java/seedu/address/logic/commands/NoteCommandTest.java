@@ -9,9 +9,11 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,7 +44,7 @@ public class NoteCommandTest {
         NoteCommand command = new NoteCommand(INDEX_FIRST_PERSON, new Note("Call again next Monday"));
         String expectedMessage = String.format(NoteCommand.MESSAGE_NOTE_UPDATED, editedPerson.getName());
 
-        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+        assertCommandSuccess(command, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
     }
 
     @Test
@@ -55,7 +57,8 @@ public class NoteCommandTest {
         NoteCommand command = new NoteCommand(INDEX_FIRST_PERSON, new Note("Replacement note"));
         String expectedMessage = String.format(NoteCommand.MESSAGE_NOTE_UPDATED, editedPerson.getName());
 
-        assertCommandSuccess(command, actualModel, expectedMessage, expectedModel);
+        assertCommandSuccess(command, actualModel,
+                new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
     }
 
     @Test
@@ -68,7 +71,8 @@ public class NoteCommandTest {
         NoteCommand command = new NoteCommand(INDEX_FIRST_PERSON);
         String expectedMessage = String.format(NoteCommand.MESSAGE_NOTE_CLEARED, clearedPerson.getName());
 
-        assertCommandSuccess(command, actualModel, expectedMessage, expectedModel);
+        assertCommandSuccess(command, actualModel,
+                new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
         assertNull(actualModel.getFilteredPersonList().get(0).getNote());
     }
 
@@ -85,8 +89,23 @@ public class NoteCommandTest {
         NoteCommand command = new NoteCommand(INDEX_FIRST_PERSON, new Note("Filtered note"));
         String expectedMessage = String.format(NoteCommand.MESSAGE_NOTE_UPDATED, editedPerson.getName());
 
-        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+        assertCommandSuccess(command, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
         assertEquals(1, model.getFilteredPersonList().size());
+    }
+
+    @Test
+    public void execute_clearLeavesPredicate_doesNotSelectClientMovingIntoOldIndex() throws Exception {
+        Person original = new PersonBuilder().withNote("Old note").build();
+        Person nextClient = new PersonBuilder(BOB).withNote("Another note").build();
+        Model actualModel = modelContaining(original);
+        actualModel.addPerson(nextClient);
+        // The shipped filters do not search notes; exercise the contract with a note-dependent predicate.
+        actualModel.updateFilteredPersonList(person -> person.getNote() != null);
+
+        CommandResult result = new NoteCommand(INDEX_FIRST_PERSON).execute(actualModel);
+
+        assertEquals(List.of(nextClient), actualModel.getFilteredPersonList());
+        assertTrue(result.getViewIndex().isEmpty());
     }
 
     @Test
