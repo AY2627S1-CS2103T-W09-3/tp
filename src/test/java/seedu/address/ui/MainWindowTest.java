@@ -39,8 +39,10 @@ import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.ModelManager;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Price;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -191,6 +193,88 @@ public class MainWindowTest {
                 Label placeholder = (Label) root.lookup("#detailPlaceholderMessage");
                 assertEquals("Select a client to see details.", placeholder.getText());
                 assertEquals("5 clients", ((Label) root.lookup("#clientCountStatus")).getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void layout_compactMainWindow_requirementsCardsFitAndLastCardIsReachable() throws Exception {
+        runOnFxThread(() -> {
+            List<Person> clients = List.of(
+                    new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
+                            .withPhone("90000001").withEmail("alexandra.elizabeth.montgomery@example.com")
+                            .withRole(ClientRole.BUYER).withTags("firsttime", "urgent")
+                            .withBudget(new Budget(new Price("800000"), new Price("1200000"))).build(),
+                    new PersonBuilder().withName("Priya Nair").withPhone("90000002")
+                            .withEmail("priya@example.com").withRole(ClientRole.SELLER).withTags()
+                            .withAskingPrice(new Price("950000")).build(),
+                    new PersonBuilder().withName("Cheryl Goh").withPhone("90000003")
+                            .withEmail("cheryl@example.com").withRole(ClientRole.BOTH).withTags("upgrader")
+                            .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                            .withAskingPrice(new Price("1500000")).build());
+            ModelManager model = new ModelManager();
+            clients.forEach(model::addPerson);
+            MainWindow window = openWindow(model);
+            try {
+                // This is a logical-size check, not an actual OS display-scaling check.
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                root.resize(853, 480);
+                root.applyCss();
+                root.layout();
+
+                ListView<?> personList = (ListView<?>) root.lookup("#personListView");
+                Node viewport = personList.lookup(".clipped-container");
+                Bounds viewportBounds = viewport.localToScene(viewport.getLayoutBounds());
+                // Requirement cards have an extra row: two must fit fully; remaining cards are scrollable.
+                List<ListCell<?>> firstTwo = personList.lookupAll(".list-cell").stream()
+                        .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < 2)
+                        .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
+                assertEquals(2, firstTwo.size());
+                for (ListCell<?> cell : firstTwo) {
+                    Bounds bounds = cell.localToScene(cell.getLayoutBounds());
+                    assertTrue(bounds.getMinY() >= viewportBounds.getMinY() - 1);
+                    assertTrue(bounds.getMaxY() <= viewportBounds.getMaxY() + 1);
+                    Region card = (Region) cell.getGraphic();
+                    assertTrue(card.getHeight() > 70 && card.getHeight() <= 90);
+                    assertTrue(card.lookup("#requirementsSummary").isVisible());
+                    assertEquals(4, ((VBox) card.lookup("#cardContent")).getChildren().stream()
+                            .filter(Node::isManaged).count());
+                }
+
+                List<Double> originalHeights = firstTwo.stream()
+                        .map(cell -> cell.getGraphic().getLayoutBounds().getHeight()).toList();
+                personList.getSelectionModel().select(0);
+                root.applyCss();
+                root.layout();
+                // Newly recreated cell graphics need CSS before their content-sized heights are measured.
+                root.applyCss();
+                root.layout();
+                for (int i = 0; i < firstTwo.size(); i++) {
+                    double selectedHeight = firstTwo.get(i).getGraphic().getLayoutBounds().getHeight();
+                    assertEquals(originalHeights.get(i), selectedHeight, 0.01);
+                }
+                personList.scrollTo(clients.size() - 1);
+                root.layout();
+                root.applyCss();
+                root.layout();
+                ListCell<?> lastCell = personList.lookupAll(".list-cell").stream()
+                        .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty()
+                                && cell.getIndex() == clients.size() - 1)
+                        .map(node -> (ListCell<?>) node).findFirst().orElseThrow();
+                Bounds lastBounds = lastCell.localToScene(lastCell.getLayoutBounds());
+                assertTrue(lastBounds.getMinY() >= viewportBounds.getMinY() - 1);
+                assertTrue(lastBounds.getMaxY() <= viewportBounds.getMaxY() + 1);
+                Label summary = (Label) lastCell.getGraphic().lookup("#requirementsSummary");
+                assertTrue(summary.isVisible());
+                assertTrue(summary.getText().contains("Budget ") && summary.getText().contains("Asking "));
+                assertTrue(summary.localToScene(summary.getLayoutBounds()).getMaxY() <= viewportBounds.getMaxY() + 1);
+                for (String id : List.of("commandTextField", "resultDisplayPlaceholder", "detailPanePlaceholder",
+                        "saveLocationStatus", "clientCountStatus")) {
+                    assertInsideViewport(root.lookup("#" + id), 853, 480);
+                }
+                assertEquals("3 clients", ((Label) root.lookup("#clientCountStatus")).getText());
             } finally {
                 window.getRoot().close();
             }

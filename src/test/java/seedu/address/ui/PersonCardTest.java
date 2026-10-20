@@ -25,6 +25,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import seedu.address.model.person.Area;
 import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
@@ -156,6 +157,9 @@ public class PersonCardTest {
 
             ListView<?> personList = (ListView<?>) root.lookup("#personListView");
             personList.getSelectionModel().select(0);
+            root.applyCss();
+            root.layout();
+            // Selection can recreate cell graphics; apply their CSS before measuring computed heights.
             root.applyCss();
             root.layout();
 
@@ -349,17 +353,16 @@ public class PersonCardTest {
             Region root = new PersonCard(person, 1).getRoot();
             Scene scene = new Scene(root, 318, 90);
             scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
-            root.resize(318, 90);
-            root.applyCss();
-            root.layout();
+            layoutContentSizedCard(root, 318);
 
             Label summary = (Label) root.lookup("#requirementsSummary");
-            assertEquals(90, root.getHeight(), 0.01);
+            assertTrue(root.getHeight() > 70 && root.getHeight() <= 90);
             assertTrue(summary.getWidth() < summary.prefWidth(-1));
             assertEquals(OverrunStyle.ELLIPSIS, summary.getTextOverrun());
             assertFalse(summary.isWrapText());
             assertEquals(4, ((VBox) root.lookup("#cardContent")).getChildren().stream()
                     .filter(javafx.scene.Node::isManaged).count());
+            assertRowsFitWithoutOverlap(root);
             Bounds cardBounds = root.localToScene(root.getLayoutBounds());
             for (String id : List.of("identityRow", "contactRow", "tags", "requirementsSummary")) {
                 Region row = (Region) root.lookup("#" + id);
@@ -376,6 +379,50 @@ public class PersonCardTest {
     }
 
     @Test
+    public void layout_largerFonts_growsWithTextWithoutClippingRows()
+            throws ExecutionException, InterruptedException {
+        Person client = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent").build();
+        Person clientWithRequirements = new PersonBuilder(client)
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("950000")).build();
+        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+            for (Person person : List.of(client, clientWithRequirements)) {
+                Region root = new PersonCard(person, 1).getRoot();
+                Scene scene = new Scene(root, 700, 300);
+                scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+                layoutContentSizedCard(root, 700);
+                double originalHeight = root.getHeight();
+
+                root.lookupAll(".label").forEach(label -> label.setStyle("-fx-font-size: 28px;"));
+                layoutContentSizedCard(root, 700);
+
+                assertTrue(root.getHeight() > originalHeight, "Larger text must increase the card's height");
+                assertRowsFitWithoutOverlap(root);
+                // Measure the text independently: fixed row bounds alone would not detect clipped glyphs.
+                for (javafx.scene.Node node : root.lookupAll(".label")) {
+                    Label label = (Label) node;
+                    if (label.isVisible() && label.isManaged() && !label.getText().isEmpty()) {
+                        Text text = new Text(label.getText());
+                        text.setFont(label.getFont());
+                        double textHeight = text.getLayoutBounds().getHeight()
+                                + label.getInsets().getTop() + label.getInsets().getBottom()
+                                + label.getLabelPadding().getTop() + label.getLabelPadding().getBottom();
+                        assertTrue(label.getHeight() >= textHeight - 1,
+                                label.getId() + " must have enough height for its font");
+                    }
+                }
+
+                root.lookupAll(".label").forEach(label -> label.setStyle(""));
+                layoutContentSizedCard(root, 700);
+                assertEquals(originalHeight, root.getHeight(), 0.01);
+            }
+            return null;
+        });
+        Platform.runLater(checkCards);
+        checkCards.get();
+    }
+
+    @Test
     public void getRoleStyleClass_eachRole_returnsColourClass() {
         assertEquals("role-buyer", PersonCard.getRoleStyleClass(ClientRole.BUYER));
         assertEquals("role-seller", PersonCard.getRoleStyleClass(ClientRole.SELLER));
@@ -386,15 +433,43 @@ public class PersonCardTest {
             throws ExecutionException, InterruptedException {
         FutureTask<Void> checkCard = new FutureTask<>(() -> {
             Region root = new PersonCard(person, 1).getRoot();
+            Scene scene = new Scene(root, 318, 90);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            layoutContentSizedCard(root, 318);
             Label summary = (Label) root.lookup("#requirementsSummary");
             assertEquals(expected, summary.getText());
             assertEquals(!expected.isEmpty(), summary.isVisible());
             assertEquals(!expected.isEmpty(), summary.isManaged());
-            assertEquals(expected.isEmpty() ? 70 : 90, root.getPrefHeight());
+            if (expected.isEmpty()) {
+                assertEquals(70, root.getHeight(), 0.01);
+            } else {
+                assertTrue(root.getHeight() > 70 && root.getHeight() <= 90);
+            }
             return null;
         });
         Platform.runLater(checkCard);
         checkCard.get();
+    }
+
+    private static void layoutContentSizedCard(Region root, double width) {
+        // Allow tag visibility and the resulting preferred size to settle after CSS changes.
+        for (int i = 0; i < 3; i++) {
+            root.applyCss();
+            root.resize(width, root.prefHeight(width));
+            root.layout();
+        }
+    }
+
+    private static void assertRowsFitWithoutOverlap(Region root) {
+        VBox content = (VBox) root.lookup("#cardContent");
+        Bounds cardBounds = root.localToScene(root.getLayoutBounds());
+        double previousBottom = cardBounds.getMinY();
+        for (javafx.scene.Node row : content.getChildren().stream().filter(javafx.scene.Node::isManaged).toList()) {
+            Bounds bounds = row.localToScene(row.getLayoutBounds());
+            assertTrue(bounds.getMinY() >= previousBottom, "Card rows must not overlap");
+            assertTrue(bounds.getMaxY() <= cardBounds.getMaxY(), "Card rows must fit inside the card");
+            previousBottom = bounds.getMaxY();
+        }
     }
 
     private static Label createPersonCard(Person person)

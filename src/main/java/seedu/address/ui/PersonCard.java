@@ -35,8 +35,6 @@ public class PersonCard extends UiPart<Region> {
     public final Person person;
 
     @FXML
-    private HBox cardPane;
-    @FXML
     private Label name;
     @FXML
     private Label role;
@@ -92,10 +90,6 @@ public class PersonCard extends UiPart<Region> {
         boolean hasRequirements = !parts.isEmpty();
         requirementsSummary.setVisible(hasRequirements);
         requirementsSummary.setManaged(hasRequirements);
-        double height = hasRequirements ? 90 : 70;
-        cardPane.setMinHeight(height);
-        cardPane.setPrefHeight(height);
-        cardPane.setMaxHeight(height);
     }
 
     private void setRoleBadge(ClientRole clientRole) {

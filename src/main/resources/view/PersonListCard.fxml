@@ -8,15 +8,16 @@
 <?import javafx.scene.layout.VBox?>
 
 <!-- Let the list cell supply the card width instead of expanding to fit its text. -->
+<!-- Use the content's computed preferred height, including when the font changes. -->
 <HBox id="cardPane" fx:id="cardPane" minWidth="0" prefWidth="0"
-      minHeight="70" prefHeight="70" maxHeight="70"
+      minHeight="-Infinity" maxHeight="-Infinity"
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-  <VBox fx:id="cardContent" alignment="CENTER_LEFT" spacing="3" minWidth="0" HBox.hgrow="ALWAYS">
+  <VBox fx:id="cardContent" alignment="CENTER_LEFT" spacing="2" minWidth="0" minHeight="68" HBox.hgrow="ALWAYS">
     <padding>
       <Insets top="4" right="10" bottom="4" left="15" />
     </padding>
     <HBox fx:id="identityRow" spacing="4" alignment="CENTER_LEFT" minWidth="0"
-          minHeight="22" prefHeight="22" maxHeight="22">
+          minHeight="22">
       <Label fx:id="id" styleClass="cell_big_label">
         <minWidth>
           <!-- Ensures that the index is never truncated. -->
@@ -33,7 +34,7 @@
       </Label>
     </HBox>
     <HBox fx:id="contactRow" spacing="4" alignment="CENTER_LEFT" minWidth="0"
-          minHeight="16" prefHeight="16" maxHeight="16">
+          minHeight="16">
       <Label fx:id="phone" styleClass="cell_small_label">
         <minWidth>
           <Region fx:constant="USE_PREF_SIZE" />
@@ -43,10 +44,9 @@
       <Label fx:id="email" styleClass="cell_small_label" minWidth="0"
              maxWidth="Infinity" textOverrun="ELLIPSIS" HBox.hgrow="ALWAYS" />
     </HBox>
-    <StackPane fx:id="tags" alignment="CENTER_LEFT" minWidth="0"
-               minHeight="16" prefHeight="16" maxHeight="16" />
+    <StackPane fx:id="tags" alignment="CENTER_LEFT" minWidth="0" minHeight="16" />
     <Label fx:id="requirementsSummary" styleClass="cell_small_label" minWidth="0" maxWidth="Infinity"
-           minHeight="16" prefHeight="16" maxHeight="16" textOverrun="ELLIPSIS" wrapText="false"
+           minHeight="16" textOverrun="ELLIPSIS" wrapText="false"
            visible="false" managed="false" />
   </VBox>
 </HBox>

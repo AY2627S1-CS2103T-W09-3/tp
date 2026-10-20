@@ -330,7 +330,9 @@
 
 #cardPane {
     -fx-background-color: transparent;
-    -fx-border-width: 0;
+    /* Reserve the selection border so selecting a card does not change its size. */
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
 }
 
 #commandTypeLabel {
