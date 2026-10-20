@@ -9,7 +9,7 @@
 
 <!-- Let the list cell supply the card width instead of expanding to fit its text. -->
 <!-- Use the content's computed preferred height, including when the font changes. -->
-<HBox id="cardPane" fx:id="cardPane" minWidth="0" prefWidth="0"
+<HBox id="cardPane" minWidth="0" prefWidth="0"
       minHeight="-Infinity" maxHeight="-Infinity"
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <VBox fx:id="cardContent" alignment="CENTER_LEFT" spacing="2" minWidth="0" minHeight="68" HBox.hgrow="ALWAYS">

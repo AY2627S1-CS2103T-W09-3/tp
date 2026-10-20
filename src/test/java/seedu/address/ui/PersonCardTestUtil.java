@@ -55,7 +55,8 @@ final class PersonCardTestUtil {
             assertTrue(labelBounds.getMinY() >= rowBounds.getMinY() - 1
                     && labelBounds.getMaxY() <= rowBounds.getMaxY() + 1, context + " exceeds its row height");
         }
-        assertEquals(card.prefHeight(card.getWidth()), card.getHeight(), 1,
-                "The card must use its content's preferred height");
+        double verticalInsets = card.getInsets().getTop() + card.getInsets().getBottom();
+        assertEquals(content.getHeight() + verticalInsets, card.getHeight(), 0.01,
+                "The card must wrap its laid-out content and vertical insets");
     }
 }

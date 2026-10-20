@@ -413,7 +413,7 @@ public class PersonCardTest {
     }
 
     @Test
-    public void layout_availableFontFamilies_keepDefaultCardsCompactWithoutClipping()
+    public void layout_availableFontFamilies_fitContentWithoutClipping()
             throws ExecutionException, InterruptedException {
         Person client = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent").build();
         List<Person> clients = List.of(client, new PersonBuilder(client).withTags().build(),
@@ -432,8 +432,8 @@ public class PersonCardTest {
                     root.lookupAll(".label").forEach(label -> label.setStyle("-fx-font-family: '" + family + "';"));
                     layoutContentSizedCard(root, 318);
 
+                    // Replacement fonts may grow the card; default-font compactness is tested separately.
                     assertCardContentFits(root);
-                    assertTrue(root.getHeight() <= 90, family + " card is " + root.getHeight() + "px tall");
                     if (i == 0) {
                         compactHeight = root.getHeight();
                     } else if (i == 1) {
