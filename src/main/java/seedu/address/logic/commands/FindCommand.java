@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import seedu.address.commons.util.ToStringBuilder;
+import seedu.address.logic.Messages;
 import seedu.address.model.Model;
 import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
 
@@ -33,7 +34,7 @@ public class FindCommand extends Command {
         // The total is the whole address book, not the filtered list.
         int shownCount = model.getFilteredPersonList().size();
         int totalCount = model.getAddressBook().getPersonList().size();
-        return new CommandResult(String.format(FilterCommand.MESSAGE_SHOWING, shownCount, totalCount));
+        return new CommandResult(Messages.getShowingMessage(shownCount, totalCount));
     }
 
     @Override
