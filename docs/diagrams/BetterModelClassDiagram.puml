@@ -13,7 +13,11 @@ UniqueTagList -right-> "*" Tag
 UniquePersonList -right-> Person
 
 Person -up-> "*" Tag
-
+Person *--> "0..1" Note
+Person *--> "0..1" Budget
+Person *--> "0..1" Price
+Person *--> "*" Area
+Person *--> "*" HousingType
 Person *--> Name
 Person *--> Phone
 Person *--> Email
