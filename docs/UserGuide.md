@@ -199,6 +199,7 @@ Examples:
 * `note 2 First line\nSecond line` stores a note containing two lines.
 * `note 3 clear` clears the third displayed client's note.
 * `note 3 Please clear the outstanding paperwork` stores the full sentence as a note.
+* `note 1 CLEAR` stores `CLEAR` as ordinary note text; only the exact lowercase `clear` clears.
 
 ### Finding clients: `find`
 
