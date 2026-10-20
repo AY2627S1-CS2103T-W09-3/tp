@@ -324,7 +324,7 @@ Action | Format, Examples
 **Clear** | `clear`, then `clear confirm`<br> `clear` shows a warning and `clear confirm` deletes all clients
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find Alicia`, `find 81234567`, `find alicia.tan@example.com`
+**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
 **List** | `list`
 **Help** | `help`
