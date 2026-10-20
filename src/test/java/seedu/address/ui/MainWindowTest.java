@@ -181,7 +181,8 @@ public class MainWindowTest {
                     assertEquals(clients.get(cell.getIndex()).getName().fullName, name.getText());
                     assertFalse(name.isWrapText());
                     assertFalse(((Label) card.lookup("#email")).isWrapText());
-                    assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().size());
+                    assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().stream()
+                            .filter(Node::isManaged).count());
                 }
                 for (String id : List.of("commandTextField", "resultDisplayPlaceholder", "personList",
                         "detailPanePlaceholder", "detailPlaceholderMessage", "clientCountStatus")) {

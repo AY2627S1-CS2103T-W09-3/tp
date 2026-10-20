@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
@@ -24,8 +25,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Price;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
@@ -74,7 +79,8 @@ public class PersonCardTest {
             StackPane tags = (StackPane) root.lookup("#tags");
             HBox tagRow = (HBox) tags.lookup("#tagRow");
 
-            assertEquals(List.of(identity, contact, tags), content.getChildren());
+            assertEquals(List.of(identity, contact, tags), content.getChildren().stream()
+                    .filter(javafx.scene.Node::isManaged).toList());
             assertEquals(List.of(root.lookup("#id"), root.lookup("#name"), root.lookup("#role")),
                     identity.getChildren());
             assertEquals("2. ", ((Label) root.lookup("#id")).getText());
@@ -157,7 +163,8 @@ public class PersonCardTest {
             assertEquals(clients.size(), cards.size());
             for (Region card : cards) {
                 assertEquals(70, card.getHeight(), 0.01);
-                assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().size());
+                assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().stream()
+                        .filter(javafx.scene.Node::isManaged).count());
                 Bounds cardBounds = card.localToScene(card.getLayoutBounds());
                 for (String id : List.of("identityRow", "contactRow", "tags")) {
                     Bounds bounds = card.lookup("#" + id).localToScene(card.lookup("#" + id).getLayoutBounds());
@@ -279,10 +286,115 @@ public class PersonCardTest {
     }
 
     @Test
+    public void constructor_buyerRequirements_displaysBudgetAreasAndHousingTypes()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withRole(ClientRole.BUYER)
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAreas(Set.of(new Area("Tampines"), new Area("Bishan")))
+                .withHousingTypes(Set.of(HousingType.HDB)).build();
+
+        assertRequirementsSummary(person, "Budget $800,000 to $1,200,000 · Bishan, Tampines · HDB");
+    }
+
+    @Test
+    public void constructor_sellerRequirements_displaysAskingPrice()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withRole(ClientRole.SELLER)
+                .withAskingPrice(new Price("950000")).build();
+
+        assertRequirementsSummary(person, "Asking $950,000");
+    }
+
+    @Test
+    public void constructor_bothPrices_labelsBudgetAndAskingPrice()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withRole(ClientRole.BOTH)
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("950000"))
+                .withAreas(Set.of(new Area("Bishan")))
+                .withHousingTypes(Set.of(HousingType.CONDO)).build();
+
+        assertRequirementsSummary(person, "Budget $800,000 to $1,200,000 · Asking $950,000 · Bishan · Condo");
+    }
+
+    @Test
+    public void constructor_partialRequirements_omitsMissingPartsAndStraySeparators()
+            throws ExecutionException, InterruptedException {
+        assertRequirementsSummary(new PersonBuilder().withAreas(Set.of(new Area("Bishan"))).build(), "Bishan");
+        assertRequirementsSummary(new PersonBuilder().withHousingTypes(Set.of(HousingType.HDB, HousingType.CONDO))
+                .build(), "Condo, HDB");
+        assertRequirementsSummary(new PersonBuilder().withAreas(Set.of(new Area("Tampines")))
+                .withHousingTypes(Set.of(HousingType.HDB)).build(), "Tampines · HDB");
+        assertRequirementsSummary(new PersonBuilder().withBudget(new Budget(new Price("800000"), new Price("800000")))
+                .withHousingTypes(Set.of(HousingType.HDB)).build(), "Budget $800,000 · HDB");
+    }
+
+    @Test
+    public void constructor_noRequirements_hidesAndUnmanagesSummary()
+            throws ExecutionException, InterruptedException {
+        assertRequirementsSummary(new PersonBuilder().build(), "");
+    }
+
+    @Test
+    public void layout_longRequirements_ellipsizesWithinNinetyPixelCard()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
+                .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH)
+                .withTags("firsttime", "urgent")
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("1500000"))
+                .withAreas(Set.of(new Area("Bishan"), new Area("Tampines"), new Area("Toa Payoh")))
+                .withHousingTypes(Set.of(HousingType.HDB, HousingType.CONDO)).build();
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region root = new PersonCard(person, 1).getRoot();
+            Scene scene = new Scene(root, 318, 90);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            root.resize(318, 90);
+            root.applyCss();
+            root.layout();
+
+            Label summary = (Label) root.lookup("#requirementsSummary");
+            assertEquals(90, root.getHeight(), 0.01);
+            assertTrue(summary.getWidth() < summary.prefWidth(-1));
+            assertEquals(OverrunStyle.ELLIPSIS, summary.getTextOverrun());
+            assertFalse(summary.isWrapText());
+            assertEquals(4, ((VBox) root.lookup("#cardContent")).getChildren().stream()
+                    .filter(javafx.scene.Node::isManaged).count());
+            Bounds cardBounds = root.localToScene(root.getLayoutBounds());
+            for (String id : List.of("identityRow", "contactRow", "tags", "requirementsSummary")) {
+                Region row = (Region) root.lookup("#" + id);
+                Bounds bounds = row.localToScene(row.getLayoutBounds());
+                assertTrue(bounds.getMinY() >= cardBounds.getMinY());
+                assertTrue(bounds.getMaxY() <= cardBounds.getMaxY());
+                assertTrue(bounds.getMinX() >= cardBounds.getMinX());
+                assertTrue(bounds.getMaxX() <= cardBounds.getMaxX());
+            }
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    @Test
     public void getRoleStyleClass_eachRole_returnsColourClass() {
         assertEquals("role-buyer", PersonCard.getRoleStyleClass(ClientRole.BUYER));
         assertEquals("role-seller", PersonCard.getRoleStyleClass(ClientRole.SELLER));
         assertEquals("role-both", PersonCard.getRoleStyleClass(ClientRole.BOTH));
+    }
+
+    private static void assertRequirementsSummary(Person person, String expected)
+            throws ExecutionException, InterruptedException {
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region root = new PersonCard(person, 1).getRoot();
+            Label summary = (Label) root.lookup("#requirementsSummary");
+            assertEquals(expected, summary.getText());
+            assertEquals(!expected.isEmpty(), summary.isVisible());
+            assertEquals(!expected.isEmpty(), summary.isManaged());
+            assertEquals(expected.isEmpty() ? 70 : 90, root.getPrefHeight());
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
     }
 
     private static Label createPersonCard(Person person)

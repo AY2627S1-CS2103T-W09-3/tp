@@ -45,5 +45,8 @@
     </HBox>
     <StackPane fx:id="tags" alignment="CENTER_LEFT" minWidth="0"
                minHeight="16" prefHeight="16" maxHeight="16" />
+    <Label fx:id="requirementsSummary" styleClass="cell_small_label" minWidth="0" maxWidth="Infinity"
+           minHeight="16" prefHeight="16" maxHeight="16" textOverrun="ELLIPSIS" wrapText="false"
+           visible="false" managed="false" />
   </VBox>
 </HBox>
