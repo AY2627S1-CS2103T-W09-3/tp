@@ -66,7 +66,7 @@ public class FindCommandTest {
     }
 
     @Test
-    public void execute_oneMatchingClient_usesSingularFeedback() {
+    public void execute_oneMatchingClient_showsCount() {
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Elle");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
