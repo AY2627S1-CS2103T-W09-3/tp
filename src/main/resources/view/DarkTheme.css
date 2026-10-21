@@ -159,7 +159,7 @@
 }
 
 .role-badge {
-    -fx-padding: 3 8 3 8;
+    -fx-padding: 2 8 2 8;
     -fx-background-radius: 12;
     -fx-font-size: 12px;
     -fx-font-weight: bold;
@@ -426,6 +426,8 @@
 }
 
 #cardPane {
+    /* Keep compact cards independent of the platform's taller System font metrics. */
+    -fx-font-family: "Arial";
     -fx-background-color: -app-card;
     -fx-background-radius: 8;
     -fx-background-insets: 2 0 2 0;

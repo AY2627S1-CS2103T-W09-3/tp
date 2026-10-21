@@ -382,6 +382,39 @@ public class PersonCardTest {
     }
 
     @Test
+    public void layout_windowFontChanges_preservesCompactCardTypography()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent")
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("950000")).build();
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region card = new PersonCard(person, 1).getRoot();
+            StackPane window = new StackPane(card);
+            Scene scene = new Scene(window, 318, 120);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            window.applyCss();
+            layoutContentSizedCard(card, 318);
+            List<Label> labels = card.lookupAll(".label").stream().map(node -> (Label) node).toList();
+            List<Font> originalFonts = labels.stream().map(Label::getFont).toList();
+            double originalHeight = card.getHeight();
+
+            // The card's default typography must not depend on the surrounding platform font.
+            for (String family : List.of("Monospaced", "Serif")) {
+                window.setStyle("-fx-font-family: '" + family + "';");
+                window.applyCss();
+                layoutContentSizedCard(card, 318);
+                assertEquals(originalFonts, labels.stream().map(Label::getFont).toList());
+                assertEquals(originalHeight, card.getHeight(), 0.01);
+                assertTrue(card.getHeight() <= 90);
+                assertCardContentFits(card);
+            }
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    @Test
     public void layout_largerFonts_growsWithTextWithoutClippingRows()
             throws ExecutionException, InterruptedException {
         Person client = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent").build();
