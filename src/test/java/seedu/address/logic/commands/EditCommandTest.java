@@ -15,8 +15,11 @@ import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
+import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -32,6 +35,7 @@ import seedu.address.model.person.Area;
 import seedu.address.model.person.Budget;
 import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
 import seedu.address.model.person.Price;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
@@ -61,7 +65,7 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
     }
 
     @Test
@@ -82,7 +86,7 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(lastPerson, editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model, new CommandResult(expectedMessage, indexLastPerson), expectedModel);
     }
 
     @Test
@@ -96,7 +100,8 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(personWithNote, editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model,
+                new CommandResult(expectedMessage, INDEX_SECOND_PERSON), expectedModel);
     }
 
     @Test
@@ -121,7 +126,7 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(personToEdit, editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model, new CommandResult(expectedMessage, INDEX_THIRD_PERSON), expectedModel);
     }
 
     @Test
@@ -146,7 +151,7 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(personToEdit, editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model, new CommandResult(expectedMessage, INDEX_THIRD_PERSON), expectedModel);
     }
 
     @Test
@@ -158,7 +163,7 @@ public class EditCommandTest {
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
     }
 
     @Test
@@ -172,12 +177,39 @@ public class EditCommandTest {
 
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
 
-        // The filter stays active, so the renamed client no longer matches it and leaves the displayed list.
+        // The filter stays active; the renamed client still matches through the unchanged email.
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         showPersonAtIndex(expectedModel, INDEX_FIRST_PERSON);
         expectedModel.setPerson(expectedModel.getFilteredPersonList().get(0), editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
+    }
+
+    @Test
+    public void execute_changesIdentityButStillMatches_returnsUpdatedVisibleIndex() throws Exception {
+        model.updateFilteredPersonList(new PersonMatchesSearchTermsPredicate(List.of("Meier")));
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName("Updated Meier")
+                .withPhone("85556666").withEmail("updated@example.net").build();
+
+        CommandResult result = new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model);
+
+        assertEquals(Optional.of(INDEX_FIRST_PERSON), result.getViewIndex());
+        Person updatedPerson = model.getFilteredPersonList().get(0);
+        assertEquals("Updated Meier", updatedPerson.getName().fullName);
+        assertEquals("85556666", updatedPerson.getPhone().value);
+        assertEquals("updated@example.net", updatedPerson.getEmail().value);
+        assertEquals(updatedPerson, model.getAddressBook().getPersonList().get(1));
+    }
+
+    @Test
+    public void execute_clientLeavesSearch_doesNotSelectClientMovingIntoOldIndex() throws Exception {
+        model.updateFilteredPersonList(new PersonMatchesSearchTermsPredicate(List.of("Meier")));
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName("Updated Client").build();
+
+        CommandResult result = new EditCommand(INDEX_FIRST_PERSON, descriptor).execute(model);
+
+        assertEquals(List.of(DANIEL), model.getFilteredPersonList());
+        assertTrue(result.getViewIndex().isEmpty());
     }
 
     @Test
@@ -253,7 +285,7 @@ public class EditCommandTest {
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(firstPerson));
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
     }
 
     @Test

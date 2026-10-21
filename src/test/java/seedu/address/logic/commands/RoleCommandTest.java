@@ -8,9 +8,13 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,6 +25,7 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.testutil.PersonBuilder;
 
@@ -39,7 +44,7 @@ public class RoleCommandTest {
         String expectedMessage = String.format(RoleCommand.MESSAGE_SUCCESS,
                 editedClient.getName(), ClientRole.BUYER.getDisplayValue());
 
-        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+        assertCommandSuccess(command, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
     }
 
     @Test
@@ -55,7 +60,28 @@ public class RoleCommandTest {
         String expectedMessage = String.format(RoleCommand.MESSAGE_SUCCESS,
                 editedClient.getName(), ClientRole.BOTH.getDisplayValue());
 
-        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+        assertCommandSuccess(command, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
+    }
+
+    @Test
+    public void execute_clientStillMatchesRoleFilter_returnsVisibleIndex() throws Exception {
+        model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+
+        CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BOTH).execute(model);
+
+        assertEquals(Optional.of(INDEX_FIRST_PERSON), result.getViewIndex());
+        assertEquals(ClientRole.BOTH, model.getFilteredPersonList().get(0).getRole());
+        assertEquals(2, model.getFilteredPersonList().size());
+    }
+
+    @Test
+    public void execute_clientLeavesRoleFilter_doesNotSelectClientMovingIntoOldIndex() throws Exception {
+        model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+
+        CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.SELLER).execute(model);
+
+        assertEquals(List.of(CARL), model.getFilteredPersonList());
+        assertTrue(result.getViewIndex().isEmpty());
     }
 
     @Test
