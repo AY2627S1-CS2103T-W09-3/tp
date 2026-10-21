@@ -263,13 +263,13 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 
 ### Client requirements
 
-The five requirement fields are optional: `Budget budget`, `Price askingPrice`,
-`Set<Area> areas`, `Set<HousingType> housingTypes` and `Note note` on `Person`.
-A client with none of them is valid, so every read of these fields is null-safe
-or empty-safe.
+The four requirement fields are optional: `Budget budget`, `Price askingPrice`,
+`Set<Area> areas` and `Set<HousingType> housingTypes` on `Person`. The optional
+`Note note` is set by `note` rather than a prefix. A client with none of them is
+valid, so every read of these fields is null-safe or empty-safe.
 
-`AddCommandParser` and `EditCommandParser` both tokenise the same five prefixes and
-delegate to `ParserUtil`:
+`AddCommandParser` and `EditCommandParser` both tokenise the four requirement prefixes
+and delegate to `ParserUtil`:
 
 | Prefix | Parser method | Model type |
 |---|---|---|
