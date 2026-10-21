@@ -113,9 +113,12 @@ public class MainWindow extends UiPart<Stage> {
     private void setAccelerators() {
         setAccelerator(helpMenuItem, KeyCombination.valueOf("F1"));
         undoMenuItem.setAccelerator(KeyCombination.valueOf("Shortcut+Z"));
-        redoMenuItem.setAccelerator(KeyCombination.valueOf(
-                System.getProperty("os.name").startsWith("Mac") ? "Meta+Shift+Z" : "Ctrl+Y"));
+        redoMenuItem.setAccelerator(redoAcceleratorFor(System.getProperty("os.name")));
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryShortcut);
+    }
+
+    static KeyCombination redoAcceleratorFor(String osName) {
+        return KeyCombination.valueOf(osName.startsWith("Mac") ? "Meta+Shift+Z" : "Ctrl+Y");
     }
 
     private void handleHistoryShortcut(KeyEvent event) {
@@ -127,7 +130,7 @@ public class MainWindow extends UiPart<Stage> {
         if (event.getCode() == KeyCode.Z && !event.isShiftDown() && (ctrlOnly || metaOnly)) {
             handleUndo();
         } else if ((event.getCode() == KeyCode.Y && ctrlOnly && !event.isShiftDown())
-                || (event.getCode() == KeyCode.Z && metaOnly && event.isShiftDown())) {
+                || (event.getCode() == KeyCode.Z && metaOnly)) {
             handleRedo();
         } else {
             return;
