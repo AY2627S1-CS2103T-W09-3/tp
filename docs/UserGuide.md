@@ -299,6 +299,39 @@ Examples using the sample clients:
 * `find 5678` finds Benjamin Lim, Nur Aisyah, Raj Kumar and Cheryl Goh, because all four phone numbers contain `5678`.
   The result shows `Showing 4 of 5 clients.`.
 
+### Filtering clients by role and tag: `filter`
+
+Shows only the clients with a given role, a given tag, or both.
+
+Format: `filter [r/ROLE] [t/TAG]…​`
+
+* `ROLE` accepts `buyer`, `seller`, or `both`, ignoring case. Only one `r/` may be given.
+* `r/buyer` shows buyers and clients marked `both`. `r/seller` shows sellers and clients marked `both`. `r/both` shows only clients marked `both`.
+* A client with no role never matches a role.
+* A tag matches a client's tag with the same name, ignoring case. The whole tag must match, so `t/urgent` does not match `urgently`.
+* Repeat `t/` to give several tags. A client matches if they have **any** of them (OR).
+* When both a role and tags are given, a client must match the role **and** at least one of the tags (AND).
+* Both parts are optional. `filter` with no role and no tag shows every client.
+* Text before the first prefix, such as `filter buyer`, is an error.
+* The result line shows how many clients are displayed out of all clients in the book, e.g. `Showing 8 of 34 clients.`. The word `clients` is used even when the number is 1.
+
+**How the filter behaves afterwards:**
+
+* `filter` replaces any filter or `find` search that is already active. It does not combine with it.
+* `find` also replaces an active filter. Use `list` to clear the filter and show all clients.
+* The filter stays active after `add`, `edit`, `delete`, `role`, `note` and `clear confirm`, so the displayed list can still be shorter than the whole book. Indexes in these commands refer to the displayed list.
+* After `add`, `edit` or `role`, the changed client is checked against the active filter again. A client who no longer matches leaves the displayed list. For example, after `filter r/buyer`, `role 1 seller` removes client 1 from the list. In the same way, after `filter t/urgent`, `edit 1 t/weekend` removes client 1, because the client no longer has the `urgent` tag.
+* Only `add` can make a client appear, and only if the new client matches. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again.
+* `delete` removes the client from the list, and `note` never changes which clients are shown, because it changes neither a role nor a tag.
+* `clear confirm` deletes every client, including the hidden ones, but the filter stays active. A client added afterwards stays hidden unless they match it, so run `list` to show everyone.
+
+Examples:
+
+* `filter r/buyer` shows all buyers, including clients marked `both`.
+* `filter t/urgent t/firsttime` shows clients tagged `urgent` or `firsttime`.
+* `filter r/buyer t/urgent` shows buyers (including `both`) who are tagged `urgent`. On the sample clients this shows no clients (`Showing 0 of 5 clients.`), because the only `urgent` client, Nur Aisyah, is a seller.
+* `filter r/both` shows only clients who are both a buyer and a seller.
+
 ### Deleting a client: `delete`
 
 Deletes the specified client from EstateBookUltraProMax.
@@ -416,6 +449,7 @@ Action | Format, Examples
 **Clear** | `clear`, then `clear confirm`<br> `clear` shows a warning and `clear confirm` deletes all clients
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`<br> e.g., `edit 2 b/500000-700000 l/Bedok`
+**Filter** | `filter [r/ROLE] [t/TAG]…​`<br> e.g., `filter r/buyer t/urgent`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`
 **Note** | `note INDEX TEXT`<br> e.g., `note 1 Call next week`, `note 1 clear`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`

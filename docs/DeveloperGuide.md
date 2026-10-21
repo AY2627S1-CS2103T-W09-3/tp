@@ -297,6 +297,33 @@ no value as invalid input. `edit` treats it as a request to clear the field:
 `parseAreasForEdit` turns a single empty `l/` into an empty set, so the client
 loses every area.
 
+### Filter command
+
+`filter` narrows the displayed clients by role and tag. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.
+
+**Parsing.** `FilterCommandParser` tokenizes the arguments with `PREFIX_ROLE` and `PREFIX_TAG`. It rejects any text before the first prefix, rejects a second `r/`, and parses the role with `ClientRole.fromString` after trimming it. The tags go through `ParserUtil#parseTags`. Both parts are optional, and the parser creates `FilterCommand` with a `PersonMatchesFilterPredicate` holding an `Optional<ClientRole>` and a `Set<Tag>`.
+
+**The predicate.** `PersonMatchesFilterPredicate#test` is true only when both parts match:
+
+* **Role.** A missing role always matches. `buyer` matches `BUYER` and `BOTH`, `seller` matches `SELLER` and `BOTH`, and `both` matches only `BOTH`. A client with no role never matches a given role.
+* **Tags.** No tags always match. Otherwise, one matching tag is enough, and tag names are compared ignoring case.
+
+So the role and the tags combine with AND, and the tags among themselves with OR.
+
+**Executing.** `FilterCommand#execute(Model)` calls `Model#updateFilteredPersonList(predicate)`. This overwrites the predicate on the single `FilteredList`, so a filter does not stack with an earlier filter or `find`, and `find` and `list` replace a filter in the same way. It then counts the displayed clients and the clients in the whole address book, and shows `Showing X of Y clients.`. Y is the whole book, not the filtered list.
+
+**Mutation commands.** `add`, `edit`, `delete`, `role`, `note` and `clear confirm` change `AddressBook` and never call `updateFilteredPersonList`, so the predicate stays set. `ModelManager` wraps `AddressBook#getPersonList()` in the `FilteredList`, which re-tests an added or replaced client against the predicate by itself. A client who no longer matches leaves the list, and no command has to refresh the list. Only `add` can make a client appear, because `edit` and `role` work on a client that is already displayed and so already matches; `delete` removes the client, `note` changes neither the role nor the tags, and `clear confirm` replaces the whole address book through `Model#setAddressBook`, so every client leaves the list and a client added afterwards is tested against the same predicate. Only `list` and a new `find` or `filter` change the predicate.
+
+The following activity diagram shows how the active filter is set, and what happens to it after a successful `add`, `edit`, `delete`, `role`, `note` or `clear confirm`. A command that fails, for example because of an invalid index or a duplicate client, changes nothing, so the filter and the displayed list stay as they were:
+
+![Activity diagram of the filter command and the commands that follow it](images/FilterActivityDiagram.png)
+
+**Why the filter is not cleared by mutations.** An agent who filters 60 clients down to 8 and then updates one of them should stay in that view. Resetting to the full list after every command would lose it.
+
+**Alternatives considered.**
+* **A second predicate that is combined with `find`:** this makes the visible list depend on the order of earlier commands, and the user has no way to see which parts are active. One predicate that is replaced is easier to explain.
+* **Clearing the filter after every mutation:** simple to implement, but it loses the view, as described above.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Documentation, logging, testing, dev-ops**
