@@ -261,6 +261,56 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 * **A stateless `clear confirm`:** the warning would be a hint only, because a user could skip it by typing `clear confirm` straight away. It also gives the UI nothing to show.
 * **A confirmation popup:** this needs a window in the UI layer and cannot be tested through `Logic` alone.
 
+### Undo, redo and history
+
+`AddressBookSnapshot` is an immutable copy of every client, including clients hidden
+by the current find or filter predicate. A `HistoryEntry` contains the before and
+after snapshots, command word and user-facing action description. `CommandHistory`
+keeps separate undo and redo stacks, with the next action first and a capacity of 20
+undoable changes. `ModelManager` delegates history operations to
+`VersionedAddressBook`. Restoring a snapshot updates the existing address book and
+observable client list, so UI bindings and the active predicate remain in place.
+History is session-only: restarting loads client data but starts with empty stacks.
+
+**Ordinary command execution.** `LogicManager` controls when a change becomes
+persistent and undoable:
+
+1. Capture a before snapshot, execute the command, then capture an after snapshot.
+   A parse error or `CommandException` stops execution without recording history.
+2. Save the address book. Successful read-only and no-op commands still use the
+   existing save path, but they do not create history entries.
+3. After saving succeeds, call `recordChange` only if the command is undoable.
+   `add`, `edit`, `delete`, `role`, `note` and confirmed `clear` are eligible.
+   Equal snapshots are ignored without clearing redo history; a recorded change
+   clears redo history. The initial `clear` warning and cancelled confirmation
+   never create an entry.
+4. If saving fails, restore the before snapshot. No entry has been recorded, so
+   both history stacks remain unchanged. `LogicManager` keeps the existing
+   access-denied or general storage-error message.
+
+**Undo and redo.** `UndoCommand` calls `model.undo()`, which moves the next entry
+to the redo stack and restores its before snapshot. `RedoCommand` moves the next
+redo entry to the undo stack and restores its after snapshot. Each command retains
+the exact `HistoryEntry` returned by the model and reports its action description.
+If the relevant stack is empty, the model's `HistoryOperationException` becomes a
+user-facing `CommandException` without changing data or saving. `HistoryCommand`
+only reads immutable stack-list snapshots and displays undo and redo actions
+separately, newest first.
+
+After a successful undo or redo, `LogicManager` saves the restored address book.
+If that save fails, it immediately passes the retained entry to `rollbackUndo` or
+`rollbackRedo`. The model restores the data that was visible before the attempt and
+reverses the stack transfer, leaving the action available to retry. Undo and redo
+do not record additional history entries. The same access-denied and general
+storage-error messages apply as for ordinary commands.
+
+**Keeping the saved file consistent.** `JsonAddressBookStorage` serialises the
+complete address book into a temporary file beside the destination, then atomically
+replaces the destination. The app never writes partial JSON directly into the saved
+file, and it removes the temporary file after a failed save. If atomic replacement
+is unsupported, saving fails and `LogicManager` rolls back the in-memory state and
+stacks rather than reporting success for an unsaved change.
+
 ### Client requirements
 
 The four requirement fields are optional: `Budget budget`, `Price askingPrice`,
