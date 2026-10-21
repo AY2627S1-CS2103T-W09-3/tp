@@ -36,6 +36,7 @@ import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.history.AddressBookSnapshot;
 import seedu.address.model.history.HistoryEntry;
+import seedu.address.model.history.HistoryOperationException;
 import seedu.address.model.person.Area;
 import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
@@ -251,6 +252,24 @@ public class LogicManagerTest {
         assertEquals(redo, model.getRedoHistory());
         assertFalse(model.canUndo());
         assertTrue(dataFile.readAddressBook().orElseThrow().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_undoSaveAndRollbackFail_reportsHistoryFailure() throws Exception {
+        model = new ModelManager() {
+            @Override
+            public void rollbackUndo(HistoryEntry entry) throws HistoryOperationException {
+                throw new HistoryOperationException("History changed before rollback");
+            }
+        };
+        JsonAddressBookStorage dataFile = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        logic = new LogicManager(model, new StorageManager(dataFile,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
+
+        assertThrows(IllegalStateException.class, "Could not restore history after a failed save", () ->
+                logic.execute("undo"));
     }
 
     @Test

@@ -154,6 +154,20 @@ public class MainWindowTest {
                 assertEquals("Executed redo", feedback.getText());
                 assertEquals("unfinished command", commandBox.getText());
 
+                // Unrelated or modified key presses must not trigger history commands.
+                commandBox.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.Z,
+                        false, true, true, false));
+                fireShortcut(commandBox, KeyCode.Z, true, true, false);
+                fireShortcut(commandBox, KeyCode.A, false, false, false);
+                fireShortcut(commandBox, KeyCode.Z, false, true, true);
+                fireShortcut(commandBox, KeyCode.Z, false, false, false);
+                fireShortcut(commandBox, KeyCode.Y, false, false, false);
+                fireShortcut(commandBox, KeyCode.Y, true, true, false);
+                fireShortcut(commandBox, KeyCode.Z, true, false, false);
+                assertEquals(List.of("undo", "redo", "history", "undo", "undo", "redo", "redo"),
+                        logic.executedCommands);
+                assertEquals("unfinished command", commandBox.getText());
+
                 enterCommand(window, commandBox, "list");
                 assertEquals("list", logic.executedCommands.get(logic.executedCommands.size() - 1));
                 assertEquals("", commandBox.getText());
