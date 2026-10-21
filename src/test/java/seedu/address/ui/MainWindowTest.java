@@ -2,20 +2,25 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
+import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.ui.PersonCardTestUtil.assertCardContentFits;
 
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -24,6 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -31,11 +37,15 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.PickResult;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import seedu.address.commons.core.index.Index;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.FindCommand;
@@ -44,14 +54,16 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.model.person.Price;
+import seedu.address.model.tag.Tag;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
 import seedu.address.testutil.PersonBuilder;
 
 /**
- * Tests the main window layout, startup focus, and command-box feedback.
+ * Tests the main window layout, startup focus, selection, and command-box feedback.
  */
 public class MainWindowTest {
 
@@ -117,8 +129,7 @@ public class MainWindowTest {
                 // Actual display-scaling checks are listed in docs/Testing.md.
                 int[][] logicalSizes = {{1920, 1080}, {1536, 864}, {853, 480}, {820, 440}};
                 for (int[] size : logicalSizes) {
-                    root.resize(size[0], size[1]);
-                    root.layout();
+                    layoutWindow(root, size[0], size[1]);
                     for (String id : List.of("menuBar", "commandTextField", "resultDisplayPlaceholder",
                             "personList", "personListView", "detailPanePlaceholder", "detailPane", "emptyState",
                             "statusbarPlaceholder", "saveLocationStatus", "clientCountStatus")) {
@@ -159,12 +170,17 @@ public class MainWindowTest {
                 layoutWindow(root, 820, 440);
                 assertTrue(root.lookup("#noteIndicator").isVisible());
                 assertTrue(root.lookup("#noteIndicator").isManaged());
+                assertTrue(root.lookup("#noteRow").isVisible());
+                assertEquals("Call next week", ((Label) root.lookup("#note")).getText());
 
                 enterCommand(window, commandBox, "note 1 clear");
                 layoutWindow(root, 820, 440);
                 assertFalse(((TextArea) root.lookup("#resultDisplay")).getStyleClass().contains("error"));
                 assertFalse(root.lookup("#noteIndicator").isVisible());
                 assertFalse(root.lookup("#noteIndicator").isManaged());
+                assertFalse(root.lookup("#noteRow").isVisible());
+                assertFalse(root.lookup("#noteRow").isManaged());
+                assertEquals("", ((Label) root.lookup("#note")).getText());
             } finally {
                 window.getRoot().close();
             }
@@ -182,9 +198,10 @@ public class MainWindowTest {
             model.addPerson(person);
             MainWindow window = openWindow(model);
             try {
-                // Selection wiring belongs to #101; exercise the embedded panel through its public API.
-                window.getDetailPane().setPerson(person);
                 Region root = (Region) window.getRoot().getScene().getRoot();
+                TextField commandBox = (TextField) root.lookup("#commandTextField");
+                enterCommand(window, commandBox, "view 1");
+                assertSelectedClient(window, person);
                 root.applyCss();
                 int[][] logicalSizes = {{853, 480}, {820, 440}};
                 for (int[] size : logicalSizes) {
@@ -321,8 +338,6 @@ public class MainWindowTest {
                     assertTrue(bounds.getMinY() >= viewportBounds.getMinY() - 1);
                     assertTrue(bounds.getMaxY() <= viewportBounds.getMaxY() + 1);
                     Region card = (Region) cell.getGraphic();
-                    assertTrue(card.getHeight() <= 90,
-                            "Default-font requirement card is " + card.getHeight() + "px tall");
                     assertCardContentFits(card);
                     assertTrue(card.lookup("#requirementsSummary").isVisible());
                     assertEquals(4, ((VBox) card.lookup("#cardContent")).getChildren().stream()
@@ -361,6 +376,112 @@ public class MainWindowTest {
                     assertInsideViewport(root.lookup("#" + id), 853, 480);
                 }
                 assertEquals("3 clients", ((Label) root.lookup("#clientCountStatus")).getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void layout_shortContentViewports_showThreeCompleteRequirementsCards() throws Exception {
+        runOnFxThread(() -> {
+            List<Person> clients = List.of(
+                    new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
+                            .withPhone("90000001").withEmail("alexandra.elizabeth.montgomery@example.com")
+                            .withRole(ClientRole.BUYER).withTags("firsttime", "urgent")
+                            .withBudget(new Budget(new Price("800000"), new Price("1200000"))).build(),
+                    new PersonBuilder().withName("Priya Nair").withRole(ClientRole.SELLER).withTags()
+                            .withPhone("90000002").withEmail("priya@example.com")
+                            .withAskingPrice(new Price("950000")).build(),
+                    new PersonBuilder().withName("Cheryl Goh").withRole(ClientRole.BOTH).withTags("upgrading")
+                            .withPhone("90000003")
+                            .withEmail("cheryl.goh.long.email@example.com")
+                            .withBudget(new Budget(new Price("700000"), new Price("900000")))
+                            .withAskingPrice(new Price("850000")).build(),
+                    new PersonBuilder().withName("Ravi Kumar").withTags()
+                            .withPhone("90000004").withEmail("ravi@example.com").build());
+            ModelManager model = new ModelManager();
+            clients.forEach(model::addPerson);
+            MainWindow window = openWindow(model);
+            try {
+                window.getDetailPane().setPerson(clients.get(2));
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                ListView<?> list = (ListView<?>) root.lookup("#personListView");
+                // Reserve space for window decorations and desktop controls instead of using the full screen height.
+                // These logical content sizes are not a substitute for actual display-scaling checks in #134.
+                int[][] contentSizes = {{820, 400}, {820, 412}, {853, 400}, {853, 452}, {853, 480}};
+                for (int[] size : contentSizes) {
+                    list.scrollTo(0);
+                    layoutWindow(root, size[0], size[1]);
+                    Bounds viewport = list.lookup(".clipped-container")
+                            .localToScene(list.lookup(".clipped-container").getLayoutBounds());
+                    List<ListCell<?>> firstThree = list.lookupAll(".list-cell").stream()
+                            .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < 3)
+                            .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
+                    assertEquals(3, firstThree.size());
+                    for (ListCell<?> cell : firstThree) {
+                        Bounds bounds = cell.localToScene(cell.getLayoutBounds());
+                        assertTrue(bounds.getMinY() >= viewport.getMinY() - 1);
+                        assertTrue(bounds.getMaxY() <= viewport.getMaxY() + 1,
+                                "Card " + (cell.getIndex() + 1) + " is clipped at " + size[0] + "x" + size[1]);
+                        Region card = (Region) cell.getGraphic();
+                        assertTrue(card.lookup("#requirementsSummary").isVisible());
+                        assertCardContentFits(card);
+                    }
+                    for (String id : List.of("menuBar", "commandTextField", "resultDisplay", "personList",
+                            "detailPane", "saveLocationStatus", "clientCountStatus")) {
+                        assertInsideViewport(root.lookup("#" + id), size[0], size[1]);
+                    }
+                    assertWithinRegion(root.lookup("#commandTextField"), root.lookup("#commandBoxPlaceholder"));
+                    assertWithinRegion(root.lookup("#resultDisplay"), root.lookup("#resultDisplayPlaceholder"));
+                    Node result = root.lookup("#resultDisplayPlaceholder");
+                    assertTrue(viewport.getMinY() >= result.localToScene(result.getLayoutBounds()).getMaxY());
+
+                    list.scrollTo(clients.size() - 1);
+                    layoutWindow(root, size[0], size[1]);
+                    ListCell<?> last = list.lookupAll(".list-cell").stream()
+                            .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty()
+                                    && cell.getIndex() == clients.size() - 1)
+                            .map(node -> (ListCell<?>) node).findFirst().orElseThrow();
+                    Bounds lastBounds = last.localToScene(last.getLayoutBounds());
+                    assertTrue(lastBounds.getMinY() >= viewport.getMinY() - 1);
+                    assertTrue(lastBounds.getMaxY() <= viewport.getMaxY() + 1);
+                }
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void layout_resizeShortThenTall_preservesFeedbackAndRestoresResultSpace() throws Exception {
+        runOnFxThread(() -> {
+            MainWindow window = openWindow(new ModelManager());
+            try {
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                TextArea feedback = (TextArea) root.lookup("#resultDisplay");
+                String message = "Long feedback ".repeat(30) + "\nSecond line\nThird line";
+                feedback.setText(message);
+                layoutWindow(root, 1120, 800);
+                double normalHeight = root.lookup("#resultDisplayPlaceholder").getLayoutBounds().getHeight();
+
+                layoutWindow(root, 820, 400);
+                assertTrue(root.lookup("#resultDisplayPlaceholder").getLayoutBounds().getHeight() < normalHeight);
+                assertEquals(message, feedback.getText());
+                Node viewport = feedback.lookup(".viewport");
+                Text sample = new Text("Ag");
+                sample.setFont(feedback.getFont());
+                assertTrue(viewport.getLayoutBounds().getHeight() >= sample.getLayoutBounds().getHeight(),
+                        "At least one full line of feedback must remain readable with scrollbars present");
+                assertInsideViewport(feedback, 820, 400);
+                feedback.setScrollTop(Double.MAX_VALUE);
+                layoutWindow(root, 820, 400);
+                assertTrue(feedback.getScrollTop() > 0, "Long feedback must remain scrollable");
+
+                layoutWindow(root, 1120, 800);
+                assertEquals(normalHeight,
+                        root.lookup("#resultDisplayPlaceholder").getLayoutBounds().getHeight(), 0.01);
+                assertEquals(message, feedback.getText());
             } finally {
                 window.getRoot().close();
             }
@@ -618,6 +739,227 @@ public class MainWindowTest {
         });
     }
 
+    @Test
+    public void selection_clickThenViewFilteredIndex_showsSelectedClientAndBorder() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            model.addPerson(CARL);
+            MainWindow window = openWindow(model);
+            try {
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                layoutWindow(root, 1000, 700);
+                assertEmptySelection(window);
+                ListView<?> listView = (ListView<?>) root.lookup("#personListView");
+                ListCell<?> secondCell = listView.lookupAll(".list-cell").stream()
+                        .map(node -> (ListCell<?>) node)
+                        .filter(cell -> !cell.isEmpty() && cell.getIndex() == 1)
+                        .findFirst().orElseThrow();
+                Point2D point = secondCell.localToScene(10, 10);
+                secondCell.fireEvent(new MouseEvent(MouseEvent.MOUSE_PRESSED,
+                        point.getX(), point.getY(), point.getX(), point.getY(),
+                        MouseButton.PRIMARY, 1, false, false, false, false, true, false, false,
+                        false, false, true, new PickResult(secondCell, point.getX(), point.getY())));
+                secondCell.fireEvent(new MouseEvent(MouseEvent.MOUSE_RELEASED,
+                        point.getX(), point.getY(), point.getX(), point.getY(),
+                        MouseButton.PRIMARY, 1, false, false, false, false, false, false, false,
+                        false, false, true, new PickResult(secondCell, point.getX(), point.getY())));
+                assertSelectedClient(window, BOB);
+                root.applyCss();
+                Region card = (Region) secondCell.getGraphic();
+                assertEquals(Color.web("#5aa2ff"), card.getBorder().getStrokes().get(0).getTopStroke());
+                assertEquals(1, card.getBorder().getStrokes().get(0).getWidths().getTop());
+
+                TextField commandBox = (TextField) root.lookup("#commandTextField");
+                enterCommand(window, commandBox, "view 3");
+                assertSelectedClient(window, CARL);
+                enterCommand(window, commandBox, "find Bob Carl");
+                assertEquals(List.of(BOB, CARL), model.getFilteredPersonList());
+                assertEmptySelection(window);
+                enterCommand(window, commandBox, "view 2");
+                assertEquals(1, listView.getSelectionModel().getSelectedIndex());
+                assertSelectedClient(window, CARL);
+                enterCommand(window, commandBox, "view 99");
+                assertSelectedClient(window, CARL);
+                assertTrue(((TextArea) root.lookup("#resultDisplay")).getStyleClass().contains("error"));
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void selection_mutationsRemainVisible_refreshesUpdatedClientDetails() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(AMY).withRole(ClientRole.BUYER).build());
+            model.addPerson(BOB);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                enterCommand(window, commandBox, "filter t/friend");
+                enterCommand(window, commandBox, "view 1");
+                enterCommand(window, commandBox, "edit 1 n/Updated Client p/85556666 e/updated@example.net");
+                Person updatedClient = model.getFilteredPersonList().get(0);
+                assertEquals("Updated Client", updatedClient.getName().fullName);
+                assertEquals("85556666", updatedClient.getPhone().value);
+                assertEquals("updated@example.net", updatedClient.getEmail().value);
+                assertSelectedClient(window, updatedClient);
+
+                enterCommand(window, commandBox, "note 1 First line\\nSecond line");
+                assertSelectedClient(window, model.getFilteredPersonList().get(0));
+                assertEquals("First line\nSecond line", detailLabel(window, "#note").getText());
+                enterCommand(window, commandBox, "note 1 clear");
+                assertSelectedClient(window, model.getFilteredPersonList().get(0));
+                assertFalse(window.getDetailPane().getRoot().lookup("#noteRow").isVisible());
+
+                enterCommand(window, commandBox, "role 1 both");
+                assertSelectedClient(window, model.getFilteredPersonList().get(0));
+                assertEquals(ClientRole.BOTH.getDisplayValue(), detailLabel(window, "#role").getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void selection_editLeavesFilter_clearsInsteadOfShowingNextClient() throws Exception {
+        assertMutationClearsSelection(new PersonMatchesFilterPredicate(Optional.empty(), Set.of(new Tag("friend"))),
+                "edit 1 t/");
+    }
+
+    @Test
+    public void selection_roleLeavesFilter_clearsInsteadOfShowingNextClient() throws Exception {
+        assertMutationClearsSelection(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()),
+                "role 1 seller");
+    }
+
+    @Test
+    public void selection_noteLeavesPredicate_clearsInsteadOfShowingNextClient() throws Exception {
+        // Current user-facing filters do not search notes; exercise the general post-mutation contract.
+        assertMutationClearsSelection(person -> person.getNote() != null, "note 1 clear");
+    }
+
+    @Test
+    public void selection_clearWarningThenConfirm_preservesSelectionUntilDeletion() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                enterCommand(window, commandBox, "view 1");
+                assertSelectedClient(window, AMY);
+
+                enterCommand(window, commandBox, "clear");
+                assertEquals(List.of(AMY, BOB), model.getAddressBook().getPersonList());
+                assertSelectedClient(window, AMY);
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                assertEquals(String.format(ClearCommand.MESSAGE_WARNING_MULTIPLE_CLIENTS, 2), feedback.getText());
+
+                enterCommand(window, commandBox, "clear confirm");
+                assertEquals(ClearCommand.MESSAGE_SUCCESS, feedback.getText());
+                assertTrue(model.getAddressBook().getPersonList().isEmpty());
+                assertEmptySelection(window);
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void selection_help_preservesSelectedClient() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+            try {
+                enterCommand(window, commandBox, "view 1");
+                assertSelectedClient(window, AMY);
+
+                enterCommand(window, commandBox, "help");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                assertFalse(feedback.getStyleClass().contains("error"));
+                assertSelectedClient(window, AMY);
+            } finally {
+                // Close both the main window and the help window opened by the command.
+                enterCommand(window, commandBox, "exit");
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void selection_commandsWithoutViewIndex_clearPanelEvenIfListIsUnchanged() throws Exception {
+        runOnFxThread(() -> {
+            for (String command : List.of("filter t/friend", "find Amy Bob", "find Nobody", "list",
+                    "delete 1", "delete 2")) {
+                ModelManager model = new ModelManager();
+                model.addPerson(AMY);
+                model.addPerson(BOB);
+                MainWindow window = openWindow(model);
+                try {
+                    TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                    window.getPersonListPanel().selectPerson(Index.fromOneBased(1));
+                    window.getRoot().getScene().getRoot().applyCss();
+                    assertSelectedClient(window, AMY);
+                    enterCommand(window, commandBox, command);
+                    TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                    assertFalse(feedback.getStyleClass().contains("error"), command);
+                    assertEmptySelection(window);
+                } finally {
+                    window.getRoot().close();
+                }
+            }
+        });
+    }
+
+    private void assertMutationClearsSelection(Predicate<Person> predicate, String command) throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            Person firstClient = new PersonBuilder(AMY).withRole(ClientRole.BUYER).withNote("First note").build();
+            Person nextClient = new PersonBuilder(BOB).withRole(ClientRole.BUYER).withNote("Second note").build();
+            model.addPerson(firstClient);
+            model.addPerson(nextClient);
+            model.updateFilteredPersonList(predicate);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                enterCommand(window, commandBox, "view 1");
+                assertSelectedClient(window, firstClient);
+                enterCommand(window, commandBox, command);
+                assertEquals(List.of(nextClient), model.getFilteredPersonList());
+                assertEmptySelection(window);
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    private static Label detailLabel(MainWindow window, String selector) {
+        return (Label) window.getDetailPane().getRoot().lookup(selector);
+    }
+
+    private static void assertSelectedClient(MainWindow window, Person person) {
+        assertSame(person, window.getPersonListPanel().selectedPersonProperty().get());
+        assertEquals(person.getName().fullName, detailLabel(window, "#name").getText());
+        assertEquals(person.getPhone().value, detailLabel(window, "#phone").getText());
+        assertEquals(person.getEmail().value, detailLabel(window, "#email").getText());
+        assertEquals(person.getAddress().value, detailLabel(window, "#address").getText());
+        assertFalse(window.getDetailPane().getRoot().lookup("#emptyState").isVisible());
+        assertTrue(window.getDetailPane().getRoot().lookup("#detailScroll").isVisible());
+    }
+
+    private static void assertEmptySelection(MainWindow window) {
+        assertNull(window.getPersonListPanel().selectedPersonProperty().get());
+        assertTrue(window.getDetailPane().getRoot().lookup("#emptyState").isVisible());
+        assertFalse(window.getDetailPane().getRoot().lookup("#detailScroll").isVisible());
+        assertEquals("", detailLabel(window, "#name").getText());
+    }
+
     private void assertFailureAndRecovery(String command, String expectedError) throws Exception {
         runOnFxThread(() -> {
             Path dataFile = temporaryFolder.resolve("addressbook.json");
@@ -663,6 +1005,16 @@ public class MainWindowTest {
             root.layout();
         }
         assertFalse(root.isNeedsLayout(), "The main window layout did not settle");
+    }
+
+    private static void assertWithinRegion(Node child, Node parent) {
+        Bounds childBounds = child.localToScene(child.getLayoutBounds());
+        Bounds parentBounds = parent.localToScene(parent.getLayoutBounds());
+        assertTrue(childBounds.getMinX() >= parentBounds.getMinX() - 1
+                && childBounds.getMaxX() <= parentBounds.getMaxX() + 1
+                && childBounds.getMinY() >= parentBounds.getMinY() - 1
+                && childBounds.getMaxY() <= parentBounds.getMaxY() + 1,
+                child.getId() + " extends beyond " + parent.getId());
     }
 
     private MainWindow openWindow(ModelManager model) {

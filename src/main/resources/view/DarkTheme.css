@@ -1,19 +1,36 @@
+.root {
+    /* Shared colours keep the list, profile and command area on the same palette. */
+    -app-background: #1c202b;
+    -app-input: #151922;
+    -app-surface: #252b3b;
+    -app-card: #303748;
+    -app-surface-raised: #363e51;
+    -app-border: #3b4356;
+    -app-text: #edf0f7;
+    -app-text-muted: #b5bdce;
+    -app-accent: #5aa2ff;
+    -app-selected: #36496d;
+    -fx-base: -app-surface;
+    -fx-background: -app-background;
+    -fx-control-inner-background: -app-surface;
+    -fx-focus-color: -app-accent;
+    -fx-faint-focus-color: transparent;
+    -fx-font-family: "System";
+    -fx-font-size: 13px;
+}
+
 .background {
-    -fx-background-color: derive(#1d1d1d, 20%);
-    background-color: #383838; /* Used in the default.html file */
+    -fx-background-color: -app-background;
+    background-color: #1c202b; /* Used in the default.html file */
 }
 
 .label {
-    -fx-font-size: 11pt;
-    -fx-font-family: "Segoe UI Semibold";
-    -fx-text-fill: #555555;
-    -fx-opacity: 0.9;
+    -fx-text-fill: -app-text;
+    -fx-opacity: 1;
 }
 
 .label-bright {
-    -fx-font-size: 11pt;
-    -fx-font-family: "Segoe UI Semibold";
-    -fx-text-fill: white;
+    -fx-text-fill: -app-text-muted;
     -fx-opacity: 1;
 }
 
@@ -25,8 +42,7 @@
 }
 
 .text-field {
-    -fx-font-size: 12pt;
-    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 14px;
 }
 
 .tab-pane {
@@ -90,7 +106,7 @@
 .list-view {
     -fx-background-insets: 0;
     -fx-padding: 0;
-    -fx-background-color: derive(#1d1d1d, 20%);
+    -fx-background-color: transparent;
 }
 
 .list-cell {
@@ -99,50 +115,60 @@
     -fx-padding: 0 0 0 0;
 }
 
-.list-cell:filled:even {
-    -fx-background-color: #3c3e3f;
+.list-cell:filled:even, .list-cell:filled:odd, .list-cell:empty {
+    -fx-background-color: transparent;
 }
 
-.list-cell:filled:odd {
-    -fx-background-color: #515658;
+.list-cell:filled:hover #cardPane {
+    -fx-background-color: -app-surface-raised;
 }
 
 .list-cell:filled:selected {
-    -fx-background-color: #424d5f;
+    -fx-background-color: transparent;
 }
 
 .list-cell:filled:selected #cardPane {
-    -fx-border-color: #3e7b91;
-    -fx-border-width: 1;
+    -fx-background-color: -app-selected;
+    -fx-border-color: -app-accent;
 }
 
 .list-cell .label {
-    -fx-text-fill: white;
+    -fx-text-fill: -app-text;
 }
 
 .cell_big_label {
-    -fx-font-family: "Segoe UI Semibold";
     -fx-font-size: 16px;
-    -fx-text-fill: #010504;
+    -fx-text-fill: -app-text;
+}
+
+.list-cell #name {
+    -fx-font-weight: bold;
 }
 
 .cell_small_label {
-    -fx-font-family: "Segoe UI";
     -fx-font-size: 13px;
-    -fx-text-fill: #010504;
+    -fx-text-fill: -app-text-muted;
+}
+
+.list-cell .cell_small_label {
+    -fx-text-fill: -app-text-muted;
+}
+
+#requirementsSummary {
+    -fx-text-fill: #c3d8ee;
 }
 
 .role-badge {
-    -fx-padding: 3 10 3 10;
+    -fx-padding: 2 8 2 8;
     -fx-background-radius: 12;
-    -fx-font-family: "Segoe UI Semibold";
     -fx-font-size: 12px;
+    -fx-font-weight: bold;
     -fx-text-fill: white;
     -fx-opacity: 1;
 }
 
 .note-indicator {
-    -fx-background-color: #3e7b91;
+    -fx-background-color: -app-accent;
     -fx-background-radius: 10;
     -fx-padding: 3;
 }
@@ -153,20 +179,31 @@
     -fx-stroke-width: 1;
 }
 
-.role-buyer {
-    -fx-background-color: #2456a6;
+.role-badge.role-buyer {
+    -fx-background-color: #244779;
+    -fx-text-fill: #d7e9ff;
 }
 
-.role-seller {
-    -fx-background-color: #9a6400;
+.role-badge.role-seller {
+    -fx-background-color: #674505;
+    -fx-text-fill: #ffe3a3;
 }
 
-.role-both {
-    -fx-background-color: #7a2e91;
+.role-badge.role-both {
+    -fx-background-color: #55316f;
+    -fx-text-fill: #efdcff;
 }
 
-.detail-pane, .detail-pane .scroll-pane, .detail-pane .scroll-pane > .viewport {
-    -fx-background-color: #303030;
+.detail-pane {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+}
+
+.detail-pane .scroll-pane, .detail-pane .scroll-pane > .viewport {
+    -fx-background-color: transparent;
 }
 
 .detail-pane .scroll-pane {
@@ -175,49 +212,59 @@
 }
 
 .detail-pane .detail-name {
-    -fx-font-family: "Segoe UI Semibold";
     -fx-font-size: 22px;
-    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
     -fx-opacity: 1;
 }
 
 .detail-pane .detail-caption {
-    -fx-font-size: 12px;
-    -fx-text-fill: #b9b9b9;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text-muted;
     -fx-opacity: 1;
 }
 
 .detail-pane .detail-value {
-    -fx-font-family: "Segoe UI";
     -fx-font-size: 14px;
-    -fx-text-fill: white;
+    -fx-text-fill: -app-text;
     -fx-opacity: 1;
 }
 
 .detail-pane .detail-empty-state {
     -fx-font-size: 14px;
-    -fx-text-fill: #b9b9b9;
+    -fx-text-fill: -app-text-muted;
     -fx-opacity: 1;
 }
 
+.detail-pane .detail-field {
+    -fx-padding: 0 0 4 0;
+}
+
+.detail-pane #nameRow {
+    -fx-padding: 0 0 12 0;
+    -fx-border-color: transparent transparent -app-border transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
 .stack-pane {
-     -fx-background-color: derive(#1d1d1d, 20%);
+     -fx-background-color: -app-background;
 }
 
 .pane-with-border {
-     -fx-background-color: derive(#1d1d1d, 20%);
-     -fx-border-color: derive(#1d1d1d, 10%);
-     -fx-border-top-width: 1px;
+     -fx-background-color: -app-background;
+     -fx-border-width: 0;
 }
 
 .status-bar {
-    -fx-background-color: derive(#1d1d1d, 30%);
+    -fx-background-color: -app-input;
+    -fx-border-color: -app-border transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
 }
 
 .result-display {
     -fx-background-color: transparent;
-    -fx-font-family: "Segoe UI Light";
-    -fx-font-size: 13pt;
+    -fx-font-size: 14px;
     -fx-text-fill: white;
 }
 
@@ -226,10 +273,16 @@
 }
 
 .status-bar .label {
-    -fx-font-family: "Segoe UI Light";
-    -fx-text-fill: white;
-    -fx-padding: 4px;
-    -fx-pref-height: 30px;
+    -fx-font-size: 11px;
+    -fx-font-family: "Monospaced";
+    -fx-text-fill: -app-text-muted;
+    -fx-padding: 4 10 4 10;
+    -fx-pref-height: 28px;
+}
+
+.status-bar #clientCountStatus {
+    -fx-text-fill: -app-text;
+    -fx-font-weight: bold;
 }
 
 .status-bar-with-border {
@@ -261,14 +314,18 @@
 }
 
 .menu-bar {
-    -fx-background-color: derive(#1d1d1d, 20%);
+    -fx-background-color: -app-input;
 }
 
 .menu-bar .label {
-    -fx-font-size: 14pt;
-    -fx-font-family: "Segoe UI Light";
-    -fx-text-fill: white;
-    -fx-opacity: 0.9;
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-text-muted;
+    -fx-opacity: 1;
+}
+
+.menu-bar .menu:hover, .menu-bar .menu:showing {
+    -fx-background-color: -app-surface-raised;
+    -fx-background-radius: 4;
 }
 
 .menu .left-container {
@@ -350,12 +407,17 @@
 }
 
 .scroll-bar {
-    -fx-background-color: derive(#1d1d1d, 20%);
+    -fx-background-color: transparent;
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: derive(#1d1d1d, 50%);
+    -fx-background-color: -app-border;
     -fx-background-insets: 3;
+    -fx-background-radius: 8;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #526a86;
 }
 
 .scroll-bar .increment-button, .scroll-bar .decrement-button {
@@ -376,10 +438,13 @@
 }
 
 #cardPane {
-    -fx-background-color: transparent;
+    -fx-background-color: -app-card;
+    -fx-background-radius: 8;
+    -fx-background-insets: 2 0 2 0;
     /* Reserve the selection border so selecting a card does not change its size. */
     -fx-border-color: transparent;
     -fx-border-width: 1;
+    -fx-border-radius: 8;
 }
 
 #commandTypeLabel {
@@ -388,30 +453,98 @@
 }
 
 #commandTextField {
-    -fx-background-color: transparent #383838 transparent #383838;
+    -fx-background-color: -app-input;
+    -fx-background-radius: 8;
     -fx-background-insets: 0;
-    -fx-border-color: #383838 #383838 #ffffff #383838;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
     -fx-border-insets: 0;
     -fx-border-width: 1;
-    -fx-font-family: "Segoe UI Light";
-    -fx-font-size: 13pt;
+    -fx-padding: 7 10 7 10;
+    -fx-font-family: "Monospaced";
+    -fx-font-size: 14px;
     -fx-text-fill: white;
+    -fx-prompt-text-fill: -app-text-muted;
 }
 
-#filterField, #personListPanel, #personWebpage {
+#commandTextField:focused {
+    -fx-border-color: -app-accent;
+}
+
+#filterField, #personWebpage {
     -fx-effect: innershadow(gaussian, black, 10, 0, 0, 0);
 }
 
+#resultDisplay {
+    -fx-background-color: -app-input;
+    -fx-background-radius: 8;
+    -fx-border-color: -app-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 5;
+}
+
 #resultDisplay .content {
-    -fx-background-color: transparent, #383838, transparent, #383838;
+    -fx-background-color: -app-input;
     -fx-background-radius: 0;
 }
 
 #tags .label {
-    -fx-text-fill: white;
-    -fx-background-color: #3e7b91;
-    -fx-padding: 1 3 1 3;
-    -fx-border-radius: 2;
-    -fx-background-radius: 2;
-    -fx-font-size: 11;
+    -fx-text-fill: #e0e6f0;
+    -fx-background-color: #3d465b;
+    -fx-padding: 1 5 1 5;
+    -fx-background-radius: 8;
+    -fx-font-size: 11px;
+}
+
+/* The list and profile sit on one background; only their content uses raised surfaces. */
+.app-shell, .workspace, #personList, #detailPanePlaceholder {
+    -fx-background-color: -app-background;
+}
+
+#detailPanePlaceholder {
+    -fx-padding: 10 10 10 0;
+}
+
+/* Leave room for three requirement cards when decorations reduce the usable window height.
+ * Keep the text size unchanged; long feedback remains scrollable in its smaller viewport.
+ */
+.app-shell:compact .menu-bar {
+    -fx-padding: 0 4 0 4;
+}
+
+.app-shell:compact #commandBoxPlaceholder {
+    -fx-padding: 2 10 2 10;
+}
+
+.app-shell:compact #commandTextField {
+    -fx-padding: 5 10 5 10;
+}
+
+.app-shell:compact #resultDisplayPlaceholder {
+    -fx-min-height: 40;
+    -fx-pref-height: 40;
+    -fx-max-height: 40;
+    -fx-padding: 2 10 2 10;
+}
+
+.app-shell:compact #resultDisplay {
+    -fx-padding: 0;
+}
+
+.app-shell:compact #resultDisplay .content {
+    -fx-padding: 1 4 1 4;
+}
+
+.app-shell:compact #personList {
+    -fx-padding: 2 10 2 10;
+}
+
+.app-shell:compact #detailPanePlaceholder {
+    -fx-padding: 2 10 2 0;
+}
+
+.app-shell:compact .status-bar .label {
+    -fx-padding: 2 10 2 10;
+    -fx-pref-height: 20;
 }

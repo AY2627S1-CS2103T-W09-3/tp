@@ -57,7 +57,11 @@ The panel tests use real client fields to check formatting, optional-row visibil
 clearing the panel, and wrapping and scrolling a 500-character note.
 The main-window tests check the embedded panel at 853 × 480 and 820 × 440 logical pixels.
 
-These tests populate the panel through `setPerson`; row-click and `view` selection wiring belongs to issue #101.
+The main-window selection tests click a rendered row and execute commands through the command box.
+They check the selected border, `view` indices in a filtered list, refreshed details after `edit`, `note` and `role`,
+and the empty state after commands without a view index. Regression cases verify that a client moving into a
+removed client's old row is not selected. The note-removal case uses a test predicate; user-facing filters do not search notes.
+
 The Windows display-scaling results in
 [issue #123](https://github.com/AY2627S1-CS2103T-W09-3/tp/issues/123) apply to the original PR #112 build,
 commit `4c0c4e47`, before this detail panel was added. They do not verify the populated panel.
@@ -78,9 +82,27 @@ Use a separate test-data folder for these manual checks:
    Hover over it and check that the tooltip says `Has note`, without displaying the note's contents.
 1. Run `note 1 clear`. Check that the marker disappears and leaves no empty space in the name row.
 1. Add a 500-character note spanning three lines, using `\n` between lines in the command.
-   After the selection wiring in #101 is available, select the client and check that the existing note row
+   Select the client and check that the existing note row
    preserves the line breaks, wraps, and scrolls to the end without clipping the following rows.
 1. Clear the note again and check that both the marker and the panel's note row disappear.
+
+### Manual selection checks
+
+Use a separate test-data folder with at least three clients.
+
+1. Click a client row. Check that its blue border appears and the detail panel shows that client's fields.
+1. Run `view 3`. Check that row 3 is selected and scrolled into view.
+1. Run `filter` or `find` with criteria matching some test clients. Check that the selection and panel clear,
+   then run `view 1` and confirm that it selects the first client in the filtered list.
+1. Edit the selected client's name, phone or email while keeping it within the active filter.
+   Check that the panel shows the updated client. Repeat with `note` and `role`.
+1. Give two test clients the buyer role, run `filter r/buyer`, then `view 1` and `role 1 seller`.
+   Check that the first client disappears and the panel clears, even though another client now occupies row 1.
+1. Select a client, then delete it. Check that the panel clears.
+1. Select a client and run `clear`. Check that the warning leaves the client selected and its details visible.
+   Without selecting another row, run `clear confirm` and check that the list and panel are empty.
+1. Select a client and run `help`. Close the help window and check that the same client is still selected
+   and its details remain visible.
 
 ### Manual display-scaling checks
 

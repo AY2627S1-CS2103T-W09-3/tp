@@ -2,9 +2,12 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -20,11 +23,12 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Region;
+import seedu.address.commons.core.index.Index;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 /**
- * Tests the placeholder visibility of the {@code PersonListPanel} when the list
- * of persons is empty, populated, and cleared.
+ * Tests placeholder visibility and selection in the {@code PersonListPanel}.
  */
 public class PersonListPanelTest {
 
@@ -67,6 +71,45 @@ public class PersonListPanelTest {
             persons.clear();
             assertTrue(listView.getItems().isEmpty());
             assertTrue(isPlaceholderVisible(root));
+        });
+    }
+
+    @Test
+    public void selectPerson_thenClearOrUseStaleIndex_updatesSelectedClient() throws Exception {
+        runOnFxThread(() -> {
+            PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(AMY, BOB));
+            assertNull(panel.selectedPersonProperty().get());
+
+            panel.selectPerson(Index.fromOneBased(2));
+            assertEquals(BOB, panel.selectedPersonProperty().get());
+
+            panel.clearSelection();
+            assertNull(panel.selectedPersonProperty().get());
+
+            panel.selectPerson(Index.fromOneBased(1));
+            panel.selectPerson(Index.fromOneBased(3));
+            assertNull(panel.selectedPersonProperty().get());
+        });
+    }
+
+    @Test
+    public void selection_listReplacedOrClientDeleted_clearsInsteadOfSelectingAnotherClient() throws Exception {
+        runOnFxThread(() -> {
+            ObservableList<Person> persons = FXCollections.observableArrayList(AMY, BOB);
+            PersonListPanel panel = new PersonListPanel(persons);
+            Region root = panel.getRoot();
+            new Scene(root, 600, 400);
+            root.applyCss();
+            root.layout();
+            panel.selectPerson(Index.fromOneBased(1));
+
+            persons.set(0, new PersonBuilder(AMY).withName("Updated Amy").build());
+            assertNull(panel.selectedPersonProperty().get());
+
+            panel.selectPerson(Index.fromOneBased(1));
+            persons.remove(0);
+            assertEquals(List.of(BOB), persons);
+            assertNull(panel.selectedPersonProperty().get());
         });
     }
 

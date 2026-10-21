@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.logging.Logger;
 
 import javafx.application.Platform;
+import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
@@ -11,6 +12,7 @@ import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
@@ -26,6 +28,9 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
+    private static final PseudoClass COMPACT_LAYOUT = PseudoClass.getPseudoClass("compact");
+    // Use the content height, not the stage height which includes platform-dependent decorations.
+    private static final double COMPACT_CONTENT_HEIGHT = 500;
 
     private final Logger logger = LogsCenter.getLogger(getClass());
 
@@ -38,6 +43,9 @@ public class MainWindow extends UiPart<Stage> {
     private DetailPane detailPane;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+
+    @FXML
+    private VBox mainContainer;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -71,6 +79,7 @@ public class MainWindow extends UiPart<Stage> {
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
+        configureResponsiveLayout();
 
         setAccelerators();
 
@@ -79,6 +88,15 @@ public class MainWindow extends UiPart<Stage> {
 
     public Stage getPrimaryStage() {
         return primaryStage;
+    }
+
+    private void configureResponsiveLayout() {
+        mainContainer.heightProperty().addListener(observable -> updateLayoutDensity());
+        updateLayoutDensity();
+    }
+
+    private void updateLayoutDensity() {
+        mainContainer.pseudoClassStateChanged(COMPACT_LAYOUT, mainContainer.getHeight() < COMPACT_CONTENT_HEIGHT);
     }
 
     private void setAccelerators() {
@@ -124,6 +142,8 @@ public class MainWindow extends UiPart<Stage> {
 
         detailPane = new DetailPane();
         detailPanePlaceholder.getChildren().add(detailPane.getRoot());
+        personListPanel.selectedPersonProperty().addListener((observable, oldPerson, newPerson) ->
+                detailPane.setPerson(newPerson));
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
@@ -192,6 +212,10 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
+            if (!commandResult.isAwaitingConfirmation() && !commandResult.isShowHelp()) {
+                commandResult.getViewIndex().ifPresentOrElse(personListPanel::selectPerson,
+                        personListPanel::clearSelection);
+            }
             logger.info("Result: " + commandResult.getFeedbackToUser());
             if (commandResult.isAwaitingConfirmation()) {
                 resultDisplay.setPendingFeedbackToUser(commandResult.getFeedbackToUser());

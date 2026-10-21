@@ -69,7 +69,10 @@ public class NoteCommand extends Command {
         model.setPerson(personToEdit, editedPerson);
 
         String message = note == null ? MESSAGE_NOTE_CLEARED : MESSAGE_NOTE_UPDATED;
-        return new CommandResult(String.format(message, editedPerson.getName()));
+        String feedback = String.format(message, editedPerson.getName());
+        int updatedIndex = model.getFilteredPersonList().indexOf(editedPerson);
+        return updatedIndex < 0 ? new CommandResult(feedback)
+                : new CommandResult(feedback, Index.fromZeroBased(updatedIndex));
     }
 
     @Override
