@@ -77,6 +77,10 @@ These rules apply when adding or editing clients.
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
 | Address | Cannot be blank. |
+| Budget | Two whole-dollar amounts joined by a hyphen, such as `400000-600000`. Each amount is from 1 to 1,000,000,000, commas are optional, and the first amount cannot exceed the second. |
+| Asking price | One whole-dollar amount from 1 to 1,000,000,000, with optional correctly placed commas. |
+| Area | One of the 32 supported areas. Case is ignored and the standard spelling is stored. |
+| Housing type | `HDB`, `Condo`, `EC` or `Landed`, ignoring case. |
 | Tag | Letters and numbers only; no spaces or symbols. |
 
 Email rules:
@@ -90,6 +94,10 @@ Prefix rules:
 * Each of `n/`, `p/`, `e/` and `a/` can appear only once per command.
 * Repeat `t/` to supply multiple tags, such as `t/urgent t/firsttime`.
 * For `edit`, use an empty `t/` to remove all tags.
+* Each of `b/` and `s/` can appear only once per command.
+* Repeat `l/` to supply multiple areas, such as `l/Bedok l/Tampines`.
+* Repeat `h/` to supply multiple housing types, such as `h/HDB h/Condo`.
+* For `edit`, an empty `b/`, `s/`, `l/` or `h/` clears that field. In `add`, an empty prefix is an error.
 
 ### Duplicate clients
 
@@ -121,7 +129,7 @@ Format: `help`
 
 Adds a client to the EstateBookUltraProMax.
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​`
+Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A client can have any number of tags, including zero.
@@ -130,6 +138,7 @@ A client can have any number of tags, including zero.
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
+* `add n/John Tan p/91234567 e/johntan@example.com a/12 Bedok Road b/400000-600000 l/Bedok h/HDB`
 
 ### Listing all clients: `list`
 
@@ -145,18 +154,75 @@ Format: `list`
 
 Edits an existing client in EstateBookUltraProMax.
 
-Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`
+Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`
 
 * Edits the client at the specified `INDEX`. The index refers to the index number shown in the displayed client list. The index **must be a positive integer** 1, 2, 3, …​
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * When editing tags, all of the client's existing tags are removed; adding tags is not cumulative.
 * To remove all of a client's tags, enter `t/` without a tag after it.
+* An `edit` replaces a whole value: `edit 1 l/Punggol` leaves `Punggol` as the only area, so list every area again to keep it.
+* An empty `b/`, `s/`, `l/` or `h/` clears that field: `edit 1 b/` removes the budget and `edit 1 l/` removes every area.
 * After a successful edit, the current search or filter stays active. The edited client leaves the list if it no longer matches. Enter `list` to show all clients.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st client to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd client to be `Betsy Crower` and clears all existing tags.
+
+### Recording a client's requirements: `b/`, `s/`, `l/`, `h/`
+
+A client's requirements are optional and can be supplied with `add` or changed
+with `edit`. `b/` is the budget, `s/` the asking price, `l/` a preferred area and
+`h/` a preferred housing type.
+
+Money is in whole Singapore dollars: no cents, no decimal point, and no `$` typed
+into the command. Each amount must be from 1 to 1,000,000,000. Commas are optional
+as long as they are correctly placed, so `400000`, `400,000` and `1,000,000` are
+accepted and `4000,00` is rejected. The app displays each amount with a dollar
+sign and thousands separators, such as `$520,000`.
+
+A budget is two amounts joined by a hyphen, smallest first: `b/400000-600000`.
+The two amounts may be equal, which displays as a single amount. `b/600000-400000`
+is rejected because the minimum exceeds the maximum.
+
+Area names are matched ignoring case and stored in title case, so `l/bedok` stores
+`Bedok`. Repeat `l/` for more than one area, as in `l/Bedok l/Tampines`. These are
+the 32 supported areas:
+
+| Area | | | |
+|---|---|---|---|
+| Ang Mo Kio | Bedok | Bishan | Bukit Batok |
+| Bukit Merah | Bukit Panjang | Bukit Timah | Choa Chu Kang |
+| Clementi | Downtown Core | Geylang | Hougang |
+| Jurong East | Jurong West | Kallang | Marine Parade |
+| Newton | Novena | Orchard | Pasir Ris |
+| Punggol | Queenstown | River Valley | Rochor |
+| Sembawang | Sengkang | Serangoon | Tampines |
+| Tanglin | Toa Payoh | Woodlands | Yishun |
+
+Housing types are `HDB`, `Condo`, `EC` and `Landed`, matched ignoring case.
+Repeat `h/` for more than one, as in `h/HDB h/Condo`.
+
+Examples:
+
+* `add n/John Tan p/91234567 e/johntan@example.com a/12 Bedok Road b/400000-600000 s/520000 l/Bedok l/Tampines h/HDB`
+  adds a client who can spend up to $600,000, is asking $520,000 for their own flat,
+  and wants an HDB flat in Bedok or Tampines.
+* `edit 1 b/500000-700000` replaces the first client's budget with $500,000 to $700,000.
+* `edit 1 s/` removes the first client's asking price.
+* `edit 2 h/Condo` replaces all of the second client's housing types with `Condo`.
+* `edit 3 l/` removes all of the third client's preferred areas.
+
+Inputs that are rejected:
+
+| Command contains | Result box shows |
+|---|---|
+| `b/600000-400000` | `Error: The budget minimum must not exceed the maximum.` |
+| `b/400000` | `Error: Prices must be whole numbers from 1 to 1,000,000,000, with optional correctly placed commas.` |
+| `s/0` | `Error: Prices must be whole numbers from 1 to 1,000,000,000, with optional correctly placed commas.` |
+| `l/Bishan East` | `Error: Area must be one of the supported areas.` |
+| `h/Shophouse` | `Error: Housing type must be HDB, Condo, EC, or Landed.` |
+| `b/1-2 b/3-4` | `Error: Multiple values specified for the following single-valued field(s): b/` |
 
 ### Assigning a client's role: `role`
 
@@ -346,10 +412,10 @@ Restart the app from that working directory.
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd b/400000-600000 l/Clementi h/HDB`
 **Clear** | `clear`, then `clear confirm`<br> `clear` shows a warning and `clear confirm` deletes all clients
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`<br> e.g., `edit 2 b/500000-700000 l/Bedok`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`
 **Note** | `note INDEX TEXT`<br> e.g., `note 1 Call next week`, `note 1 clear`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
