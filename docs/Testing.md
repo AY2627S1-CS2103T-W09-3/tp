@@ -81,7 +81,11 @@ Use a separate test-data folder with at least three clients.
    Check that the panel shows the updated client. Repeat with `note` and `role`.
 1. Give two test clients the buyer role, run `filter r/buyer`, then `view 1` and `role 1 seller`.
    Check that the first client disappears and the panel clears, even though another client now occupies row 1.
-1. Select a client, then delete it. Check that the panel clears. Repeat after `clear` followed by `clear confirm`.
+1. Select a client, then delete it. Check that the panel clears.
+1. Select a client and run `clear`. Check that the warning leaves the client selected and its details visible.
+   Without selecting another row, run `clear confirm` and check that the list and panel are empty.
+1. Select a client and run `help`. Close the help window and check that the same client is still selected
+   and its details remain visible.
 
 ### Manual display-scaling checks
 

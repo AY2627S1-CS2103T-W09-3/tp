@@ -703,19 +703,67 @@ public class MainWindowTest {
     }
 
     @Test
+    public void selection_clearWarningThenConfirm_preservesSelectionUntilDeletion() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                enterCommand(window, commandBox, "view 1");
+                assertSelectedClient(window, AMY);
+
+                enterCommand(window, commandBox, "clear");
+                assertEquals(List.of(AMY, BOB), model.getAddressBook().getPersonList());
+                assertSelectedClient(window, AMY);
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                assertEquals(String.format(ClearCommand.MESSAGE_WARNING_MULTIPLE_CLIENTS, 2), feedback.getText());
+
+                enterCommand(window, commandBox, "clear confirm");
+                assertEquals(ClearCommand.MESSAGE_SUCCESS, feedback.getText());
+                assertTrue(model.getAddressBook().getPersonList().isEmpty());
+                assertEmptySelection(window);
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void selection_help_preservesSelectedClient() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            MainWindow window = openWindow(model);
+            TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+            try {
+                enterCommand(window, commandBox, "view 1");
+                assertSelectedClient(window, AMY);
+
+                enterCommand(window, commandBox, "help");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                assertFalse(feedback.getStyleClass().contains("error"));
+                assertSelectedClient(window, AMY);
+            } finally {
+                // Close both the main window and the help window opened by the command.
+                enterCommand(window, commandBox, "exit");
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
     public void selection_commandsWithoutViewIndex_clearPanelEvenIfListIsUnchanged() throws Exception {
         runOnFxThread(() -> {
             for (String command : List.of("filter t/friend", "find Amy Bob", "find Nobody", "list",
-                    "delete 1", "delete 2", "clear confirm")) {
+                    "delete 1", "delete 2")) {
                 ModelManager model = new ModelManager();
                 model.addPerson(AMY);
                 model.addPerson(BOB);
                 MainWindow window = openWindow(model);
                 try {
                     TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
-                    if (command.equals("clear confirm")) {
-                        enterCommand(window, commandBox, "clear");
-                    }
                     window.getPersonListPanel().selectPerson(Index.fromOneBased(1));
                     window.getRoot().getScene().getRoot().applyCss();
                     assertSelectedClient(window, AMY);

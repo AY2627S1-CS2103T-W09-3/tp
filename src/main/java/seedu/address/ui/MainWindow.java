@@ -194,8 +194,10 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
-            commandResult.getViewIndex().ifPresentOrElse(personListPanel::selectPerson,
-                    personListPanel::clearSelection);
+            if (!commandResult.isAwaitingConfirmation() && !commandResult.isShowHelp()) {
+                commandResult.getViewIndex().ifPresentOrElse(personListPanel::selectPerson,
+                        personListPanel::clearSelection);
+            }
             logger.info("Result: " + commandResult.getFeedbackToUser());
             if (commandResult.isAwaitingConfirmation()) {
                 resultDisplay.setPendingFeedbackToUser(commandResult.getFeedbackToUser());

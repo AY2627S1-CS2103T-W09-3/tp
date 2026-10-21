@@ -21,7 +21,7 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
-    /** Index in the post-command filtered list to select, or null to clear the selection. */
+    /** Index in the post-command filtered list to select; see {@link #getViewIndex()} for empty-index handling. */
     private final Index viewIndex;
 
     /** The user must confirm before the command takes effect. */
@@ -84,7 +84,8 @@ public class CommandResult {
 
     /**
      * Returns the client index to select in the post-command filtered list.
-     * An empty optional instructs the UI to clear its selection and detail panel.
+     * Results awaiting confirmation or showing help preserve the current selection and detail panel.
+     * For other results, an empty optional instructs the UI to clear its selection and detail panel.
      * After edit, note or role, the index identifies the updated client if it remains visible;
      * otherwise it is empty, even if a different client now occupies the old index.
      */
