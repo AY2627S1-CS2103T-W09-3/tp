@@ -25,6 +25,8 @@ public class ClearCommand extends Command {
     public static final String MESSAGE_WARNING_MULTIPLE_CLIENTS = "This will delete all %1$d clients. Type "
             + COMMAND_WORD + " " + CONFIRM_WORD + " to proceed.";
 
+    private String actionDescription = "";
+
     private final boolean isConfirmed;
 
     /**
@@ -40,6 +42,7 @@ public class ClearCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) {
+        actionDescription = "";
         requireNonNull(model);
 
         // Counts the whole address book, not the filtered list, because clear also deletes hidden clients.
@@ -57,7 +60,23 @@ public class ClearCommand extends Command {
         }
 
         model.setAddressBook(new AddressBook());
+        actionDescription = "Cleared " + clientCount + (clientCount == 1 ? " client" : " clients");
         return new CommandResult(MESSAGE_SUCCESS);
+    }
+
+    @Override
+    public boolean isUndoable() {
+        return isConfirmed;
+    }
+
+    @Override
+    public String getCommandWord() {
+        return COMMAND_WORD;
+    }
+
+    @Override
+    public String getActionDescription() {
+        return actionDescription;
     }
 
     @Override

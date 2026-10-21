@@ -23,6 +23,9 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.ReadOnlyUserPrefs;
+import seedu.address.model.history.AddressBookSnapshot;
+import seedu.address.model.history.HistoryEntry;
+import seedu.address.model.history.HistoryOperationException;
 import seedu.address.model.person.Area;
 import seedu.address.model.person.Budget;
 import seedu.address.model.person.HousingType;
@@ -159,6 +162,63 @@ public class AddCommandTest {
      * A default model stub that has all of the methods failing.
      */
     private class ModelStub implements Model {
+        @Override
+        public AddressBookSnapshot captureSnapshot() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void restoreSnapshot(AddressBookSnapshot snapshot) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public boolean recordChange(AddressBookSnapshot before, AddressBookSnapshot after,
+                String commandWord, String actionDescription) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public boolean canUndo() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public boolean canRedo() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public HistoryEntry undo() throws HistoryOperationException {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public HistoryEntry redo() throws HistoryOperationException {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void rollbackUndo(HistoryEntry entry) throws HistoryOperationException {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void rollbackRedo(HistoryEntry entry) throws HistoryOperationException {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public List<HistoryEntry> getUndoHistory() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public List<HistoryEntry> getRedoHistory() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+
         @Override
         public ReadOnlyUserPrefs getUserPrefs() {
             throw new AssertionError("This method should not be called.");

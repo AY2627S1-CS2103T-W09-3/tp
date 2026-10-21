@@ -33,6 +33,8 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.history.AddressBookSnapshot;
+import seedu.address.model.history.HistoryEntry;
 import seedu.address.model.person.Area;
 import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
@@ -61,6 +63,26 @@ public class LogicManagerTest {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
         logic = new LogicManager(model, storage);
+    }
+
+    @Test
+    public void execute_cancelledClear_preservesDataAndExistingHistory() throws Exception {
+        AddressBookSnapshot empty = model.captureSnapshot();
+        model.addPerson(AMY);
+        model.recordChange(empty, model.captureSnapshot(), "add", "Added client Amy Bee");
+        AddressBookSnapshot beforeBob = model.captureSnapshot();
+        model.addPerson(BOB);
+        model.recordChange(beforeBob, model.captureSnapshot(), "add", "Added client Bob Choo");
+        model.undo();
+        List<HistoryEntry> undo = model.getUndoHistory();
+        List<HistoryEntry> redo = model.getRedoHistory();
+
+        assertTrue(logic.execute("clear").isAwaitingConfirmation());
+        assertEquals(ClearCommand.MESSAGE_CANCELLED, logic.execute("delete 1").getFeedbackToUser());
+
+        assertEquals(beforeBob, model.captureSnapshot());
+        assertEquals(undo, model.getUndoHistory());
+        assertEquals(redo, model.getRedoHistory());
     }
 
     @Test
