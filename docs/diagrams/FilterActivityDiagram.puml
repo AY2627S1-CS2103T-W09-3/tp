@@ -18,7 +18,7 @@ else ([else])
     stop
 endif
 
-:User executes add, edit, delete, role or note;
+:User executes add, edit, delete, role, note or clear confirm;
 :Change the address book;
 :Keep the active predicate;
 :Update the displayed list

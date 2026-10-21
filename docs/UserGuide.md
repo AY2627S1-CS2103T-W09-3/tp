@@ -319,10 +319,11 @@ Format: `filter [r/ROLE] [t/TAG]…​`
 
 * `filter` replaces any filter or `find` search that is already active. It does not combine with it.
 * `find` also replaces an active filter. Use `list` to clear the filter and show all clients.
-* The filter stays active after `add`, `edit`, `delete`, `role` and `note`, so the displayed list can still be shorter than the whole book. Indexes in these commands refer to the displayed list.
+* The filter stays active after `add`, `edit`, `delete`, `role`, `note` and `clear confirm`, so the displayed list can still be shorter than the whole book. Indexes in these commands refer to the displayed list.
 * After `add`, `edit` or `role`, the changed client is checked against the active filter again. A client who no longer matches leaves the displayed list. For example, after `filter r/buyer`, `role 1 seller` removes client 1 from the list. In the same way, after `filter t/urgent`, `edit 1 t/weekend` removes client 1, because the client no longer has the `urgent` tag.
 * Only `add` can make a client appear, and only if the new client matches. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again.
 * `delete` removes the client from the list, and `note` never changes which clients are shown, because it changes neither a role nor a tag.
+* `clear confirm` deletes every client, including the hidden ones, but the filter stays active. A client added afterwards stays hidden unless they match it, so run `list` to show everyone.
 
 Examples:
 
