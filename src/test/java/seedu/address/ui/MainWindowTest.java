@@ -117,8 +117,7 @@ public class MainWindowTest {
                 // Actual display-scaling checks are listed in docs/Testing.md.
                 int[][] logicalSizes = {{1920, 1080}, {1536, 864}, {853, 480}, {820, 440}};
                 for (int[] size : logicalSizes) {
-                    root.resize(size[0], size[1]);
-                    root.layout();
+                    layoutWindow(root, size[0], size[1]);
                     for (String id : List.of("menuBar", "commandTextField", "resultDisplayPlaceholder",
                             "personList", "personListView", "detailPanePlaceholder", "detailPane", "emptyState",
                             "statusbarPlaceholder", "saveLocationStatus", "clientCountStatus")) {
@@ -331,6 +330,112 @@ public class MainWindowTest {
                     assertInsideViewport(root.lookup("#" + id), 853, 480);
                 }
                 assertEquals("3 clients", ((Label) root.lookup("#clientCountStatus")).getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void layout_shortContentViewports_showThreeCompleteRequirementsCards() throws Exception {
+        runOnFxThread(() -> {
+            List<Person> clients = List.of(
+                    new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
+                            .withPhone("90000001").withEmail("alexandra.elizabeth.montgomery@example.com")
+                            .withRole(ClientRole.BUYER).withTags("firsttime", "urgent")
+                            .withBudget(new Budget(new Price("800000"), new Price("1200000"))).build(),
+                    new PersonBuilder().withName("Priya Nair").withRole(ClientRole.SELLER).withTags()
+                            .withPhone("90000002").withEmail("priya@example.com")
+                            .withAskingPrice(new Price("950000")).build(),
+                    new PersonBuilder().withName("Cheryl Goh").withRole(ClientRole.BOTH).withTags("upgrading")
+                            .withPhone("90000003")
+                            .withEmail("cheryl.goh.long.email@example.com")
+                            .withBudget(new Budget(new Price("700000"), new Price("900000")))
+                            .withAskingPrice(new Price("850000")).build(),
+                    new PersonBuilder().withName("Ravi Kumar").withTags()
+                            .withPhone("90000004").withEmail("ravi@example.com").build());
+            ModelManager model = new ModelManager();
+            clients.forEach(model::addPerson);
+            MainWindow window = openWindow(model);
+            try {
+                window.getDetailPane().setPerson(clients.get(2));
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                ListView<?> list = (ListView<?>) root.lookup("#personListView");
+                // Reserve space for window decorations and desktop controls instead of using the full screen height.
+                // These logical content sizes are not a substitute for actual display-scaling checks in #134.
+                int[][] contentSizes = {{820, 400}, {820, 412}, {853, 400}, {853, 452}, {853, 480}};
+                for (int[] size : contentSizes) {
+                    list.scrollTo(0);
+                    layoutWindow(root, size[0], size[1]);
+                    Bounds viewport = list.lookup(".clipped-container")
+                            .localToScene(list.lookup(".clipped-container").getLayoutBounds());
+                    List<ListCell<?>> firstThree = list.lookupAll(".list-cell").stream()
+                            .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < 3)
+                            .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
+                    assertEquals(3, firstThree.size());
+                    for (ListCell<?> cell : firstThree) {
+                        Bounds bounds = cell.localToScene(cell.getLayoutBounds());
+                        assertTrue(bounds.getMinY() >= viewport.getMinY() - 1);
+                        assertTrue(bounds.getMaxY() <= viewport.getMaxY() + 1,
+                                "Card " + (cell.getIndex() + 1) + " is clipped at " + size[0] + "x" + size[1]);
+                        Region card = (Region) cell.getGraphic();
+                        assertTrue(card.lookup("#requirementsSummary").isVisible());
+                        assertCardContentFits(card);
+                    }
+                    for (String id : List.of("menuBar", "commandTextField", "resultDisplay", "personList",
+                            "detailPane", "saveLocationStatus", "clientCountStatus")) {
+                        assertInsideViewport(root.lookup("#" + id), size[0], size[1]);
+                    }
+                    assertWithinRegion(root.lookup("#commandTextField"), root.lookup("#commandBoxPlaceholder"));
+                    assertWithinRegion(root.lookup("#resultDisplay"), root.lookup("#resultDisplayPlaceholder"));
+                    Node result = root.lookup("#resultDisplayPlaceholder");
+                    assertTrue(viewport.getMinY() >= result.localToScene(result.getLayoutBounds()).getMaxY());
+
+                    list.scrollTo(clients.size() - 1);
+                    layoutWindow(root, size[0], size[1]);
+                    ListCell<?> last = list.lookupAll(".list-cell").stream()
+                            .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty()
+                                    && cell.getIndex() == clients.size() - 1)
+                            .map(node -> (ListCell<?>) node).findFirst().orElseThrow();
+                    Bounds lastBounds = last.localToScene(last.getLayoutBounds());
+                    assertTrue(lastBounds.getMinY() >= viewport.getMinY() - 1);
+                    assertTrue(lastBounds.getMaxY() <= viewport.getMaxY() + 1);
+                }
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void layout_resizeShortThenTall_preservesFeedbackAndRestoresResultSpace() throws Exception {
+        runOnFxThread(() -> {
+            MainWindow window = openWindow(new ModelManager());
+            try {
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                TextArea feedback = (TextArea) root.lookup("#resultDisplay");
+                String message = "Long feedback ".repeat(30) + "\nSecond line\nThird line";
+                feedback.setText(message);
+                layoutWindow(root, 1120, 800);
+                double normalHeight = root.lookup("#resultDisplayPlaceholder").getLayoutBounds().getHeight();
+
+                layoutWindow(root, 820, 400);
+                assertTrue(root.lookup("#resultDisplayPlaceholder").getLayoutBounds().getHeight() < normalHeight);
+                assertEquals(message, feedback.getText());
+                Node viewport = feedback.lookup(".viewport");
+                Text sample = new Text("Ag");
+                sample.setFont(feedback.getFont());
+                assertTrue(viewport.getLayoutBounds().getHeight() >= sample.getLayoutBounds().getHeight(),
+                        "At least one full line of feedback must remain readable with scrollbars present");
+                assertInsideViewport(feedback, 820, 400);
+                feedback.setScrollTop(Double.MAX_VALUE);
+                layoutWindow(root, 820, 400);
+                assertTrue(feedback.getScrollTop() > 0, "Long feedback must remain scrollable");
+
+                layoutWindow(root, 1120, 800);
+                assertEquals(normalHeight,
+                        root.lookup("#resultDisplayPlaceholder").getLayoutBounds().getHeight(), 0.01);
+                assertEquals(message, feedback.getText());
             } finally {
                 window.getRoot().close();
             }
@@ -633,6 +738,16 @@ public class MainWindowTest {
             root.layout();
         }
         assertFalse(root.isNeedsLayout(), "The main window layout did not settle");
+    }
+
+    private static void assertWithinRegion(Node child, Node parent) {
+        Bounds childBounds = child.localToScene(child.getLayoutBounds());
+        Bounds parentBounds = parent.localToScene(parent.getLayoutBounds());
+        assertTrue(childBounds.getMinX() >= parentBounds.getMinX() - 1
+                && childBounds.getMaxX() <= parentBounds.getMaxX() + 1
+                && childBounds.getMinY() >= parentBounds.getMinY() - 1
+                && childBounds.getMaxY() <= parentBounds.getMaxY() + 1,
+                child.getId() + " extends beyond " + parent.getId());
     }
 
     private MainWindow openWindow(ModelManager model) {

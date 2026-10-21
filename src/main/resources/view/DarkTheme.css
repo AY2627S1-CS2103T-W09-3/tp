@@ -493,3 +493,46 @@
 #detailPanePlaceholder {
     -fx-padding: 10 10 10 0;
 }
+
+/* Leave room for three requirement cards when decorations reduce the usable window height.
+ * Keep the text size unchanged; long feedback remains scrollable in its smaller viewport.
+ */
+.app-shell:compact .menu-bar {
+    -fx-padding: 0 4 0 4;
+}
+
+.app-shell:compact #commandBoxPlaceholder {
+    -fx-padding: 2 10 2 10;
+}
+
+.app-shell:compact #commandTextField {
+    -fx-padding: 5 10 5 10;
+}
+
+.app-shell:compact #resultDisplayPlaceholder {
+    -fx-min-height: 40;
+    -fx-pref-height: 40;
+    -fx-max-height: 40;
+    -fx-padding: 2 10 2 10;
+}
+
+.app-shell:compact #resultDisplay {
+    -fx-padding: 0;
+}
+
+.app-shell:compact #resultDisplay .content {
+    -fx-padding: 1 4 1 4;
+}
+
+.app-shell:compact #personList {
+    -fx-padding: 4 10 4 10;
+}
+
+.app-shell:compact #detailPanePlaceholder {
+    -fx-padding: 4 10 4 0;
+}
+
+.app-shell:compact .status-bar .label {
+    -fx-padding: 2 10 2 10;
+    -fx-pref-height: 20;
+}
