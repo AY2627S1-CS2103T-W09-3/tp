@@ -65,6 +65,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited client: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
 
+    private String actionDescription = "";
+
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
 
@@ -82,6 +84,7 @@ public class EditCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        actionDescription = "";
         requireNonNull(model);
         List<Person> lastShownList = model.getFilteredPersonList();
 
@@ -98,6 +101,7 @@ public class EditCommand extends Command {
         }
 
         model.setPerson(personToEdit, editedPerson);
+        actionDescription = "Edited client " + editedPerson.getName();
         String feedback = String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
         int updatedIndex = model.getFilteredPersonList().indexOf(editedPerson);
         return updatedIndex < 0 ? new CommandResult(feedback)
@@ -129,6 +133,21 @@ public class EditCommand extends Command {
         return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress,
                 personToEdit.getRole(), personToEdit.getNote(), updatedTags, updatedBudget,
                 updatedAskingPrice, updatedAreas, updatedHousingTypes);
+    }
+
+    @Override
+    public boolean isUndoable() {
+        return true;
+    }
+
+    @Override
+    public String getCommandWord() {
+        return COMMAND_WORD;
+    }
+
+    @Override
+    public String getActionDescription() {
+        return actionDescription;
     }
 
     @Override

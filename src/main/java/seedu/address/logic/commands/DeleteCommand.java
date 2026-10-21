@@ -26,6 +26,8 @@ public class DeleteCommand extends Command {
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted client: %1$s (%2$s)";
     public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: delete INDEX.";
 
+    private String actionDescription = "";
+
     private final Index targetIndex;
 
     public DeleteCommand(Index targetIndex) {
@@ -34,6 +36,7 @@ public class DeleteCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        actionDescription = "";
         requireNonNull(model);
         List<Person> lastShownList = model.getFilteredPersonList();
 
@@ -48,9 +51,25 @@ public class DeleteCommand extends Command {
                 : personToDelete.getRole().toString();
 
         model.deletePerson(personToDelete);
+        actionDescription = "Deleted client " + personToDelete.getName();
 
         return new CommandResult(String.format(
                 MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName(), role));
+    }
+
+    @Override
+    public boolean isUndoable() {
+        return true;
+    }
+
+    @Override
+    public String getCommandWord() {
+        return COMMAND_WORD;
+    }
+
+    @Override
+    public String getActionDescription() {
+        return actionDescription;
     }
 
     @Override

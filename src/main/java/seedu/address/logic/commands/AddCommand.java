@@ -74,6 +74,21 @@ public class AddCommand extends Command {
     }
 
     @Override
+    public boolean isUndoable() {
+        return true;
+    }
+
+    @Override
+    public String getCommandWord() {
+        return COMMAND_WORD;
+    }
+
+    @Override
+    public String getActionDescription() {
+        return "Added client " + toAdd.getName();
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;

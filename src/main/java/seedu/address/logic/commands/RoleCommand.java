@@ -25,6 +25,8 @@ public class RoleCommand extends Command {
     public static final String MESSAGE_SUCCESS =
             "Role updated: %1$s is now marked as %2$s";
 
+    private String actionDescription = "";
+
     private final Index index;
     private final ClientRole role;
 
@@ -39,6 +41,7 @@ public class RoleCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        actionDescription = "";
         requireNonNull(model);
         List<Person> lastShownList = model.getFilteredPersonList();
 
@@ -54,11 +57,27 @@ public class RoleCommand extends Command {
                 clientToEdit.getHousingTypes());
 
         model.setPerson(clientToEdit, editedClient);
+        actionDescription = "Changed role for " + editedClient.getName() + " to " + role.getDisplayValue();
 
         String feedback = String.format(MESSAGE_SUCCESS, editedClient.getName(), role.getDisplayValue());
         int updatedIndex = model.getFilteredPersonList().indexOf(editedClient);
         return updatedIndex < 0 ? new CommandResult(feedback)
                 : new CommandResult(feedback, Index.fromZeroBased(updatedIndex));
+    }
+
+    @Override
+    public boolean isUndoable() {
+        return true;
+    }
+
+    @Override
+    public String getCommandWord() {
+        return COMMAND_WORD;
+    }
+
+    @Override
+    public String getActionDescription() {
+        return actionDescription;
     }
 
     @Override

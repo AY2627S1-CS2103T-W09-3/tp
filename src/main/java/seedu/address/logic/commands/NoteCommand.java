@@ -31,6 +31,8 @@ public class NoteCommand extends Command {
     public static final String MESSAGE_NOTE_UPDATED = "Note updated for %1$s.";
     public static final String MESSAGE_NOTE_CLEARED = "Note cleared for %1$s.";
 
+    private String actionDescription = "";
+
     private final Index index;
     private final Note note;
 
@@ -52,6 +54,7 @@ public class NoteCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        actionDescription = "";
         requireNonNull(model);
         List<Person> lastShownList = model.getFilteredPersonList();
 
@@ -67,12 +70,28 @@ public class NoteCommand extends Command {
                 personToEdit.getHousingTypes());
 
         model.setPerson(personToEdit, editedPerson);
+        actionDescription = (note == null ? "Cleared note for " : "Updated note for ") + editedPerson.getName();
 
         String message = note == null ? MESSAGE_NOTE_CLEARED : MESSAGE_NOTE_UPDATED;
         String feedback = String.format(message, editedPerson.getName());
         int updatedIndex = model.getFilteredPersonList().indexOf(editedPerson);
         return updatedIndex < 0 ? new CommandResult(feedback)
                 : new CommandResult(feedback, Index.fromZeroBased(updatedIndex));
+    }
+
+    @Override
+    public boolean isUndoable() {
+        return true;
+    }
+
+    @Override
+    public String getCommandWord() {
+        return COMMAND_WORD;
+    }
+
+    @Override
+    public String getActionDescription() {
+        return actionDescription;
     }
 
     @Override
