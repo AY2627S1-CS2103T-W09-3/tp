@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.ui.PersonCardTestUtil.assertCardContentFits;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
@@ -24,8 +26,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Price;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
@@ -74,7 +81,8 @@ public class PersonCardTest {
             StackPane tags = (StackPane) root.lookup("#tags");
             HBox tagRow = (HBox) tags.lookup("#tagRow");
 
-            assertEquals(List.of(identity, contact, tags), content.getChildren());
+            assertEquals(List.of(identity, contact, tags), content.getChildren().stream()
+                    .filter(javafx.scene.Node::isManaged).toList());
             assertEquals(List.of(root.lookup("#id"), root.lookup("#name"), root.lookup("#role")),
                     identity.getChildren());
             assertEquals("2. ", ((Label) root.lookup("#id")).getText());
@@ -131,7 +139,7 @@ public class PersonCardTest {
     }
 
     @Test
-    public void layout_optionalFields_keepsEveryCardAtSeventyPixels()
+    public void layout_optionalFields_keepsCardsCompactAndTheSameHeight()
             throws ExecutionException, InterruptedException {
         List<Person> clients = List.of(
                 new PersonBuilder().withName("Alicia Tan").withRole(ClientRole.BUYER).withTags("firsttime").build(),
@@ -152,12 +160,20 @@ public class PersonCardTest {
             personList.getSelectionModel().select(0);
             root.applyCss();
             root.layout();
+            // Selection can recreate cell graphics; apply their CSS before measuring computed heights.
+            root.applyCss();
+            root.layout();
 
             List<Region> cards = root.lookupAll("#cardPane").stream().map(node -> (Region) node).toList();
             assertEquals(clients.size(), cards.size());
+            double cardHeight = cards.getFirst().getHeight();
+            assertTrue(cardHeight >= 70 && cardHeight <= 220.0 / 3,
+                    "Default-font cards must stay compact enough for three to fit in the small list");
             for (Region card : cards) {
-                assertEquals(70, card.getHeight(), 0.01);
-                assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().size());
+                assertEquals(cardHeight, card.getHeight(), 0.01);
+                assertCardContentFits(card);
+                assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().stream()
+                        .filter(javafx.scene.Node::isManaged).count());
                 Bounds cardBounds = card.localToScene(card.getLayoutBounds());
                 for (String id : List.of("identityRow", "contactRow", "tags")) {
                     Bounds bounds = card.lookup("#" + id).localToScene(card.lookup("#" + id).getLayoutBounds());
@@ -196,7 +212,7 @@ public class PersonCardTest {
                 Bounds bounds = cell.localToScene(cell.getLayoutBounds());
                 assertTrue(bounds.getMinY() >= 0);
                 assertTrue(bounds.getMaxY() <= 220);
-                assertEquals(70, cell.getGraphic().getLayoutBounds().getHeight(), 0.01);
+                assertCardContentFits((Region) cell.getGraphic());
             }
             return null;
         });
@@ -213,9 +229,8 @@ public class PersonCardTest {
             Region root = new PersonCard(person, 1).getRoot();
             Scene scene = new Scene(root, 180, 70);
             scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
-            root.resize(180, 70);
-            root.applyCss();
-            root.layout();
+            layoutContentSizedCard(root, 180);
+            double originalHeight = root.getHeight();
 
             HBox tagRow = (HBox) root.lookup("#tagRow");
             Label overflow = (Label) root.lookup("#tagOverflow");
@@ -240,13 +255,13 @@ public class PersonCardTest {
                 }
             }
 
-            root.resize(700, 70);
-            root.layout();
+            layoutContentSizedCard(root, 700);
             assertFalse(overflow.isVisible());
             assertFalse(overflow.isManaged());
             assertEquals(tagNames, tagRow.getChildren().stream().filter(node -> node != overflow && node.isVisible())
                     .map(node -> ((Label) node).getText()).toList());
-            assertEquals(70, root.getHeight(), 0.01);
+            assertEquals(originalHeight, root.getHeight(), 0.01);
+            assertCardContentFits(root);
             return null;
         });
         Platform.runLater(checkCard);
@@ -262,16 +277,15 @@ public class PersonCardTest {
             Region root = new PersonCard(person, 1).getRoot();
             Scene scene = new Scene(root, 180, 70);
             scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
-            root.resize(180, 70);
-            root.applyCss();
-            root.layout();
+            layoutContentSizedCard(root, 180);
 
             Label overflow = (Label) root.lookup("#tagOverflow");
             assertTrue(overflow.isVisible());
             assertEquals("+1", overflow.getText());
             assertEquals("Additional tags: " + tagName, overflow.getTooltip().getText());
-            assertEquals(70, root.getHeight(), 0.01);
-            assertEquals(16, ((StackPane) root.lookup("#tags")).getHeight(), 0.01);
+            assertCardContentFits(root);
+            assertTrue(((StackPane) root.lookup("#tags")).getHeight() >= overflow.prefHeight(-1) - 1,
+                    "The tag row must fit the overflow label's font rather than be capped at 16 pixels");
             return null;
         });
         Platform.runLater(checkCard);
@@ -279,10 +293,198 @@ public class PersonCardTest {
     }
 
     @Test
+    public void constructor_buyerRequirements_displaysBudgetAreasAndHousingTypes()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withRole(ClientRole.BUYER)
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAreas(Set.of(new Area("Tampines"), new Area("Bishan")))
+                .withHousingTypes(Set.of(HousingType.HDB)).build();
+
+        assertRequirementsSummary(person, "Budget $800,000 to $1,200,000 · Bishan, Tampines · HDB");
+    }
+
+    @Test
+    public void constructor_sellerRequirements_displaysAskingPrice()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withRole(ClientRole.SELLER)
+                .withAskingPrice(new Price("950000")).build();
+
+        assertRequirementsSummary(person, "Asking $950,000");
+    }
+
+    @Test
+    public void constructor_bothPrices_labelsBudgetAndAskingPrice()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withRole(ClientRole.BOTH)
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("950000"))
+                .withAreas(Set.of(new Area("Bishan")))
+                .withHousingTypes(Set.of(HousingType.CONDO)).build();
+
+        assertRequirementsSummary(person, "Budget $800,000 to $1,200,000 · Asking $950,000 · Bishan · Condo");
+    }
+
+    @Test
+    public void constructor_partialRequirements_omitsMissingPartsAndStraySeparators()
+            throws ExecutionException, InterruptedException {
+        assertRequirementsSummary(new PersonBuilder().withAreas(Set.of(new Area("Bishan"))).build(), "Bishan");
+        assertRequirementsSummary(new PersonBuilder().withHousingTypes(Set.of(HousingType.HDB, HousingType.CONDO))
+                .build(), "Condo, HDB");
+        assertRequirementsSummary(new PersonBuilder().withAreas(Set.of(new Area("Tampines")))
+                .withHousingTypes(Set.of(HousingType.HDB)).build(), "Tampines · HDB");
+        assertRequirementsSummary(new PersonBuilder().withBudget(new Budget(new Price("800000"), new Price("800000")))
+                .withHousingTypes(Set.of(HousingType.HDB)).build(), "Budget $800,000 · HDB");
+    }
+
+    @Test
+    public void constructor_noRequirements_hidesAndUnmanagesSummary()
+            throws ExecutionException, InterruptedException {
+        assertRequirementsSummary(new PersonBuilder().build(), "");
+    }
+
+    @Test
+    public void layout_longRequirements_ellipsizesWithinNinetyPixelCard()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
+                .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH)
+                .withTags("firsttime", "urgent")
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("1500000"))
+                .withAreas(Set.of(new Area("Bishan"), new Area("Tampines"), new Area("Toa Payoh")))
+                .withHousingTypes(Set.of(HousingType.HDB, HousingType.CONDO)).build();
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region root = new PersonCard(person, 1).getRoot();
+            Scene scene = new Scene(root, 318, 90);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            layoutContentSizedCard(root, 318);
+
+            Label summary = (Label) root.lookup("#requirementsSummary");
+            assertTrue(root.getHeight() <= 90, "Default-font requirement card is " + root.getHeight() + "px tall");
+            assertTrue(summary.getWidth() < summary.prefWidth(-1));
+            assertEquals(OverrunStyle.ELLIPSIS, summary.getTextOverrun());
+            assertFalse(summary.isWrapText());
+            assertEquals(4, ((VBox) root.lookup("#cardContent")).getChildren().stream()
+                    .filter(javafx.scene.Node::isManaged).count());
+            assertCardContentFits(root);
+            Bounds cardBounds = root.localToScene(root.getLayoutBounds());
+            for (String id : List.of("identityRow", "contactRow", "tags", "requirementsSummary")) {
+                Region row = (Region) root.lookup("#" + id);
+                Bounds bounds = row.localToScene(row.getLayoutBounds());
+                assertTrue(bounds.getMinY() >= cardBounds.getMinY());
+                assertTrue(bounds.getMaxY() <= cardBounds.getMaxY());
+                assertTrue(bounds.getMinX() >= cardBounds.getMinX());
+                assertTrue(bounds.getMaxX() <= cardBounds.getMaxX());
+            }
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    @Test
+    public void layout_largerFonts_growsWithTextWithoutClippingRows()
+            throws ExecutionException, InterruptedException {
+        Person client = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent").build();
+        Person clientWithRequirements = new PersonBuilder(client)
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("950000")).build();
+        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+            for (Person person : List.of(client, clientWithRequirements)) {
+                Region root = new PersonCard(person, 1).getRoot();
+                Scene scene = new Scene(root, 700, 300);
+                scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+                layoutContentSizedCard(root, 700);
+                double originalHeight = root.getHeight();
+
+                root.lookupAll(".label").forEach(label -> label.setStyle("-fx-font-size: 28px;"));
+                layoutContentSizedCard(root, 700);
+
+                assertTrue(root.getHeight() > originalHeight, "Larger text must increase the card's height");
+                assertCardContentFits(root);
+
+                root.lookupAll(".label").forEach(label -> label.setStyle(""));
+                layoutContentSizedCard(root, 700);
+                assertEquals(originalHeight, root.getHeight(), 0.01);
+            }
+            return null;
+        });
+        Platform.runLater(checkCards);
+        checkCards.get();
+    }
+
+    @Test
+    public void layout_availableFontFamilies_fitContentWithoutClipping()
+            throws ExecutionException, InterruptedException {
+        Person client = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent").build();
+        List<Person> clients = List.of(client, new PersonBuilder(client).withTags().build(),
+                new PersonBuilder(client).withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                        .withAskingPrice(new Price("950000")).build());
+        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+            List<String> families = List.of("System", "Serif", "Monospaced", "Segoe UI", "Arial Unicode MS").stream()
+                    .filter(family -> Font.getFamilies().contains(family)).toList();
+            assertFalse(families.isEmpty());
+            for (String family : families) {
+                double compactHeight = 0;
+                for (int i = 0; i < clients.size(); i++) {
+                    Region root = new PersonCard(clients.get(i), 1).getRoot();
+                    Scene scene = new Scene(root, 318, 120);
+                    scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+                    root.lookupAll(".label").forEach(label -> label.setStyle("-fx-font-family: '" + family + "';"));
+                    layoutContentSizedCard(root, 318);
+
+                    // Replacement fonts may grow the card; default-font compactness is tested separately.
+                    assertCardContentFits(root);
+                    if (i == 0) {
+                        compactHeight = root.getHeight();
+                    } else if (i == 1) {
+                        assertEquals(compactHeight, root.getHeight(), 0.01,
+                                "Removing tags must not change the card height for " + family);
+                    } else {
+                        assertTrue(root.getHeight() > compactHeight, "The summary must have its own row");
+                    }
+                }
+            }
+            return null;
+        });
+        Platform.runLater(checkCards);
+        checkCards.get();
+    }
+
+    @Test
     public void getRoleStyleClass_eachRole_returnsColourClass() {
         assertEquals("role-buyer", PersonCard.getRoleStyleClass(ClientRole.BUYER));
         assertEquals("role-seller", PersonCard.getRoleStyleClass(ClientRole.SELLER));
         assertEquals("role-both", PersonCard.getRoleStyleClass(ClientRole.BOTH));
+    }
+
+    private static void assertRequirementsSummary(Person person, String expected)
+            throws ExecutionException, InterruptedException {
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region root = new PersonCard(person, 1).getRoot();
+            Scene scene = new Scene(root, 318, 90);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            layoutContentSizedCard(root, 318);
+            Label summary = (Label) root.lookup("#requirementsSummary");
+            assertEquals(expected, summary.getText());
+            assertEquals(!expected.isEmpty(), summary.isVisible());
+            assertEquals(!expected.isEmpty(), summary.isManaged());
+            assertEquals(expected.isEmpty() ? 3 : 4, ((VBox) root.lookup("#cardContent")).getChildren().stream()
+                    .filter(javafx.scene.Node::isManaged).count());
+            assertTrue(root.getHeight() <= 90, "Default-font card is " + root.getHeight() + "px tall");
+            assertCardContentFits(root);
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    private static void layoutContentSizedCard(Region root, double width) {
+        // Allow tag visibility and the resulting preferred size to settle after CSS changes.
+        for (int i = 0; i < 3; i++) {
+            root.applyCss();
+            root.resize(width, root.prefHeight(width));
+            root.layout();
+        }
     }
 
     private static Label createPersonCard(Person person)

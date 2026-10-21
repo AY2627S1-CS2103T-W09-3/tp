@@ -5,6 +5,7 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
 import seedu.address.commons.util.ToStringBuilder;
+import seedu.address.logic.Messages;
 import seedu.address.model.Model;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
 
@@ -18,8 +19,6 @@ public class FilterCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Filters clients by role and tag.\n"
             + "Parameters: [" + PREFIX_ROLE + "ROLE] [" + PREFIX_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "buyer " + PREFIX_TAG + "urgent";
-
-    public static final String MESSAGE_SHOWING = "Showing %1$d of %2$d clients.";
 
     private final PersonMatchesFilterPredicate predicate;
 
@@ -35,7 +34,7 @@ public class FilterCommand extends Command {
         // The total is the whole address book, not the filtered list.
         int shownCount = model.getFilteredPersonList().size();
         int totalCount = model.getAddressBook().getPersonList().size();
-        return new CommandResult(String.format(MESSAGE_SHOWING, shownCount, totalCount));
+        return new CommandResult(Messages.getShowingMessage(shownCount, totalCount));
     }
 
     @Override

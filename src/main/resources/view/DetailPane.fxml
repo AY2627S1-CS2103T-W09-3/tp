@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="detailPane" minWidth="0" minHeight="0" prefWidth="380" styleClass="detail-pane"
+           xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <stylesheets>
+    <URL value="@DarkTheme.css" />
+  </stylesheets>
+  <Label fx:id="emptyState" text="Select a client to see details." styleClass="detail-empty-state"
+         wrapText="true" minWidth="0" maxWidth="Infinity" alignment="CENTER">
+    <padding>
+      <Insets top="20" right="20" bottom="20" left="20" />
+    </padding>
+  </Label>
+  <ScrollPane fx:id="detailScroll" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+              minWidth="0" minHeight="0" visible="false" managed="false">
+    <VBox fx:id="detailRows" spacing="18" minWidth="0" fillWidth="true">
+      <padding>
+        <Insets top="20" right="20" bottom="20" left="20" />
+      </padding>
+      <HBox fx:id="nameRow" spacing="12" alignment="TOP_LEFT" minHeight="-Infinity">
+        <Label fx:id="name" styleClass="detail-name" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+        <Label fx:id="role" styleClass="role-badge" minWidth="-Infinity" />
+      </HBox>
+      <VBox fx:id="phoneRow" spacing="4" minHeight="-Infinity">
+        <Label text="Phone" styleClass="detail-caption" />
+        <Label fx:id="phone" styleClass="detail-value" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" />
+      </VBox>
+      <VBox fx:id="emailRow" spacing="4" minHeight="-Infinity">
+        <Label text="Email" styleClass="detail-caption" />
+        <Label fx:id="email" styleClass="detail-value" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" />
+      </VBox>
+      <VBox fx:id="addressRow" spacing="4" minHeight="-Infinity">
+        <Label text="Address" styleClass="detail-caption" />
+        <Label fx:id="address" styleClass="detail-value" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" />
+      </VBox>
+      <VBox fx:id="budgetRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+        <Label text="Budget" styleClass="detail-caption" />
+        <Label fx:id="budget" styleClass="detail-value" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" />
+      </VBox>
+      <VBox fx:id="askingPriceRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+        <Label text="Asking price" styleClass="detail-caption" />
+        <Label fx:id="askingPrice" styleClass="detail-value" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" />
+      </VBox>
+      <VBox fx:id="preferredAreasRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+        <Label text="Preferred areas" styleClass="detail-caption" />
+        <Label fx:id="preferredAreas" styleClass="detail-value" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" />
+      </VBox>
+      <VBox fx:id="housingTypesRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+        <Label text="Housing types" styleClass="detail-caption" />
+        <Label fx:id="housingTypes" styleClass="detail-value" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" />
+      </VBox>
+      <VBox fx:id="noteRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+        <Label text="Note" styleClass="detail-caption" />
+        <Label fx:id="note" styleClass="detail-value" wrapText="true" minWidth="0"
+               minHeight="-Infinity" maxWidth="Infinity" />
+      </VBox>
+      <VBox fx:id="tagsRow" spacing="6" minHeight="-Infinity" visible="false" managed="false">
+        <Label text="Tags" styleClass="detail-caption" />
+        <FlowPane fx:id="tags" minWidth="0" minHeight="-Infinity" prefWrapLength="0"
+                  hgap="7" vgap="3" />
+      </VBox>
+    </VBox>
+  </ScrollPane>
+</StackPane>

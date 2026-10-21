@@ -17,8 +17,7 @@ public class Messages {
     public static final String MESSAGE_UNKNOWN_COMMAND = "Unknown command.";
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format!\n%1$s";
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX = "The client index provided is invalid.";
-    public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d clients listed!";
-    public static final String MESSAGE_ONE_CLIENT_LISTED = "1 client listed!";
+    public static final String MESSAGE_SHOWING = "Showing %1$d of %2$d clients.";
     public static final String MESSAGE_NO_CLIENTS_FOUND = "No clients found";
     public static final String MESSAGE_DUPLICATE_FIELDS =
                 "Multiple values specified for the following single-valued field(s): ";
@@ -30,6 +29,14 @@ public class Messages {
             "This phone number already belongs to another client: %1$s. " + COBUYER_WORKAROUND_HINT;
     public static final String MESSAGE_DUPLICATE_EMAIL =
             "This email address already belongs to another client: %1$s. " + COBUYER_WORKAROUND_HINT;
+
+    /**
+     * Returns the message that reports how many clients are displayed out of all clients in the address book.
+     * The word "clients" is used even when a count is 1.
+     */
+    public static String getShowingMessage(int shownCount, int totalCount) {
+        return String.format(MESSAGE_SHOWING, shownCount, totalCount);
+    }
 
     /**
      * Returns an error message indicating the duplicate prefixes.

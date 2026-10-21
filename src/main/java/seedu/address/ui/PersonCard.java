@@ -1,5 +1,6 @@
 package seedu.address.ui;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -11,7 +12,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
+import seedu.address.model.person.Area;
 import seedu.address.model.person.ClientRole;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
 
 /**
@@ -32,8 +35,6 @@ public class PersonCard extends UiPart<Region> {
     public final Person person;
 
     @FXML
-    private HBox cardPane;
-    @FXML
     private Label name;
     @FXML
     private Label role;
@@ -45,6 +46,8 @@ public class PersonCard extends UiPart<Region> {
     private Label email;
     @FXML
     private StackPane tags;
+    @FXML
+    private Label requirementsSummary;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -62,6 +65,31 @@ public class PersonCard extends UiPart<Region> {
                 .map(tag -> tag.tagName)
                 .toList();
         tags.getChildren().add(new TagRow(tagNames));
+        setRequirementsSummary();
+    }
+
+    private void setRequirementsSummary() {
+        List<String> parts = new ArrayList<>();
+        if (person.getBudget() != null) {
+            parts.add("Budget " + person.getBudget());
+        }
+        if (person.getAskingPrice() != null) {
+            parts.add("Asking " + person.getAskingPrice().getDisplayValue());
+        }
+        String areas = String.join(", ", person.getAreas().stream().map(Area::getValue).sorted().toList());
+        if (!areas.isEmpty()) {
+            parts.add(areas);
+        }
+        String housingTypes = String.join(", ", person.getHousingTypes().stream()
+                .map(HousingType::getDisplayValue).sorted().toList());
+        if (!housingTypes.isEmpty()) {
+            parts.add(housingTypes);
+        }
+
+        requirementsSummary.setText(String.join(" · ", parts));
+        boolean hasRequirements = !parts.isEmpty();
+        requirementsSummary.setVisible(hasRequirements);
+        requirementsSummary.setManaged(hasRequirements);
     }
 
     private void setRoleBadge(ClientRole clientRole) {
