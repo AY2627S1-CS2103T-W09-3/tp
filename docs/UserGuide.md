@@ -63,6 +63,7 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list` and `exit`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
+  The `undo`, `redo` and `history` commands are exceptions: they reject extra parameters.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -369,9 +370,32 @@ Format: `clear`, then `clear confirm`
 * A pending confirmation is not saved, so closing the app cancels it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Warning:**
-`clear confirm` deletes every client. This cannot be undone because undo is not available in v1.4.
-Back up your data before using it.
+`clear confirm` deletes every client. You can undo it only while it remains in the current session's
+history. Keep a separate backup of important data.
 </div>
+
+### Undoing, redoing and viewing changes: `undo`, `redo`, `history`
+
+Use `undo` to reverse the most recent change to client data, and `redo` to reapply the most recently
+undone change. Use `history` to see the available undo and redo actions in separate lists, newest first.
+
+Formats: `undo`, `redo`, `history` (no parameters)
+
+* Changes made by `add`, `edit`, `delete`, `role`, `note` and `clear confirm` can be undone. A confirmed
+  clear is one action, so one `undo` restores all clients it removed.
+* Read-only commands, failed commands, a cancelled or unconfirmed `clear`, and commands that leave the
+  client data unchanged do not add history entries.
+* Up to 20 recent changes are kept. When the limit is reached, the oldest undoable change is discarded.
+* After an `undo`, making a new change clears the redo list. For example, after `add`, `undo`, then `edit`,
+  the undone `add` can no longer be redone.
+* If there is nothing to undo or redo, the command reports that no action is available. If both lists are
+  empty, `history` reports that there is no history.
+* History is kept only for the current app session. Closing and reopening the app keeps the saved client
+  data but starts with empty undo and redo lists.
+* You can also use **Edit > Undo**, **Edit > Redo** and **Edit > History**. Undo shortcuts are `Ctrl+Z`
+  and `Cmd+Z`; redo shortcuts are `Ctrl+Y` and `Cmd+Shift+Z`. They work while the command box has focus.
+
+For example, enter `delete 2`, then `undo` to restore that client. Enter `redo` to delete the client again.
 
 ### Exiting the program: `exit`
 
@@ -453,6 +477,9 @@ Action | Format, Examples
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`
 **Note** | `note INDEX TEXT`<br> e.g., `note 1 Call next week`, `note 1 clear`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
+**Undo** | `undo`<br> Reverses the most recent change
+**Redo** | `redo`<br> Reapplies the most recently undone change
+**History** | `history`<br> Lists available undo and redo actions
 **List** | `list`
 **Help** | `help`
 **Exit** | `exit`
