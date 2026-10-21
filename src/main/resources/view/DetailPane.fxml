@@ -31,47 +31,53 @@
                minHeight="-Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
         <Label fx:id="role" styleClass="role-badge" minWidth="-Infinity" />
       </HBox>
-      <VBox fx:id="phoneRow" spacing="4" minHeight="-Infinity">
+      <VBox fx:id="phoneRow" styleClass="detail-field" spacing="4" minHeight="-Infinity">
         <Label text="Phone" styleClass="detail-caption" />
         <Label fx:id="phone" styleClass="detail-value" wrapText="true" minWidth="0"
                minHeight="-Infinity" maxWidth="Infinity" />
       </VBox>
-      <VBox fx:id="emailRow" spacing="4" minHeight="-Infinity">
+      <VBox fx:id="emailRow" styleClass="detail-field" spacing="4" minHeight="-Infinity">
         <Label text="Email" styleClass="detail-caption" />
         <Label fx:id="email" styleClass="detail-value" wrapText="true" minWidth="0"
                minHeight="-Infinity" maxWidth="Infinity" />
       </VBox>
-      <VBox fx:id="addressRow" spacing="4" minHeight="-Infinity">
+      <VBox fx:id="addressRow" styleClass="detail-field" spacing="4" minHeight="-Infinity">
         <Label text="Address" styleClass="detail-caption" />
         <Label fx:id="address" styleClass="detail-value" wrapText="true" minWidth="0"
                minHeight="-Infinity" maxWidth="Infinity" />
       </VBox>
-      <VBox fx:id="budgetRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+      <VBox fx:id="budgetRow" styleClass="detail-field" spacing="4" minHeight="-Infinity"
+            visible="false" managed="false">
         <Label text="Budget" styleClass="detail-caption" />
         <Label fx:id="budget" styleClass="detail-value" wrapText="true" minWidth="0"
                minHeight="-Infinity" maxWidth="Infinity" />
       </VBox>
-      <VBox fx:id="askingPriceRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+      <VBox fx:id="askingPriceRow" styleClass="detail-field" spacing="4" minHeight="-Infinity"
+            visible="false" managed="false">
         <Label text="Asking price" styleClass="detail-caption" />
         <Label fx:id="askingPrice" styleClass="detail-value" wrapText="true" minWidth="0"
                minHeight="-Infinity" maxWidth="Infinity" />
       </VBox>
-      <VBox fx:id="preferredAreasRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+      <VBox fx:id="preferredAreasRow" styleClass="detail-field" spacing="4" minHeight="-Infinity"
+            visible="false" managed="false">
         <Label text="Preferred areas" styleClass="detail-caption" />
         <Label fx:id="preferredAreas" styleClass="detail-value" wrapText="true" minWidth="0"
                minHeight="-Infinity" maxWidth="Infinity" />
       </VBox>
-      <VBox fx:id="housingTypesRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+      <VBox fx:id="housingTypesRow" styleClass="detail-field" spacing="4" minHeight="-Infinity"
+            visible="false" managed="false">
         <Label text="Housing types" styleClass="detail-caption" />
         <Label fx:id="housingTypes" styleClass="detail-value" wrapText="true" minWidth="0"
                minHeight="-Infinity" maxWidth="Infinity" />
       </VBox>
-      <VBox fx:id="noteRow" spacing="4" minHeight="-Infinity" visible="false" managed="false">
+      <VBox fx:id="noteRow" styleClass="detail-field" spacing="4" minHeight="-Infinity"
+            visible="false" managed="false">
         <Label text="Note" styleClass="detail-caption" />
         <Label fx:id="note" styleClass="detail-value" wrapText="true" minWidth="0"
                minHeight="-Infinity" maxWidth="Infinity" />
       </VBox>
-      <VBox fx:id="tagsRow" spacing="6" minHeight="-Infinity" visible="false" managed="false">
+      <VBox fx:id="tagsRow" styleClass="detail-field" spacing="6" minHeight="-Infinity"
+            visible="false" managed="false">
         <Label text="Tags" styleClass="detail-caption" />
         <FlowPane fx:id="tags" minWidth="0" minHeight="-Infinity" prefWrapLength="0"
                   hgap="7" vgap="3" />

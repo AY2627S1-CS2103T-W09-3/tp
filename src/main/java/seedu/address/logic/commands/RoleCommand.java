@@ -55,8 +55,10 @@ public class RoleCommand extends Command {
 
         model.setPerson(clientToEdit, editedClient);
 
-        return new CommandResult(String.format(MESSAGE_SUCCESS,
-                editedClient.getName(), role.getDisplayValue()));
+        String feedback = String.format(MESSAGE_SUCCESS, editedClient.getName(), role.getDisplayValue());
+        int updatedIndex = model.getFilteredPersonList().indexOf(editedClient);
+        return updatedIndex < 0 ? new CommandResult(feedback)
+                : new CommandResult(feedback, Index.fromZeroBased(updatedIndex));
     }
 
     @Override

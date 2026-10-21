@@ -118,19 +118,20 @@ How the parsing works:
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<img src="images/ModelClassDiagram.png" width="450" />
+<img src="images/ModelClassDiagram.png" width="750" />
 
 
 The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
+* stores each `Person` with an optional note, budget and asking price, and any number of areas and housing types.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
-<img src="images/BetterModelClassDiagram.png" width="450" />
+<img src="images/BetterModelClassDiagram.png" width="700" />
 
 </div>
 
@@ -260,6 +261,42 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 * **A stateless `clear confirm`:** the warning would be a hint only, because a user could skip it by typing `clear confirm` straight away. It also gives the UI nothing to show.
 * **A confirmation popup:** this needs a window in the UI layer and cannot be tested through `Logic` alone.
 
+### Client requirements
+
+The four requirement fields are optional: `Budget budget`, `Price askingPrice`,
+`Set<Area> areas` and `Set<HousingType> housingTypes` on `Person`. The optional
+`Note note` is set by `note` rather than a prefix. A client with none of them is
+valid, so every read of these fields is null-safe or empty-safe.
+
+`AddCommandParser` and `EditCommandParser` both tokenise the four requirement prefixes
+and delegate to `ParserUtil`:
+
+| Prefix | Parser method | Model type |
+|---|---|---|
+| `b/` | `parseBudget` | `Budget` |
+| `s/` | `parsePrice` | `Price` |
+| `l/` | `parseAreas` | `Set<Area>` |
+| `h/` | `parseHousingTypes` | `Set<HousingType>` |
+
+`parseBudget` splits on the hyphen into two halves and parses each with
+`parsePrice`, then builds a `Budget`, whose constructor rejects a minimum above the
+maximum. `parsePrice` checks the string against
+`[1-9]\d{0,2}(,\d{3})+|[1-9]\d*`, parses the digits with the commas stripped, and
+rejects anything outside 1 to 1,000,000,000. `Price` stores an `int` and exposes
+`getDisplayValue`, which formats it as `$1,000,000`.
+
+`Area` is an allowlist, not an enum. The 32 planning areas carry no per-value
+behaviour, and the set is data rather than code: one `List<String>` of canonical
+names keeps one spelling per area, makes case-insensitive validation a loop, and
+lets the stored value be the displayed value. `HousingType` is an enum because each
+of its four constants carries a display string and the set is fixed.
+
+Adding and editing differ in how an empty prefix is read. `add` rejects `b/` with
+no value as invalid input. `edit` treats it as a request to clear the field:
+`parseBudgetForEdit` and `parseAskingPriceForEdit` return null, and
+`parseAreasForEdit` turns a single empty `l/` into an empty set, so the client
+loses every area.
+
 ### Filter command
 
 `filter` narrows the displayed clients by role and tag. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.
@@ -304,18 +341,20 @@ The following activity diagram shows how the active filter is set, and what happ
 
 **Target user profile**:
 
-* is a property agent who manages multiple buyers and sellers simultaneously
-* needs to retrieve client information quickly while handling calls, viewings, travel, and follow-ups
-* needs to record clients' contact details, budgets, property preferences, viewing information, and follow-up status
+* is a property agent who manages many buyers and sellers at once
+* needs to reach a client's contact details and requirements while on a call or between viewings
+* records a client's budget, asking price, preferred areas, preferred housing types and free-text notes
 * works primarily on a desktop or laptop
 * prefers typing and keyboard-driven workflows over navigating with a mouse
 * is comfortable using a Command Line Interface (CLI)
-* may use their device where clients or colleagues can see the screen and therefore needs to protect sensitive client information
+* may share a screen with a client or colleague and therefore needs the list to show one line per client
 
-**Value proposition**: EstateBookUltraProMax gives property agents fast, CLI-optimised access to buyer and seller
-contacts, budgets, property preferences, viewing information, and follow-up statuses. It removes the friction of
-managing clients through spreadsheets by allowing records to be added, updated, and retrieved quickly using
-keyboard-driven commands.
+**Value proposition**: EstateBookUltraProMax is a command-driven client book for property agents who
+manage buyers and sellers at the same time. Each client record holds contact details, a budget, an
+asking price, preferred areas, preferred housing types and a note, and every one of them is set by
+typing a short command. That makes a record faster to find and update than a spreadsheet: the list
+stays one line per client, search and filter narrow it in place, and the requirements line tells the
+agent what the client wants without opening anything else.
 
 
 ### User stories
@@ -337,28 +376,38 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | property agent | record a buyer's budget range | avoid proposing properties outside the buyer's means |
 | `* * *` | property agent | record a buyer's preferred locations | shortlist properties in areas acceptable to the buyer |
 | `* * *` | property agent | record a buyer's preferred property type | exclude unsuitable property categories |
-| `* * *` | property agent | record a buyer's minimum bedroom requirement | avoid recommending properties that are too small |
 | `* * *` | property agent | record notes about a client | retain important context that does not fit into the standard fields |
 | `* * *` | property agent | tag contacts using meaningful labels | group clients according to attributes relevant to my work |
-| `* * *` | property agent | record a viewing appointment for a client | remember the client's upcoming property viewing |
-| `* * *` | property agent | view a client's viewing status | quickly determine whether a viewing has been scheduled |
-| `* * *` | property agent | update a viewing's status | keep the client's viewing information current |
 | `* * *` | property agent | exit the application safely | ensure that my latest changes are retained |
 | `* *` | new property agent | view realistic sample clients | understand what information the application can manage |
 | `* *` | new property agent | view concise help within the application | learn the available commands without leaving my workflow |
 | `* *` | user ready to begin | clear all sample or experimental data | start with a clean client list |
 | `* *` | property agent | filter contacts by buyer or seller role | focus on the relevant side of my client pipeline |
-| `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
-| `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
+| `* *` | property agent | detect possible duplicate contacts | avoid splitting one client's information across multiple records |
+| `*` | property agent | create a backup of my client records | reduce the risk of losing important information |
+| `*` | property agent | restore my client records from a valid backup | recover my information after data loss or device replacement |
+
+#### Future requirements
+
+These stories are deliberately out of scope for v1.4. They stay listed so the
+backlog below the shipped features is visible.
+
+| Priority | As a …​ | I want to …​ | So that I can…​ |
+| -------- | ------- | ------------ | --------------- |
+| `* * *` | property agent | record a buyer's minimum bedroom requirement | avoid recommending properties that are too small |
+| `* * *` | property agent | record a viewing appointment for a client | remember the client's upcoming property viewing |
+| `* * *` | property agent | view a client's viewing status | quickly determine whether a viewing has been scheduled |
+| `* * *` | property agent | update a viewing's status | keep the client's viewing information current |
 | `* *` | property agent | view a client's upcoming viewings | prepare for the client's next appointment |
 | `* *` | busy property agent | view all appointments for a selected day | plan my schedule and avoid missing appointments |
 | `* *` | property agent | record feedback after a viewing | remember the client's response when choosing the next recommendation |
 | `* *` | property agent | record a client's current follow-up status | know what action I need to take next |
 | `* *` | property agent | record the next follow-up date | contact the client at an appropriate time |
 | `* *` | property agent | view clients whose follow-ups are due or overdue | prioritise clients who require my attention |
+| `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
+| `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
 | `* *` | property agent | sort contacts by name, latest update, or next follow-up | review my clients in an order suitable for my current task |
 | `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
-| `* *` | property agent | detect possible duplicate contacts | avoid splitting one client's information across multiple records |
 | `* *` | long-time property agent | archive an inactive client | reduce clutter without permanently losing past information |
 | `* *` | returning property agent | restore an archived client | resume working with a past client who has become active again |
 | `* *` | property agent migrating from spreadsheets | import client records from a common tabular format | avoid entering all my existing client information manually |
@@ -369,8 +418,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `*` | property agent | preview the records affected by a bulk command | avoid modifying the wrong clients |
 | `*` | property agent | merge confirmed duplicate contacts | maintain one complete record for each client |
 | `*` | property agent changing agencies | export selected client records | retain records that I am permitted to take with me |
-| `*` | property agent | create a backup of my client records | reduce the risk of losing important information |
-| `*` | property agent | restore my client records from a valid backup | recover my information after data loss or device replacement |
 | `*` | property agent | view when and how a client record was last changed | determine whether the information is current |
 | `*` | property agent | separate personal leads from agency-assigned leads | keep my different work contexts organised |
 | `*` | property agent | record relationships between clients | recognise couples, co-buyers, family members, and co-owners |
@@ -386,7 +433,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 **MSS**
 
-1. Agent requests to add a client, providing the client's name, phone number, email address, address, and any optional tags.
+1. Agent requests to add a client, providing the client's name, phone number, email address, address, and optionally a budget, an asking price, preferred areas, preferred housing types and tags.
 2. EstateBookUltraProMax adds the client and displays the recorded details.
 3. Agent requests to assign the new client a role of buyer, seller, or both.
 4. EstateBookUltraProMax assigns the role and displays the client's updated role.
@@ -501,6 +548,42 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
+### Non-Functional Requirements
+
+1. **Usability:** A user with an above average typing speed for English text should be able to accomplish most tasks using the _Command Line Interface (CLI)_ faster than with a mouse-driven GUI.
+2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed.
+3. **Performance:** The system should be able to hold up to <ins>100</ins> active client records without any noticeable sluggishness in performance during typical usage (e.g., searching, filtering).
+4. **Data Reliability:** The application must ensure that all data-changing actions are saved safely so that the latest changes are retained upon exiting.
+5. **Fault Tolerance:** The application must gracefully handle invalid inputs (e.g., invalid client references, missing roles, or conflicting duplicate details) by displaying clear error messages, instead of crashing.
+
+
+### Glossary
+
+| Term                             | Definition                                                                                                                                                                         |
+|:---------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **CLI (Command Line Interface)** | A text-based user interface where the agent interacts with the application by typing commands, optimised for speed and keyboard-driven workflows.                                  |
+| **Mainstream OS**                | Standard desktop and laptop operating systems, specifically Windows, Linux, Unix, or macOS.                                                                                        |
+| **Client Role**                  | The classification of a client's relationship with the agent. A client can be classified as a `Buyer`, a `Seller`, or `Both`.                                                      |
+| **Tag**                          | A custom, meaningful label assigned to a client to group them according to specific attributes relevant to the agent's work.                                                       |
+| **Duplicate Contact**            | A client record that shares a name, phone number or email with another record, which the system detects to prevent fragmented information.                                         |
+| **Household Record**             | One record kept for couples or co-buyers who share contact details, tagged `t/couple`, since clients cannot share a phone number or email.                                         |
+| **Requirements**                 | The property a client is looking for: a budget range, an asking price, one or more preferred areas and one or more housing types.                                                  |
+| **Budget**                       | A client's price range, held as a minimum and a maximum whole-dollar amount. The two may be equal.                                                                                 |
+| **Asking Price**                 | The price a seller is asking for their property, in whole Singapore dollars.                                                                                                       |
+| **Area**                         | One of 32 Singapore planning areas a client wants to buy in. Stored in title case.                                                                                                 |
+| **Housing Type**                 | One of `HDB`, `Condo`, `EC` or `Landed`.                                                                                                                                           |
+| **Note**                         | Up to 500 characters of free text attached to a client. The two characters `\n` store a line break.                                                                                |
+| **Sample Data**                  | A set of realistic, pre-loaded dummy client records provided to help new agents explore and learn the application's features safely before clearing it to start their actual work. |
+
+--------------------------------------------------------------------------------------------------------------------
+
+## **Appendix: Proposed features**
+
+The features below are not implemented. They are kept here so the design work is
+not lost, and they carry no v1.4 commitment.
+
+### Use cases
+
 #### UC05: Record a client's viewing outcome
 
 **MSS**
@@ -559,30 +642,6 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
   * 3b1. EstateBookUltraProMax displays an error describing the missing or invalid details without changing the follow-up plan.
 
   Use case resumes at step 3.
-
-### Non-Functional Requirements
-
-1. **Usability:** A user with an above average typing speed for English text should be able to accomplish most tasks using the _Command Line Interface (CLI)_ and command _aliases_ than navigating with mouse-driven GUI.
-2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed.
-3. **Performance:** The system should be able to hold up to <ins>100</ins> active client records without any noticeable sluggishness in performance during typical usage (e.g., searching, filtering).
-4. **Data Reliability:** The application must ensure that all data-changing actions are saved safely so that the latest changes are retained upon exiting.
-5. **Fault Tolerance:** The application must gracefully handle invalid inputs (e.g., invalid client references, missing roles, or conflicting duplicate details) by displaying clear error messages, instead of crashing.
-
-
-### Glossary
-
-| Term                             | Definition                                                                                                                                                                         |
-|:---------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **CLI (Command Line Interface)** | A text-based user interface where the agent interacts with the application by typing commands, optimised for speed and keyboard-driven workflows.                                  |
-| **Mainstream OS**                | Standard desktop and laptop operating systems, specifically Windows, Linux, Unix, or macOS.                                                                                        |
-| **Client Role**                  | The classification of a client's relationship with the agent. A client can be classified as a `Buyer`, a `Seller`, or `Both`.                                                      |
-| **Viewing**                      | A scheduled appointment for a client to visit a property. It contains a status (e.g., `pending`, `completed`).                                                                     |
-| **Tag**                          | A custom, meaningful label assigned to a client to group them according to specific attributes relevant to the agent's work.                                                       |
-| **Alias**                        | A shortened, memorable version of a standard CLI command used to reduce typing overhead for fast-typing agents.                                                                    |
-| **Duplicate Contact**            | A client record that shares a name, phone number or email with another record, which the system detects to prevent fragmented information.                                         |
-| **Household Record**             | One record kept for couples or co-buyers who share contact details, tagged `t/couple`, since clients cannot share a phone number or email.                                         |
-| **Property Preferences**         | A collective term for a buyer's specific real estate requirements, including their budget range, preferred locations, property type, and minimum bedroom requirements.             |
-| **Sample Data**                  | A set of realistic, pre-loaded dummy client records provided to help new agents explore and learn the application's features safely before clearing it to start their actual work. |
 
 --------------------------------------------------------------------------------------------------------------------
 

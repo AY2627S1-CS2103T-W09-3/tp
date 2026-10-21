@@ -343,7 +343,7 @@ public class PersonCardTest {
     }
 
     @Test
-    public void layout_longRequirements_ellipsizesWithinNinetyPixelCard()
+    public void layout_longRequirements_ellipsizesWithoutClippingContent()
             throws ExecutionException, InterruptedException {
         Person person = new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
                 .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH)
@@ -359,7 +359,7 @@ public class PersonCardTest {
             layoutContentSizedCard(root, 318);
 
             Label summary = (Label) root.lookup("#requirementsSummary");
-            assertTrue(root.getHeight() <= 90, "Default-font requirement card is " + root.getHeight() + "px tall");
+            // Font-dependent card height is checked against the real list viewport in MainWindowTest.
             assertTrue(summary.getWidth() < summary.prefWidth(-1));
             assertEquals(OverrunStyle.ELLIPSIS, summary.getTextOverrun());
             assertFalse(summary.isWrapText());
@@ -374,6 +374,40 @@ public class PersonCardTest {
                 assertTrue(bounds.getMaxY() <= cardBounds.getMaxY());
                 assertTrue(bounds.getMinX() >= cardBounds.getMinX());
                 assertTrue(bounds.getMaxX() <= cardBounds.getMaxX());
+            }
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    @Test
+    public void layout_windowFontChanges_inheritsFontAndFitsContent()
+            throws ExecutionException, InterruptedException {
+        Person person = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent")
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("950000")).build();
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region card = new PersonCard(person, 1).getRoot();
+            StackPane window = new StackPane(card);
+            Scene scene = new Scene(window, 318, 120);
+            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            window.applyCss();
+            layoutContentSizedCard(card, 318);
+            List<Label> labels = card.lookupAll(".label").stream().map(node -> (Label) node).toList();
+            String nativeFamily = Font.font("System", 13).getFamily();
+            assertTrue(labels.stream().allMatch(label -> label.getFont().getFamily().equals(nativeFamily)),
+                    "Card text must use the native window font rather than a pinned typeface");
+
+            // Font metrics may change; every row must continue to contain its actual text.
+            for (String family : List.of("Monospaced", "Serif")) {
+                window.setStyle("-fx-font-family: '" + family + "';");
+                window.applyCss();
+                layoutContentSizedCard(card, 318);
+                String expectedFamily = Font.font(family, 13).getFamily();
+                assertTrue(labels.stream().allMatch(label -> label.getFont().getFamily().equals(expectedFamily)),
+                        "Card text must inherit " + family);
+                assertCardContentFits(card);
             }
             return null;
         });
@@ -470,7 +504,6 @@ public class PersonCardTest {
             assertEquals(!expected.isEmpty(), summary.isManaged());
             assertEquals(expected.isEmpty() ? 3 : 4, ((VBox) root.lookup("#cardContent")).getChildren().stream()
                     .filter(javafx.scene.Node::isManaged).count());
-            assertTrue(root.getHeight() <= 90, "Default-font card is " + root.getHeight() + "px tall");
             assertCardContentFits(root);
             return null;
         });
