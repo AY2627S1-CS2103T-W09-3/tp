@@ -17,7 +17,9 @@ import org.junit.jupiter.api.Test;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Bounds;
+import javafx.scene.AccessibleRole;
 import javafx.scene.Scene;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -26,6 +28,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Font;
 import seedu.address.model.person.Area;
 import seedu.address.model.person.Budget;
@@ -83,7 +86,8 @@ public class PersonCardTest {
 
             assertEquals(List.of(identity, contact, tags), content.getChildren().stream()
                     .filter(javafx.scene.Node::isManaged).toList());
-            assertEquals(List.of(root.lookup("#id"), root.lookup("#name"), root.lookup("#role")),
+            assertEquals(List.of(root.lookup("#id"), root.lookup("#name"), root.lookup("#noteIndicator"),
+                    root.lookup("#role")),
                     identity.getChildren());
             assertEquals("2. ", ((Label) root.lookup("#id")).getText());
             assertEquals(person.getName().fullName, ((Label) root.lookup("#name")).getText());
@@ -106,7 +110,8 @@ public class PersonCardTest {
     public void layout_narrowList_keepsBadgeVisibleAndTruncatesLongText()
             throws ExecutionException, InterruptedException {
         Person person = new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
-                .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH).build();
+                .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH)
+                .withNote("Call next week").build();
         FutureTask<Void> checkCard = new FutureTask<>(() -> {
             Region root = new PersonListPanel(FXCollections.observableArrayList(person)).getRoot();
             Scene scene = new Scene(root, 318, 200);
@@ -119,12 +124,17 @@ public class PersonCardTest {
             Label name = (Label) card.lookup("#name");
             Label email = (Label) card.lookup("#email");
             Label badge = (Label) card.lookup("#role");
+            Label marker = (Label) card.lookup("#noteIndicator");
+            Bounds markerBounds = marker.localToScene(marker.getLayoutBounds());
             Bounds badgeBounds = badge.localToScene(badge.getLayoutBounds());
             assertTrue(card.getWidth() <= 318);
             assertTrue(badgeBounds.getMaxX() <= 318);
             assertTrue(badge.getWidth() >= badge.prefWidth(-1) - 1);
             assertEquals(ClientRole.BOTH.getDisplayValue(), badge.getText());
-            assertTrue(name.localToScene(name.getLayoutBounds()).getMaxX() <= badgeBounds.getMinX());
+            assertTrue(name.localToScene(name.getLayoutBounds()).getMaxX() <= markerBounds.getMinX());
+            assertTrue(markerBounds.getMaxX() <= badgeBounds.getMinX());
+            assertEquals(20, marker.getWidth(), 0.01);
+            assertEquals(marker.getWidth(), marker.getHeight(), 0.01);
             for (Label text : List.of(name, email)) {
                 assertTrue(text.getWidth() < text.prefWidth(-1));
                 assertEquals(OverrunStyle.ELLIPSIS, text.getTextOverrun());
@@ -139,10 +149,45 @@ public class PersonCardTest {
     }
 
     @Test
+    public void constructor_notePresent_showsAccessibleIconWithoutText()
+            throws ExecutionException, InterruptedException {
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region root = new PersonCard(new PersonBuilder().withNote("Call next week").build(), 1).getRoot();
+            Label marker = (Label) root.lookup("#noteIndicator");
+            assertTrue(marker.isVisible());
+            assertTrue(marker.isManaged());
+            assertEquals("", marker.getText());
+            assertEquals(ContentDisplay.GRAPHIC_ONLY, marker.getContentDisplay());
+            assertTrue(marker.getGraphic() instanceof SVGPath);
+            assertEquals("Has note", marker.getTooltip().getText());
+            assertEquals("Has note", marker.getAccessibleText());
+            assertEquals(AccessibleRole.TEXT, marker.getAccessibleRole());
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    @Test
+    public void constructor_noteAbsent_hidesMarkerWithoutReservingSpace()
+            throws ExecutionException, InterruptedException {
+        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+            Region root = new PersonCard(new PersonBuilder().build(), 1).getRoot();
+            Label marker = (Label) root.lookup("#noteIndicator");
+            assertFalse(marker.isVisible());
+            assertFalse(marker.isManaged());
+            return null;
+        });
+        Platform.runLater(checkCard);
+        checkCard.get();
+    }
+
+    @Test
     public void layout_optionalFields_keepsCardsCompactAndTheSameHeight()
             throws ExecutionException, InterruptedException {
         List<Person> clients = List.of(
-                new PersonBuilder().withName("Alicia Tan").withRole(ClientRole.BUYER).withTags("firsttime").build(),
+                new PersonBuilder().withName("Alicia Tan").withRole(ClientRole.BUYER).withTags("firsttime")
+                        .withNote("Call next week").build(),
                 new PersonBuilder().withName("Priya Nair").withRole(ClientRole.SELLER).withTags().build(),
                 new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
                         .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH)

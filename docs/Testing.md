@@ -65,6 +65,23 @@ Before completing [issue #96](https://github.com/AY2627S1-CS2103T-W09-3/tp/issue
 500-character note wraps and scrolls without clipping at an actual 1280 × 720 resolution with 150% display scaling.
 Record the tested commit and results separately from the earlier build's results.
 
+### Note marker checks
+
+Run `./gradlew test --tests seedu.address.ui.PersonCardTest --tests seedu.address.ui.MainWindowTest`.
+The tests check that a note produces an icon-only card marker with a `Has note` tooltip and accessibility text,
+that adding or clearing a note refreshes the marker, and that the marker fits beside a long name and role badge.
+The existing detail-panel tests also check a 500-character note containing two line breaks.
+
+Use a separate test-data folder for these manual checks:
+
+1. Run `note 1 Call next week`. Check that a small circular note icon appears beside the client's name.
+   Hover over it and check that the tooltip says `Has note`, without displaying the note's contents.
+1. Run `note 1 clear`. Check that the marker disappears and leaves no empty space in the name row.
+1. Add a 500-character note spanning three lines, using `\n` between lines in the command.
+   After the selection wiring in #101 is available, select the client and check that the existing note row
+   preserves the line breaks, wraps, and scrolls to the end without clipping the following rows.
+1. Clear the note again and check that both the marker and the panel's note row disappear.
+
 ### Manual display-scaling checks
 
 Use a display and operating system that support each configuration below. Set the actual screen resolution

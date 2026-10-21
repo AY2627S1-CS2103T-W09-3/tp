@@ -144,6 +144,34 @@ public class MainWindowTest {
     }
 
     @Test
+    public void execute_noteAddedThenCleared_updatesCardMarker() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder().build());
+            MainWindow window = openWindow(model);
+            try {
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                TextField commandBox = (TextField) root.lookup("#commandTextField");
+                layoutWindow(root, 820, 440);
+                assertFalse(root.lookup("#noteIndicator").isManaged());
+
+                enterCommand(window, commandBox, "note 1 Call next week");
+                layoutWindow(root, 820, 440);
+                assertTrue(root.lookup("#noteIndicator").isVisible());
+                assertTrue(root.lookup("#noteIndicator").isManaged());
+
+                enterCommand(window, commandBox, "note 1 clear");
+                layoutWindow(root, 820, 440);
+                assertFalse(((TextArea) root.lookup("#resultDisplay")).getStyleClass().contains("error"));
+                assertFalse(root.lookup("#noteIndicator").isVisible());
+                assertFalse(root.lookup("#noteIndicator").isManaged());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
     public void layout_populatedDetailPaneAtSmallViewports_wrapsAndScrollsWithoutExpandingWindow() throws Exception {
         runOnFxThread(() -> {
             String noteText = "First line ".repeat(15) + "\n" + "Second line ".repeat(14) + "\n"
@@ -164,6 +192,8 @@ public class MainWindowTest {
                     ScrollPane scroll = (ScrollPane) root.lookup("#detailScroll");
                     VBox rows = (VBox) scroll.getContent();
                     Label note = (Label) root.lookup("#note");
+                    assertTrue(root.lookup("#noteIndicator").isVisible());
+                    assertInsideViewport(root.lookup("#noteIndicator"), size[0], size[1]);
                     assertInsideViewport(root.lookup("#detailPane"), size[0], size[1]);
                     assertInsideViewport(root.lookup("#statusbarPlaceholder"), size[0], size[1]);
                     assertTrue(rows.getHeight() > scroll.getViewportBounds().getHeight());

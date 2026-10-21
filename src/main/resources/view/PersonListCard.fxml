@@ -2,10 +2,12 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
 
 <!-- Let the list cell supply the card width instead of expanding to fit its text. -->
 <!-- Use the content's computed preferred height, including when the font changes. -->
@@ -27,6 +29,18 @@
       </Label>
       <Label fx:id="name" styleClass="cell_big_label" minWidth="0"
              maxWidth="Infinity" textOverrun="ELLIPSIS" HBox.hgrow="ALWAYS" />
+      <Label fx:id="noteIndicator" styleClass="note-indicator" contentDisplay="GRAPHIC_ONLY"
+             accessibleRole="TEXT" accessibleText="Has note" alignment="CENTER"
+             minWidth="20" prefWidth="20" maxWidth="20" minHeight="20" prefHeight="20" maxHeight="20"
+             visible="false" managed="false">
+        <graphic>
+          <SVGPath content="M1,0 H7 L10,3 V12 H1 Z M7,0 V3 H10 M3,6 H8 M3,9 H8"
+                   styleClass="note-icon" mouseTransparent="true" />
+        </graphic>
+        <tooltip>
+          <Tooltip text="Has note" />
+        </tooltip>
+      </Label>
       <Label fx:id="role" styleClass="role-badge">
         <minWidth>
           <!-- Keeps the role badge fully visible when the client's name is long. -->
