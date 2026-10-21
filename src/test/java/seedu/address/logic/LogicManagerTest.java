@@ -26,6 +26,7 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -95,12 +96,49 @@ public class LogicManagerTest {
     public void execute_commandExecutionError_throwsCommandException() {
         String deleteCommand = "delete 9";
         assertCommandException(deleteCommand, MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertFalse(model.canUndo());
     }
 
     @Test
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
+        assertFalse(model.canUndo());
+    }
+
+    @Test
+    public void execute_mutation_recordsHistoryOnlyAfterSave() throws Exception {
+        Path filePath = temporaryFolder.resolve("addressBook.json");
+        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(filePath) {
+            @Override
+            public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                assertFalse(model.canUndo(), "The change must not be recorded before saving");
+                super.saveAddressBook(addressBook);
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(addressBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+
+        assertTrue(model.canUndo());
+        assertEquals("Added client Amy Bee", model.getUndoHistory().get(0).getActionDescription());
+        assertEquals(model.getAddressBook().getPersonList(),
+                addressBookStorage.readAddressBook().orElseThrow().getPersonList());
+    }
+
+    @Test
+    public void execute_readOnlyAndNoOpCommands_doNotRecordHistory() throws Exception {
+        logic.execute("list");
+        logic.execute("clear");
+        assertFalse(model.canUndo());
+
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+        List<HistoryEntry> recorded = model.getUndoHistory();
+        logic.execute("edit 1 n/Amy Bee");
+        logic.execute("list");
+
+        assertEquals(recorded, model.getUndoHistory());
     }
 
     @Test
@@ -135,6 +173,98 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void execute_saveFails_restoresDataAndBothHistoryStacks() throws Exception {
+        AddressBookSnapshot empty = model.captureSnapshot();
+        model.addPerson(AMY);
+        model.recordChange(empty, model.captureSnapshot(), "add", "Added client Amy Bee");
+        HistoryEntry undone = model.undo();
+        List<HistoryEntry> undo = model.getUndoHistory();
+        List<HistoryEntry> redo = model.getRedoHistory();
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
+
+        assertCommandException("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road",
+                String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
+
+        assertEquals(empty, model.captureSnapshot());
+        assertEquals(undo, model.getUndoHistory());
+        assertEquals(undone, redo.get(0));
+        assertEquals(redo, model.getRedoHistory());
+    }
+
+    @Test
+    public void execute_undoRedo_savesEachRestoredAddressBook() throws Exception {
+        JsonAddressBookStorage dataFile = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+        AddressBookSnapshot afterAdd = model.captureSnapshot();
+
+        assertEquals("Undid: Added client Amy Bee", logic.execute("undo").getFeedbackToUser());
+        assertTrue(model.getAddressBook().getPersonList().isEmpty());
+        assertTrue(dataFile.readAddressBook().orElseThrow().getPersonList().isEmpty());
+        assertEquals("Undo history:\nNone\nRedo history:\n1. Added client Amy Bee",
+                logic.execute("history").getFeedbackToUser());
+
+        assertEquals("Redid: Added client Amy Bee", logic.execute("redo").getFeedbackToUser());
+        assertEquals(afterAdd, model.captureSnapshot());
+        assertEquals(afterAdd.getPersonList(), dataFile.readAddressBook().orElseThrow().getPersonList());
+    }
+
+    @Test
+    public void execute_emptyHistory_reportsUnavailableActions() throws Exception {
+        assertCommandException("undo", "There is no action to undo");
+        assertCommandException("redo", "There is no action to redo");
+        assertEquals(HistoryCommand.MESSAGE_EMPTY_HISTORY, logic.execute("history").getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_undoSaveFails_restoresDataAndHistoryStacks() throws Exception {
+        JsonAddressBookStorage dataFile = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+        AddressBookSnapshot afterAdd = model.captureSnapshot();
+        List<HistoryEntry> undo = model.getUndoHistory();
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
+
+        assertCommandException("undo", String.format(
+                LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
+
+        assertEquals(afterAdd, model.captureSnapshot());
+        assertEquals(undo, model.getUndoHistory());
+        assertFalse(model.canRedo());
+        assertEquals(afterAdd.getPersonList(), dataFile.readAddressBook().orElseThrow().getPersonList());
+    }
+
+    @Test
+    public void execute_redoSaveFails_restoresDataAndHistoryStacks() throws Exception {
+        JsonAddressBookStorage dataFile = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+        logic.execute("undo");
+        AddressBookSnapshot afterUndo = model.captureSnapshot();
+        List<HistoryEntry> redo = model.getRedoHistory();
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_AD_EXCEPTION));
+
+        assertCommandException("redo", String.format(
+                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+
+        assertEquals(afterUndo, model.captureSnapshot());
+        assertEquals(redo, model.getRedoHistory());
+        assertFalse(model.canUndo());
+        assertTrue(dataFile.readAddressBook().orElseThrow().getPersonList().isEmpty());
+    }
+
+    @Test
+    public void execute_noOpAfterUndo_keepsRedoUntilNextChange() throws Exception {
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+        logic.execute("add n/Bob Choo p/81234567 e/bob@example.com a/2 Test Road");
+        logic.execute("undo");
+        List<HistoryEntry> redo = model.getRedoHistory();
+
+        logic.execute("edit 1 n/Amy Bee");
+        assertEquals(redo, model.getRedoHistory());
+
+        logic.execute("add n/Carol New p/91234567 e/carol@example.com a/3 Test Road");
+        assertFalse(model.canRedo());
     }
 
     @Test
@@ -210,11 +340,13 @@ public class LogicManagerTest {
         assertEquals("This will delete all 2 clients. Type clear confirm to proceed.", warning.getFeedbackToUser());
         assertTrue(warning.isAwaitingConfirmation());
         assertEquals(2, model.getAddressBook().getPersonList().size());
+        assertFalse(model.canUndo());
 
         CommandResult cleared = logic.execute("clear confirm");
         assertEquals(ClearCommand.MESSAGE_SUCCESS, cleared.getFeedbackToUser());
         assertFalse(cleared.isAwaitingConfirmation());
         assertTrue(model.getAddressBook().getPersonList().isEmpty());
+        assertEquals("Cleared 2 clients", model.getUndoHistory().get(0).getActionDescription());
     }
 
     @Test
@@ -371,10 +503,8 @@ public class LogicManagerTest {
         // Triggers the saveAddressBook method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
-        ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
-        assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+        assertCommandFailure(addCommand, CommandException.class, expectedMessage, new ModelManager());
+        assertFalse(model.canUndo());
     }
 
     /**
