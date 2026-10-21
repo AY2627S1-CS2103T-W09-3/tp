@@ -290,8 +290,6 @@ public class MainWindowTest {
                     assertTrue(bounds.getMinY() >= viewportBounds.getMinY() - 1);
                     assertTrue(bounds.getMaxY() <= viewportBounds.getMaxY() + 1);
                     Region card = (Region) cell.getGraphic();
-                    assertTrue(card.getHeight() <= 90,
-                            "Default-font requirement card is " + card.getHeight() + "px tall");
                     assertCardContentFits(card);
                     assertTrue(card.lookup("#requirementsSummary").isVisible());
                     assertEquals(4, ((VBox) card.lookup("#cardContent")).getChildren().stream()

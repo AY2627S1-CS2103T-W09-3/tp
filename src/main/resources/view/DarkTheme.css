@@ -426,8 +426,6 @@
 }
 
 #cardPane {
-    /* Keep compact cards independent of the platform's taller System font metrics. */
-    -fx-font-family: "Arial";
     -fx-background-color: -app-card;
     -fx-background-radius: 8;
     -fx-background-insets: 2 0 2 0;
@@ -527,11 +525,11 @@
 }
 
 .app-shell:compact #personList {
-    -fx-padding: 4 10 4 10;
+    -fx-padding: 2 10 2 10;
 }
 
 .app-shell:compact #detailPanePlaceholder {
-    -fx-padding: 4 10 4 0;
+    -fx-padding: 2 10 2 0;
 }
 
 .app-shell:compact .status-bar .label {
