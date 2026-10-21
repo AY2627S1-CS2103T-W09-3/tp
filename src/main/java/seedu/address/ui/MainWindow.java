@@ -9,6 +9,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
@@ -43,6 +44,7 @@ public class MainWindow extends UiPart<Stage> {
     private DetailPane detailPane;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private CommandBox commandBox;
 
     @FXML
     private VBox mainContainer;
@@ -52,6 +54,15 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private MenuItem helpMenuItem;
+
+    @FXML
+    private MenuItem undoMenuItem;
+
+    @FXML
+    private MenuItem redoMenuItem;
+
+    @FXML
+    private MenuItem historyMenuItem;
 
     @FXML
     private StackPane personListPanelPlaceholder;
@@ -101,6 +112,27 @@ public class MainWindow extends UiPart<Stage> {
 
     private void setAccelerators() {
         setAccelerator(helpMenuItem, KeyCombination.valueOf("F1"));
+        undoMenuItem.setAccelerator(KeyCombination.valueOf("Shortcut+Z"));
+        redoMenuItem.setAccelerator(KeyCombination.valueOf(
+                System.getProperty("os.name").startsWith("Mac") ? "Meta+Shift+Z" : "Ctrl+Y"));
+        getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryShortcut);
+    }
+
+    private void handleHistoryShortcut(KeyEvent event) {
+        if (event.isAltDown()) {
+            return;
+        }
+        boolean ctrlOnly = event.isControlDown() && !event.isMetaDown();
+        boolean metaOnly = event.isMetaDown() && !event.isControlDown();
+        if (event.getCode() == KeyCode.Z && !event.isShiftDown() && (ctrlOnly || metaOnly)) {
+            handleUndo();
+        } else if ((event.getCode() == KeyCode.Y && ctrlOnly && !event.isShiftDown())
+                || (event.getCode() == KeyCode.Z && metaOnly && event.isShiftDown())) {
+            handleRedo();
+        } else {
+            return;
+        }
+        event.consume();
     }
 
     /**
@@ -151,7 +183,7 @@ public class MainWindow extends UiPart<Stage> {
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.getFilteredPersonList());
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
-        CommandBox commandBox = new CommandBox(this::executeCommand);
+        commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
         Platform.runLater(commandBox::requestFocus);
     }
@@ -178,6 +210,21 @@ public class MainWindow extends UiPart<Stage> {
         } else {
             helpWindow.focus();
         }
+    }
+
+    @FXML
+    private void handleUndo() {
+        commandBox.executeCommand("undo");
+    }
+
+    @FXML
+    private void handleRedo() {
+        commandBox.executeCommand("redo");
+    }
+
+    @FXML
+    private void handleHistory() {
+        commandBox.executeCommand("history");
     }
 
     void show() {
