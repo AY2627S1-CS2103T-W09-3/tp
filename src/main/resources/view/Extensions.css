@@ -13,8 +13,8 @@
 }
 
 .list-cell:empty {
-    /* Empty cells will not have alternating colours */
-    -fx-background: #383838;
+    /* Let the themed list background show through empty rows. */
+    -fx-background-color: transparent;
 }
 
 .tag-selector {
