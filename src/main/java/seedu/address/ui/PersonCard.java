@@ -39,6 +39,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label role;
     @FXML
+    private Label noteIndicator;
+    @FXML
     private Label id;
     @FXML
     private Label phone;
@@ -58,6 +60,9 @@ public class PersonCard extends UiPart<Region> {
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
         setRoleBadge(person.getRole());
+        boolean hasNote = person.getNote() != null;
+        noteIndicator.setVisible(hasNote);
+        noteIndicator.setManaged(hasNote);
         phone.setText(person.getPhone().value);
         email.setText(person.getEmail().value);
         List<String> tagNames = person.getTags().stream()
