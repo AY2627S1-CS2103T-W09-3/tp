@@ -3,14 +3,17 @@ package seedu.address.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.exceptions.IllegalValueException;
-import seedu.address.commons.util.FileUtil;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ReadOnlyAddressBook;
 
@@ -82,8 +85,29 @@ public class JsonAddressBookStorage {
         requireNonNull(addressBook);
         requireNonNull(filePath);
 
-        FileUtil.createIfMissing(filePath);
-        JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), filePath);
+        String json = JsonUtil.toJsonString(new JsonSerializableAddressBook(addressBook));
+        Path destination = filePath.toAbsolutePath();
+        Path parent = destination.getParent();
+        Files.createDirectories(parent);
+        if (Files.exists(destination) && !Files.isWritable(destination)) {
+            throw new AccessDeniedException(destination.toString());
+        }
+
+        // Write beside the destination so replacing it can be atomic. A failed write or move leaves
+        // the previously saved address book untouched.
+        Path temporaryFile = Files.createTempFile(parent, ".addressbook-", ".tmp");
+        try {
+            Files.writeString(temporaryFile, json, StandardCharsets.UTF_8);
+            replaceDataFile(temporaryFile, destination);
+        } finally {
+            Files.deleteIfExists(temporaryFile);
+        }
+    }
+
+    /** Replaces the saved file only after its complete replacement has been written. */
+    void replaceDataFile(Path temporaryFile, Path destination) throws IOException {
+        Files.move(temporaryFile, destination, StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING);
     }
 
 }
