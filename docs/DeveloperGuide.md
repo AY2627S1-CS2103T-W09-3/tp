@@ -965,6 +965,11 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `clear`<br>
       Expected: The result box shows `The client book is already empty.`.
 
+1. Restoring the sample clients after the clear tests
+
+   1. Exit the app, delete `data/addressbook.json` from this test folder, then relaunch the JAR.<br>
+      Expected: The app recreates `data/addressbook.json` and displays the five sample clients.
+
 ### Searching clients by name, phone or email
 
 1. Partial matching, ignoring case
@@ -1002,7 +1007,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Adding a note
 
-   1. Prerequisites: Run `list` and confirm `Alicia Tan` is client 1.
+   1. Prerequisites: Run `list`, confirm `Alicia Tan` is client 1, then run `view 1` to open her profile.
 
    1. Test case: `note 1 Call again next Monday`<br>
       Expected: Alicia's note becomes `Call again next Monday`. The result box shows `Note updated for Alicia Tan.`.
