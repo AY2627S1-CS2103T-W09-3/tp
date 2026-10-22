@@ -929,3 +929,253 @@ testers are expected to do more *exploratory* testing.
    1. Run `list`.<br>
       Expected: The result box shows `Listed all clients.` and the corrupted file is replaced with a valid empty
       client book. Restore the backup after completing the test.
+
+### Clearing all clients with confirmation
+
+1. Confirming a clear deletes every client
+
+   1. Prerequisites: Start with the five sample clients. Run `list` to confirm all five are displayed.
+
+   1. Test case: `clear`<br>
+      Expected: No client is deleted. The result box shows
+      `This will delete all 5 clients. Type clear confirm to proceed.` and the command box is outlined in amber.
+
+   1. Test case: `clear confirm`<br>
+      Expected: All clients are deleted. The result box shows `Client book has been cleared!`.
+
+1. Cancelling a pending clear
+
+   1. Prerequisites: Run `clear` so a confirmation is pending.
+
+   1. Test case: `list`<br>
+      Expected: The clear is cancelled, no client is deleted, and `list` is not run. The result box shows
+      `Clear cancelled.`.
+
+1. Confirming without a pending clear
+
+   1. Prerequisites: Ensure no clear is pending. Run `list` first if needed.
+
+   1. Test case: `clear confirm`<br>
+      Expected: No client is deleted. The result box shows `No clear is pending. Type clear first.`.
+
+1. Clearing an already empty client book
+
+   1. Prerequisites: Run `clear`, then `clear confirm`, so no clients remain.
+
+   1. Test case: `clear`<br>
+      Expected: The result box shows `The client book is already empty.`.
+
+1. Restoring the sample clients after the clear tests
+
+   1. Exit the app, delete `data/addressbook.json` from this test folder, then relaunch the JAR.<br>
+      Expected: The app recreates `data/addressbook.json` and displays the five sample clients.
+
+### Searching clients by name, phone or email
+
+1. Partial matching, ignoring case
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `find ali`<br>
+      Expected: Only `Alicia Tan` is displayed. The result box shows `Showing 1 of 5 clients.`.
+
+   1. Test case: `find 8456`<br>
+      Expected: Only `Raj Kumar` is displayed, matched by part of his phone number `84567890`. The result box
+      shows `Showing 1 of 5 clients.`.
+
+   1. Test case: `find raj.k`<br>
+      Expected: Only `Raj Kumar` is displayed, matched by part of his email address `raj.kumar@example.com`. The
+      result box shows `Showing 1 of 5 clients.`.
+
+1. Multiple keywords use OR matching
+
+   1. Test case: `find Alicia 82345678`<br>
+      Expected: `Alicia Tan` and `Benjamin Lim` are displayed, matched by name and phone number respectively. The
+      result box shows `Showing 2 of 5 clients.`.
+
+1. No matching clients
+
+   1. Test case: `find zzz`<br>
+      Expected: No clients are displayed. The result box shows `Showing 0 of 5 clients.`.
+
+1. Restoring the full list
+
+   1. Test case: `list`<br>
+      Expected: All five sample clients are displayed again. The result box shows `Listed all clients.`.
+
+### Adding, replacing and clearing a client note
+
+1. Adding a note
+
+   1. Prerequisites: Run `list`, confirm `Alicia Tan` is client 1, then run `view 1` to open her profile.
+
+   1. Test case: `note 1 Call again next Monday`<br>
+      Expected: Alicia's note becomes `Call again next Monday`. The result box shows `Note updated for Alicia Tan.`.
+      The note appears in the detail panel.
+
+1. Using `\n` for a line break
+
+   1. Test case: `note 1 First line\nSecond line`<br>
+      Expected: Alicia's note becomes two lines, `First line` and `Second line`. The detail panel shows the note
+      with a line break.
+
+1. Clearing a note
+
+   1. Test case: `note 1 clear`<br>
+      Expected: Alicia's note is removed. The result box shows `Note cleared for Alicia Tan.` and the note row is
+      hidden in the detail panel.
+
+1. The exact lowercase `clear` is reserved
+
+   1. Test case: `note 1 Clear`<br>
+      Expected: Alicia's note becomes the ordinary text `Clear`. The result box shows `Note updated for Alicia Tan.`.
+
+   1. Test case: `note 1 Call to clear documents`<br>
+      Expected: Alicia's note becomes `Call to clear documents`, stored as ordinary text.
+
+1. Rejecting a note over the 500-character limit
+
+   1. Test case: `note 1` followed by 501 characters of text<br>
+      Expected: No note is changed. The result box shows `Error: Notes should be 1 to 500 characters.`.
+
+1. Rejecting a blank note
+
+   1. Test case: `note 1   ` (an index followed by only spaces)<br>
+      Expected: No note is changed. The result box shows `Error: Notes should be 1 to 500 characters.`.
+
+### Filtering clients by role and tag
+
+1. Filtering by role
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `filter r/buyer`<br>
+      Expected: `Alicia Tan`, `Benjamin Lim` and `Cheryl Goh` are displayed, because `buyer` matches buyers and
+      clients who are both. The result box shows `Showing 3 of 5 clients.`.
+
+   1. Test case: `filter r/both`<br>
+      Expected: Only `Cheryl Goh` is displayed. The result box shows `Showing 1 of 5 clients.`.
+
+   1. Test case: `filter r/BUYER`<br>
+      Expected: Role input is case-insensitive, so the same three buyers are displayed. The result box shows
+      `Showing 3 of 5 clients.`.
+
+1. Filtering by tag
+
+   1. Test case: `filter t/urgent`<br>
+      Expected: Only `Nur Aisyah` is displayed. The result box shows `Showing 1 of 5 clients.`.
+
+   1. Test case: `filter t/upgrading t/weekend`<br>
+      Expected: Clients with any of these tags are displayed: `Benjamin Lim` and `Cheryl Goh` (tagged `upgrading`)
+      and `Raj Kumar` (tagged `weekend`). The result box shows `Showing 3 of 5 clients.`.
+
+1. Combining role and tags with AND
+
+   1. Test case: `filter r/buyer t/urgent`<br>
+      Expected: No clients are displayed, because no buyer (including both) is tagged `urgent`. The result box shows
+      `Showing 0 of 5 clients.`.
+
+1. Restoring the full list
+
+   1. Test case: `list`<br>
+      Expected: All five sample clients are displayed again. The result box shows `Listed all clients.`.
+
+### Viewing a client in the detail panel
+
+1. Opening a client's profile
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `view 1`<br>
+      Expected: Alicia Tan's card is highlighted and her profile is shown in the panel on the right. The result box
+      shows `Showing Alicia Tan.`.
+
+   1. Test case: `view 5`<br>
+      Expected: Cheryl Goh's profile is shown, including her role `Buyer, Seller`, budget, asking price, areas,
+      housing types and tags. The result box shows `Showing Cheryl Goh.`.
+
+1. Viewing using a filtered index
+
+   1. Test case: `find Cheryl`, then `view 1`<br>
+      Expected: Cheryl Goh's profile is shown, using her index in the filtered results. The result box shows
+      `Showing Cheryl Goh.`.
+
+1. Invalid view input
+
+   1. Test case: `view`<br>
+      Expected: The result box shows `Error: Invalid command format. Use: view INDEX.`.
+
+   1. Test case: `view 0`<br>
+      Expected: The result box shows `Error: The client index provided is invalid.`.
+
+1. Empty panel state
+
+   1. Prerequisites: Run `list` (a successful list command clears the selection).
+
+   1. Expected: The detail panel shows `Select a client to see details.`.
+
+### Recording client requirements
+
+1. Adding a client with requirements
+
+   1. Prerequisites: Run `list` to confirm the current clients.
+
+   1. Test case: `add n/John Tan p/91234567 e/johntan@example.com a/12 Bedok Road b/400000-600000 s/520000 l/Bedok l/Tampines h/HDB`<br>
+      Expected: `John Tan` is added and displayed with a budget of $400,000 to $600,000, an asking price of
+      $520,000, preferred areas `Bedok` and `Tampines`, and housing type `HDB`. The result box shows a message
+      beginning `New client added: John Tan`.
+
+1. Editing a client's requirements
+
+   1. Test case: `edit 1 b/500000-700000`<br>
+      Expected: The first client's (Alicia Tan's) budget is replaced with $500,000 to $700,000.
+
+   1. Test case: `edit 1 l/Punggol`<br>
+      Expected: Alicia Tan's areas are replaced with only `Punggol`.
+
+   1. Test case: `edit 3 s/`<br>
+      Expected: Nur Aisyah's asking price is removed.
+
+   1. Test case: `edit 5 h/Condo`<br>
+      Expected: Cheryl Goh's housing types are replaced with only `Condo`.
+
+1. Rejecting invalid requirement values
+
+   1. Test case: `edit 1 b/600000-400000`<br>
+      Expected: No change. The result box shows `Error: The budget minimum must not exceed the maximum.`.
+
+   1. Test case: `edit 1 s/0`<br>
+      Expected: No change. The result box shows
+      `Error: Prices must be whole numbers from 1 to 1,000,000,000, with optional correctly placed commas.`.
+
+   1. Test case: `edit 1 l/Bishan East`<br>
+      Expected: No change. The result box shows `Error: Area must be one of the supported areas.`.
+
+   1. Test case: `edit 1 h/Shophouse`<br>
+      Expected: No change. The result box shows `Error: Housing type must be HDB, Condo, EC, or Landed.`.
+
+1. Rejecting a repeated single-valued prefix
+
+   1. Test case: `edit 1 b/1-2 b/3-4`<br>
+      Expected: No change. The result box shows
+      `Error: Multiple values specified for the following single-valued field(s): b/`.
+
+### Checking the list and detail panel layout
+
+1. Master-detail layout on launch
+
+   1. Prerequisites: Launch the app from a folder containing only the JAR file.
+
+   1. Expected: The window shows the client list on the left and the detail panel on the right. Until a client is
+      selected, the detail panel shows `Select a client to see details.`. The status bar shows the data file path
+      and the displayed client count.
+
+1. Selecting a client updates the panel
+
+   1. Test case: `view 1`<br>
+      Expected: The first client's card is highlighted and the detail panel shows their full profile.
+
+1. Clearing the selection
+
+   1. Test case: `list`<br>
+      Expected: The list refreshes and the detail panel returns to `Select a client to see details.`.

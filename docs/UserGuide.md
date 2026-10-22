@@ -19,7 +19,11 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 
 1. Copy the file to the folder you want to use as the _home folder_ for EstateBookUltraProMax.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar estatebookultrapromax.jar`.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run the command matching your downloaded JAR:<br>
+   * Windows: `java -jar estatebookultrapromax-win.jar`
+   * Linux: `java -jar estatebookultrapromax-linux.jar`
+   * macOS on Intel: `java -jar estatebookultrapromax-mac.jar`
+   * macOS on Apple Silicon: `java -jar estatebookultrapromax-mac-aarch64.jar`<br>
    A GUI similar to the one below should appear in a few seconds.<br>
    If no saved data file exists, the app starts with five sample clients:
    two buyers, two sellers, and one who is both.
@@ -40,6 +44,17 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
    * `exit` : Exits the app.
 
 1. Refer to the [Features](#features) section below for details of each command.
+
+<div markdown="block" class="alert alert-info">
+
+**:information_source: Keep each release in its own folder:**<br>
+
+Keep each release's JAR file in its own writable folder and always run it from
+that folder. The app creates its `data/` directory and `preferences.json` file
+next to the JAR, so using a separate folder for each release keeps different
+versions from sharing data or settings.
+
+</div>
 
 --------------------------------------------------------------------------------------------------------------------
 
