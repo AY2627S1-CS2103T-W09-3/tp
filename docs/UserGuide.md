@@ -394,6 +394,11 @@ Formats: `undo`, `redo`, `history` (no parameters)
   data but starts with empty undo and redo lists.
 * You can also use **Edit > Undo**, **Edit > Redo** and **Edit > History**. Undo shortcuts are `Ctrl+Z`
   and `Cmd+Z`; redo shortcuts are `Ctrl+Y` and `Cmd+Shift+Z`. They work while the command box has focus.
+* If `clear` is awaiting confirmation, an Edit menu action or undo/redo shortcut cancels that
+  confirmation instead of performing the action. The result box shows `Clear cancelled.`; use the
+  action again after cancellation.
+* With focus in the command box, undo/redo shortcuts run the app's commands rather than the text
+  field's undo/redo. Any unfinished command text stays in the box.
 
 For example, enter `delete 2`, then `undo` to restore that client. Enter `redo` to delete the client again.
 
