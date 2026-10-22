@@ -282,6 +282,7 @@ After successful command execution, `MainWindow` applies these rules:
 | No view index, and neither awaiting confirmation nor showing help | Clear selection, even if the list contents did not change. |
 | Awaiting clear confirmation or showing help | Preserve selection unless a list change already cleared it. |
 | Parsing or execution throws an exception | Show the error without explicitly changing selection; a list change may already have cleared it. |
+| Any input other than `clear confirm` while a clear is pending | `LogicManager` swallows any `ParseException`, skips the command and returns `Clear cancelled.` with no view index, so the panel is cleared and no error is shown. |
 
 `EditCommand`, `RoleCommand` and `NoteCommand` replace the immutable `Person`,
 then look up that replacement in the filtered list. If it is still visible,
