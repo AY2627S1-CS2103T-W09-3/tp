@@ -173,12 +173,12 @@ Examples using the initial sample clients:
 * `list`, then `view 1`, shows Alex Yeoh and the message `Showing Alex Yeoh.`
 * `find Irfan`, then `view 1`, shows Irfan Ibrahim, the first client in those results.
 
-![Alex Yeoh selected using view 1, with contact details and requirements in the right panel](images/ViewClient.png)
+![Benjamin Lim selected using view 2, with contact details and requirements in the right panel](images/ViewClient.png)
 
 *The panel after `list` followed by `view 1` using the sample clients. Scroll down
 within the panel to read the note and tags.*
 
-![The same client's note and tags after scrolling the detail panel](images/ViewClientNote.png)
+![Alicia Tan selected using view 1, with notes and tags in the detail panel](images/ViewClientNote.png)
 
 **When does the panel change?**
 
