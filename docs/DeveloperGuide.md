@@ -230,9 +230,77 @@ A note is free-text working detail kept on a client: where a negotiation stands,
 
 **Storing.** `JsonAdaptedPerson` mirrors the note as a string under the `note` key. Because the field carries `@JsonInclude(JsonInclude.Include.NON_NULL)`, a client with no note leaves the key out of the data file entirely. A real line break in the model value is represented by the escaped characters `\n` in the JSON file and is decoded back into a line break when the file is read. A missing key becomes no note, and a value that is blank or longer than 500 characters raises an `IllegalValueException` carrying the same message, so a hand-edited data file is reported rather than silently accepted. A 500-character two-line note therefore survives a restart unchanged.
 
-**Display.** The application does not display the note content. It only confirms an update with `Note updated for <name>.` or a removal with `Note cleared for <name>.`; the stored content can currently be inspected only in the data file. The person card does not show the note because a note can run to 500 characters over several lines, which does not fit the card layout the UI uses today. Until the UI gains a treatment for long text, the card keeps its current fields and the note stays in storage.
+**Display.** `DetailPane` displays the selected client's note in its existing note row, with wrapping and preserved line breaks. The row is hidden when no note exists, and the profile scrolls vertically when needed. `NoteCommand` returns the updated client's index when that client remains in the filtered list, so the UI selects the replacement `Person` and refreshes the profile. See [Detailed client view](#detailed-client-view) for the selection rules.
 
-**Why `find` does not search notes.** `find` matches the fields that identify a client: name, phone number and email. A note is unstructured working detail in which any word may appear, so matching it would return clients for the wrong reason; a user searching `call` wants the client named Call, not every client whose note says to call back. A note can be re-read from the data file, and setting a new note with `note` replaces the old one, so the command remains usable even without a note display.
+**Why `find` does not search notes.** `find` matches name, phone number and email. Notes contain free-text working details, so searching them could return unrelated clients. Users can read a note in the detail panel and replace it with `note`.
+
+### Detailed client view
+
+The `view INDEX` command and the detail panel form one feature. The command
+resolves a displayed index; the UI owns selection and rendering. Clicking a
+client card uses the same selection listener as a successful `view` command.
+Neither selection nor `ViewCommand` changes client data or the active predicate.
+
+**Command path.** `CommandBox` passes input to `MainWindow#executeCommand`,
+which calls `LogicManager#execute`. `AddressBookParser` delegates `view` arguments
+to `ViewCommandParser`. The parser accepts one integer token and uses
+`ParserUtil#parseIndex` to validate a positive, supported index. Missing,
+non-numeric or extra arguments raise `ParseException` with
+`Invalid command format. Use: view INDEX.` Zero, negative and overflowing integer
+values instead use `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX`.
+
+`ViewCommand#execute` reads `Model#getFilteredPersonList`, checks the upper bound
+and obtains the client's name for `Showing <name>.`. An out-of-range index raises
+`CommandException`. On success, it returns a `CommandResult` carrying the `Index`
+in `getViewIndex()`, without calling any UI class. The current `LogicManager`
+then saves the address book before returning the result, as it does for other
+successful commands. `view` does not modify the book, but this shared save can
+still fail; the selection request is applied only after `LogicManager` returns.
+
+![Sequence from view 1 to selecting and rendering the first displayed client](images/ViewSequenceDiagram.png)
+
+The diagram shows a successful `view 1` with at least one displayed client and
+no pending clear confirmation. Parser internals, the shared save path and the
+feedback display are abbreviated to keep the selection flow readable.
+The source is [ViewSequenceDiagram.puml](diagrams/ViewSequenceDiagram.puml).
+
+**Selection and rendering.** `MainWindow` reads `CommandResult#getViewIndex()`
+and calls `PersonListPanel#selectPerson`. This clears the old selection, selects
+the current item at that index and scrolls the list to it. A listener registered
+in `MainWindow#fillInnerParts` observes `selectedPersonProperty()` and calls
+`DetailPane#setPerson(newPerson)`. The panel displays the selected `Person`,
+hides absent optional rows, sorts tags, areas and housing types for display,
+and resets its vertical scroll position. `setPerson(null)` clears the profile
+and shows the empty-state prompt. A mouse selection triggers this same listener
+without parsing a command or writing to storage.
+
+**Refresh and clearing rules.** `PersonListPanel` observes the existing filtered
+list and clears selection whenever that list changes. An index is a position,
+not a stable client identity: deletion, replacement or filtering can put another
+client in that position. Clearing avoids leaving stale details on screen.
+After successful command execution, `MainWindow` applies these rules:
+
+| Command result | Selection handling |
+|---|---|
+| Contains a view index | Select that client in the current filtered list. |
+| No view index, and neither awaiting confirmation nor showing help | Clear selection, even if the list contents did not change. |
+| Awaiting clear confirmation or showing help | Preserve selection unless a list change already cleared it. |
+| Parsing or execution throws an exception | Show the error without explicitly changing selection; a list change may already have cleared it. |
+| Any input other than `clear confirm` while a clear is pending | `LogicManager` swallows any `ParseException`, skips the command and returns `Clear cancelled.` with no view index, so the panel is cleared and no error is shown. |
+
+`EditCommand`, `RoleCommand` and `NoteCommand` replace the immutable `Person`,
+then look up that replacement in the filtered list. If it is still visible,
+their result contains its post-update index; the UI reselects it after the list
+listener has cleared the old selection. If it no longer matches, they return
+no view index and the panel remains empty. `find`, `filter`, `list`, `add`,
+`delete` and confirmed `clear` return no view index. Cancelling clear also
+returns no view index and clears the panel, while preserving client data.
+
+**Verification.** `ViewCommandParserTest` covers argument validation;
+`ViewCommandTest` covers displayed indexes and unchanged model data.
+`MainWindowTest` exercises the command-to-panel path, filtered selection,
+refresh after edits, selection clearing and preservation on errors/help/clear
+warnings. `DetailPaneTest` checks optional rows, wrapping and scrolling.
 
 ### Clear confirmation
 

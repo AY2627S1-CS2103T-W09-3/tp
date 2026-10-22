@@ -146,10 +146,66 @@ Examples:
 Shows all clients and clears the current search filter.
 
 After using `find`, enter `list` to restore the complete client list.
-For `edit`, `delete` and `role`, always use the index currently shown beside
+For `view`, `edit`, `delete`, `role` and `note`, always use the index currently shown beside
 the client. Indexes can change when the displayed list changes.
 
 Format: `list`
+
+### Viewing a client's details: `view`
+
+Shows a client's full profile in the panel on the right and highlights their
+card in the list. You can also click a client card to open the same profile.
+Viewing a client does not change their data or the current search/filter.
+
+Format: `view INDEX`
+
+* `INDEX` is the positive integer shown beside a client in the **currently displayed list**.
+  After `find` or `filter`, use the new displayed index, not the client's previous index.
+* The panel shows the client's name, contact details and any recorded role,
+  budget, asking price, preferred areas, housing types, note and tags.
+  Optional fields with no value are hidden.
+* Long text wraps. Notes preserve line breaks, and the panel scrolls vertically
+  when the profile is taller than the available space. Selecting a client resets
+  the panel to the top.
+* With no selection, the panel shows `Select a client to see details.`
+
+Examples using the initial sample clients:
+
+* `list`, then `view 1`, shows Alicia Tan and the message `Showing Alicia Tan.`
+* `find Cheryl`, then `view 1`, shows Cheryl Goh, the first client in those results.
+
+![Alicia Tan selected using list and view 1, with the note indicator on her card and notes and tags in the detail panel](images/ViewClientNote.png)
+
+*The panel after `list` followed by `view 1`. The document icon beside Alicia's name
+marks that she has a note; scroll down within the panel to read the note and tags.*
+
+![Cheryl Goh selected using find Cheryl and view 1, with requirements in the right panel](images/ViewClient.png)
+
+*The panel after `find Cheryl` followed by `view 1`. Cheryl has no note, so her card
+shows no note indicator.*
+
+**When does the panel change?**
+
+| Action | Panel behaviour                                                                                    |
+|---|----------------------------------------------------------------------------------------------------|
+| `view INDEX` or clicking a client card | Shows that client.                                                                                 |
+| Successful `edit`, `role` or `note` | Shows the updated client if they still match the active search/filter; otherwise clears the panel. |
+| Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index.                                 |
+| `help`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
+| Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed.               |
+
+Clearing the panel prevents it from showing an outdated client when a list
+change moves a different client into the same index. It does not delete data.
+Even if `list` or `find` produces the same results, a successful command clears
+the selection so that you can choose from the current list again.
+
+**Invalid input:** `view`, `view abc` and `view 1 extra` show
+`Error: Invalid command format. Use: view INDEX.` An index of zero, a negative index,
+or an index outside the displayed list shows `Error: The client index provided is invalid.`
+Outside a pending `clear` confirmation, a rejected `view` shows the error above and leaves
+the existing profile unchanged. If a `clear` confirmation is pending, any `view` input,
+valid or not, cancels the clear instead: you see `Clear cancelled.`, `view` is not run,
+and the panel is cleared. Enter `view INDEX` again to open the profile.
 
 ### Editing a client: `edit`
 
@@ -262,6 +318,7 @@ Formats:
 * Only the exact lowercase text `clear`, after surrounding whitespace is removed, clears the note.
 * Other capitalization and text containing `clear` are stored as ordinary note text.
 * The currently displayed client filter remains active after setting or clearing a note.
+* Read the note in the [detail panel](#viewing-a-clients-details-view). The note row is hidden when the note is cleared.
 
 Examples:
 
@@ -482,6 +539,7 @@ Action | Format, Examples
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`
 **Note** | `note INDEX TEXT`<br> e.g., `note 1 Call next week`, `note 1 clear`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
+**View** | `view INDEX`<br> e.g., `view 1`
 **Undo** | `undo`<br> Reverses the most recent change
 **Redo** | `redo`<br> Reapplies the most recently undone change
 **History** | `history`<br> Lists available undo and redo actions
