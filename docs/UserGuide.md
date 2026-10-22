@@ -41,6 +41,17 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 
 1. Refer to the [Features](#features) section below for details of each command.
 
+<div markdown="block" class="alert alert-info">
+
+**:information_source: Keep each release in its own folder:**<br>
+
+Keep each release's JAR file in its own writable folder and always run it from
+that folder. The app creates its `data/` directory and `preferences.json` file
+next to the JAR, so using a separate folder for each release keeps different
+versions from sharing data or settings.
+
+</div>
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## Features
