@@ -171,15 +171,18 @@ Format: `view INDEX`
 
 Examples using the initial sample clients:
 
-* `list`, then `view 1`, shows Alex Yeoh and the message `Showing Alex Yeoh.`
-* `find Irfan`, then `view 1`, shows Irfan Ibrahim, the first client in those results.
+* `list`, then `view 1`, shows Alicia Tan and the message `Showing Alicia Tan.`
+* `find Cheryl`, then `view 1`, shows Cheryl Goh, the first client in those results.
 
-![Benjamin Lim selected using view 2, with contact details and requirements in the right panel](images/ViewClient.png)
+![Alicia Tan selected using list and view 1, with the note indicator on her card and notes and tags in the detail panel](images/ViewClientNote.png)
 
-*The panel after `list` followed by `view 1` using the sample clients. Scroll down
-within the panel to read the note and tags.*
+*The panel after `list` followed by `view 1`. The document icon beside Alicia's name
+marks that she has a note; scroll down within the panel to read the note and tags.*
 
-![Alicia Tan selected using view 1, with notes and tags in the detail panel](images/ViewClientNote.png)
+![Cheryl Goh selected using find Cheryl and view 1, with requirements in the right panel](images/ViewClient.png)
+
+*The panel after `find Cheryl` followed by `view 1`. Cheryl has no note, so her card
+shows no note indicator.*
 
 **When does the panel change?**
 
@@ -189,7 +192,7 @@ within the panel to read the note and tags.*
 | Successful `edit`, `role` or `note` | Shows the updated client if they still match the active search/filter; otherwise clears the panel. |
 | Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index.                                 |
 | `help`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
-| Cancelling a pending clear | Clears the panel withoutgee deleting any clients; the cancelling input is not executed.            |
+| Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed.               |
 
 Clearing the panel prevents it from showing an outdated client when a list
 change moves a different client into the same index. It does not delete data.
