@@ -10,10 +10,14 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.RedoCommand;
+import seedu.address.logic.commands.UndoCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.AddressBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
+import seedu.address.model.history.AddressBookSnapshot;
+import seedu.address.model.history.HistoryOperationException;
 import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
 
@@ -63,18 +67,41 @@ public class LogicManager implements Logic {
             }
         }
 
+        AddressBookSnapshot before = model.captureSnapshot();
         CommandResult commandResult = command.execute(model);
+        AddressBookSnapshot after = model.captureSnapshot();
 
         try {
             storage.saveAddressBook(model.getAddressBook());
         } catch (AccessDeniedException e) {
+            rollbackFailedSave(command, before);
             throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
         } catch (IOException ioe) {
+            rollbackFailedSave(command, before);
             throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+        }
+
+        if (command.isUndoable()) {
+            model.recordChange(before, after, command.getCommandWord(), command.getActionDescription());
         }
 
         isClearPending = commandResult.isAwaitingConfirmation();
         return commandResult;
+    }
+
+    /** Reverts the data and stack transition made before a failed save. */
+    private void rollbackFailedSave(Command command, AddressBookSnapshot before) {
+        try {
+            if (command instanceof UndoCommand undoCommand) {
+                model.rollbackUndo(undoCommand.getUndoneEntry());
+            } else if (command instanceof RedoCommand redoCommand) {
+                model.rollbackRedo(redoCommand.getRedoneEntry());
+            } else {
+                model.restoreSnapshot(before);
+            }
+        } catch (HistoryOperationException e) {
+            throw new IllegalStateException("Could not restore history after a failed save", e);
+        }
     }
 
     /**

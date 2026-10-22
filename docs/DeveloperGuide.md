@@ -73,7 +73,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `DetailPane`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+
+`MainWindow` places `PersonListPanel` beside `DetailPane` in a master-detail layout. The list panel shows the displayed clients as `PersonCard`s. Selecting a client shows that client's profile in `DetailPane`; clearing the selection shows its empty state. The `StatusBarFooter` below them shows the data file path and a count that updates with the displayed client list.
+
+The menu bar provides `File` and `Help` actions, plus an `Edit` menu for `Undo`, `Redo` and `History`. The `Edit` actions submit the corresponding commands through `CommandBox`, so they use the same execution path and show feedback in `ResultDisplay` just like typed commands. Undo also has `Ctrl+Z` on Windows and Linux or `Cmd+Z` on macOS; redo has `Ctrl+Y` or `Cmd+Shift+Z`, respectively. These shortcuts work while the command box has focus.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -329,6 +333,56 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 * **A stateless `clear confirm`:** the warning would be a hint only, because a user could skip it by typing `clear confirm` straight away. It also gives the UI nothing to show.
 * **A confirmation popup:** this needs a window in the UI layer and cannot be tested through `Logic` alone.
 
+### Undo, redo and history
+
+`AddressBookSnapshot` is an immutable copy of every client, including clients hidden
+by the current find or filter predicate. A `HistoryEntry` contains the before and
+after snapshots, command word and user-facing action description. `CommandHistory`
+keeps separate undo and redo stacks, with the next action first and a capacity of 20
+undoable changes. `ModelManager` delegates history operations to
+`VersionedAddressBook`. Restoring a snapshot updates the existing address book and
+observable client list, so UI bindings and the active predicate remain in place.
+History is session-only: restarting loads client data but starts with empty stacks.
+
+**Ordinary command execution.** `LogicManager` controls when a change becomes
+persistent and undoable:
+
+1. Capture a before snapshot, execute the command, then capture an after snapshot.
+   A parse error or `CommandException` stops execution without recording history.
+2. Save the address book. Successful read-only and no-op commands still use the
+   existing save path, but they do not create history entries.
+3. After saving succeeds, call `recordChange` only if the command is undoable.
+   `add`, `edit`, `delete`, `role`, `note` and confirmed `clear` are eligible.
+   Equal snapshots are ignored without clearing redo history; a recorded change
+   clears redo history. The initial `clear` warning and cancelled confirmation
+   never create an entry.
+4. If saving fails, restore the before snapshot. No entry has been recorded, so
+   both history stacks remain unchanged. `LogicManager` keeps the existing
+   access-denied or general storage-error message.
+
+**Undo and redo.** `UndoCommand` calls `model.undo()`, which moves the next entry
+to the redo stack and restores its before snapshot. `RedoCommand` moves the next
+redo entry to the undo stack and restores its after snapshot. Each command retains
+the exact `HistoryEntry` returned by the model and reports its action description.
+If the relevant stack is empty, the model's `HistoryOperationException` becomes a
+user-facing `CommandException` without changing data or saving. `HistoryCommand`
+only reads immutable stack-list snapshots and displays undo and redo actions
+separately, newest first.
+
+After a successful undo or redo, `LogicManager` saves the restored address book.
+If that save fails, it immediately passes the retained entry to `rollbackUndo` or
+`rollbackRedo`. The model restores the data that was visible before the attempt and
+reverses the stack transfer, leaving the action available to retry. Undo and redo
+do not record additional history entries. The same access-denied and general
+storage-error messages apply as for ordinary commands.
+
+**Keeping the saved file consistent.** `JsonAddressBookStorage` serialises the
+complete address book into a temporary file beside the destination, then atomically
+replaces the destination. The app never writes partial JSON directly into the saved
+file, and it removes the temporary file after a failed save. If atomic replacement
+is unsupported, saving fails and `LogicManager` rolls back the in-memory state and
+stacks rather than reporting success for an unsaved change.
+
 ### Client requirements
 
 The four requirement fields are optional: `Budget budget`, `Price askingPrice`,
@@ -364,6 +418,33 @@ no value as invalid input. `edit` treats it as a request to clear the field:
 `parseBudgetForEdit` and `parseAskingPriceForEdit` return null, and
 `parseAreasForEdit` turns a single empty `l/` into an empty set, so the client
 loses every area.
+
+### Filter command
+
+`filter` narrows the displayed clients by role and tag. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.
+
+**Parsing.** `FilterCommandParser` tokenizes the arguments with `PREFIX_ROLE` and `PREFIX_TAG`. It rejects any text before the first prefix, rejects a second `r/`, and parses the role with `ClientRole.fromString` after trimming it. The tags go through `ParserUtil#parseTags`. Both parts are optional, and the parser creates `FilterCommand` with a `PersonMatchesFilterPredicate` holding an `Optional<ClientRole>` and a `Set<Tag>`.
+
+**The predicate.** `PersonMatchesFilterPredicate#test` is true only when both parts match:
+
+* **Role.** A missing role always matches. `buyer` matches `BUYER` and `BOTH`, `seller` matches `SELLER` and `BOTH`, and `both` matches only `BOTH`. A client with no role never matches a given role.
+* **Tags.** No tags always match. Otherwise, one matching tag is enough, and tag names are compared ignoring case.
+
+So the role and the tags combine with AND, and the tags among themselves with OR.
+
+**Executing.** `FilterCommand#execute(Model)` calls `Model#updateFilteredPersonList(predicate)`. This overwrites the predicate on the single `FilteredList`, so a filter does not stack with an earlier filter or `find`, and `find` and `list` replace a filter in the same way. It then counts the displayed clients and the clients in the whole address book, and shows `Showing X of Y clients.`. Y is the whole book, not the filtered list.
+
+**Mutation commands.** `add`, `edit`, `delete`, `role`, `note` and `clear confirm` change `AddressBook` and never call `updateFilteredPersonList`, so the predicate stays set. `ModelManager` wraps `AddressBook#getPersonList()` in the `FilteredList`, which re-tests an added or replaced client against the predicate by itself. A client who no longer matches leaves the list, and no command has to refresh the list. Only `add` can make a client appear, because `edit` and `role` work on a client that is already displayed and so already matches; `delete` removes the client, `note` changes neither the role nor the tags, and `clear confirm` replaces the whole address book through `Model#setAddressBook`, so every client leaves the list and a client added afterwards is tested against the same predicate. Only `list` and a new `find` or `filter` change the predicate.
+
+The following activity diagram shows how the active filter is set, and what happens to it after a successful `add`, `edit`, `delete`, `role`, `note` or `clear confirm`. A command that fails, for example because of an invalid index or a duplicate client, changes nothing, so the filter and the displayed list stay as they were:
+
+![Activity diagram of the filter command and the commands that follow it](images/FilterActivityDiagram.png)
+
+**Why the filter is not cleared by mutations.** An agent who filters 60 clients down to 8 and then updates one of them should stay in that view. Resetting to the full list after every command would lose it.
+
+**Alternatives considered.**
+* **A second predicate that is combined with `find`:** this makes the visible list depend on the order of earlier commands, and the user has no way to see which parts are active. One predicate that is replaced is easier to explain.
+* **Clearing the filter after every mutation:** simple to implement, but it loses the view, as described above.
 
 --------------------------------------------------------------------------------------------------------------------
 

@@ -63,6 +63,7 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list` and `exit`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
+  The `undo`, `redo` and `history` commands are exceptions: they reject extra parameters.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -353,6 +354,39 @@ Examples using the sample clients:
 * `find 5678` finds Benjamin Lim, Nur Aisyah, Raj Kumar and Cheryl Goh, because all four phone numbers contain `5678`.
   The result shows `Showing 4 of 5 clients.`.
 
+### Filtering clients by role and tag: `filter`
+
+Shows only the clients with a given role, a given tag, or both.
+
+Format: `filter [r/ROLE] [t/TAG]…​`
+
+* `ROLE` accepts `buyer`, `seller`, or `both`, ignoring case. Only one `r/` may be given.
+* `r/buyer` shows buyers and clients marked `both`. `r/seller` shows sellers and clients marked `both`. `r/both` shows only clients marked `both`.
+* A client with no role never matches a role.
+* A tag matches a client's tag with the same name, ignoring case. The whole tag must match, so `t/urgent` does not match `urgently`.
+* Repeat `t/` to give several tags. A client matches if they have **any** of them (OR).
+* When both a role and tags are given, a client must match the role **and** at least one of the tags (AND).
+* Both parts are optional. `filter` with no role and no tag shows every client.
+* Text before the first prefix, such as `filter buyer`, is an error.
+* The result line shows how many clients are displayed out of all clients in the book, e.g. `Showing 8 of 34 clients.`. The word `clients` is used even when the number is 1.
+
+**How the filter behaves afterwards:**
+
+* `filter` replaces any filter or `find` search that is already active. It does not combine with it.
+* `find` also replaces an active filter. Use `list` to clear the filter and show all clients.
+* The filter stays active after `add`, `edit`, `delete`, `role`, `note` and `clear confirm`, so the displayed list can still be shorter than the whole book. Indexes in these commands refer to the displayed list.
+* After `add`, `edit` or `role`, the changed client is checked against the active filter again. A client who no longer matches leaves the displayed list. For example, after `filter r/buyer`, `role 1 seller` removes client 1 from the list. In the same way, after `filter t/urgent`, `edit 1 t/weekend` removes client 1, because the client no longer has the `urgent` tag.
+* Only `add` can make a client appear, and only if the new client matches. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again.
+* `delete` removes the client from the list, and `note` never changes which clients are shown, because it changes neither a role nor a tag.
+* `clear confirm` deletes every client, including the hidden ones, but the filter stays active. A client added afterwards stays hidden unless they match it, so run `list` to show everyone.
+
+Examples:
+
+* `filter r/buyer` shows all buyers, including clients marked `both`.
+* `filter t/urgent t/firsttime` shows clients tagged `urgent` or `firsttime`.
+* `filter r/buyer t/urgent` shows buyers (including `both`) who are tagged `urgent`. On the sample clients this shows no clients (`Showing 0 of 5 clients.`), because the only `urgent` client, Nur Aisyah, is a seller.
+* `filter r/both` shows only clients who are both a buyer and a seller.
+
 ### Deleting a client: `delete`
 
 Deletes the specified client from EstateBookUltraProMax.
@@ -390,9 +424,37 @@ Format: `clear`, then `clear confirm`
 * A pending confirmation is not saved, so closing the app cancels it.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Warning:**
-`clear confirm` deletes every client. This cannot be undone because undo is not available in v1.4.
-Back up your data before using it.
+`clear confirm` deletes every client. You can undo it only while it remains in the current session's
+history. Keep a separate backup of important data.
 </div>
+
+### Undoing, redoing and viewing changes: `undo`, `redo`, `history`
+
+Use `undo` to reverse the most recent change to client data, and `redo` to reapply the most recently
+undone change. Use `history` to see the available undo and redo actions in separate lists, newest first.
+
+Formats: `undo`, `redo`, `history` (no parameters)
+
+* Changes made by `add`, `edit`, `delete`, `role`, `note` and `clear confirm` can be undone. A confirmed
+  clear is one action, so one `undo` restores all clients it removed.
+* Read-only commands, failed commands, a cancelled or unconfirmed `clear`, and commands that leave the
+  client data unchanged do not add history entries.
+* Up to 20 recent changes are kept. When the limit is reached, the oldest undoable change is discarded.
+* After an `undo`, making a new change clears the redo list. For example, after `add`, `undo`, then `edit`,
+  the undone `add` can no longer be redone.
+* If there is nothing to undo or redo, the command reports that no action is available. If both lists are
+  empty, `history` reports that there is no history.
+* History is kept only for the current app session. Closing and reopening the app keeps the saved client
+  data but starts with empty undo and redo lists.
+* You can also use **Edit > Undo**, **Edit > Redo** and **Edit > History**. Undo shortcuts are `Ctrl+Z`
+  and `Cmd+Z`; redo shortcuts are `Ctrl+Y` and `Cmd+Shift+Z`. They work while the command box has focus.
+* If `clear` is awaiting confirmation, an Edit menu action or undo/redo shortcut cancels that
+  confirmation instead of performing the action. The result box shows `Clear cancelled.`; use the
+  action again after cancellation.
+* With focus in the command box, undo/redo shortcuts run the app's commands rather than the text
+  field's undo/redo. Any unfinished command text stays in the box.
+
+For example, enter `delete 2`, then `undo` to restore that client. Enter `redo` to delete the client again.
 
 ### Exiting the program: `exit`
 
@@ -470,10 +532,14 @@ Action | Format, Examples
 **Clear** | `clear`, then `clear confirm`<br> `clear` shows a warning and `clear confirm` deletes all clients
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`<br> e.g., `edit 2 b/500000-700000 l/Bedok`
+**Filter** | `filter [r/ROLE] [t/TAG]…​`<br> e.g., `filter r/buyer t/urgent`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`
 **Note** | `note INDEX TEXT`<br> e.g., `note 1 Call next week`, `note 1 clear`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
 **View** | `view INDEX`<br> e.g., `view 1`
+**Undo** | `undo`<br> Reverses the most recent change
+**Redo** | `redo`<br> Reapplies the most recently undone change
+**History** | `history`<br> Lists available undo and redo actions
 **List** | `list`
 **Help** | `help`
 **Exit** | `exit`

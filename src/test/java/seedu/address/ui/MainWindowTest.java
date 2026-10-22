@@ -13,6 +13,7 @@ import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.ui.PersonCardTestUtil.assertCardContentFits;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -34,9 +37,14 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
@@ -45,9 +53,12 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.index.Index;
+import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.ClearCommand;
+import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.ModelManager;
@@ -111,6 +122,70 @@ public class MainWindowTest {
     }
 
     @Test
+    public void historyMenuAndShortcuts_executeThroughCommandBox() throws Exception {
+        runOnFxThread(() -> {
+            RecordingLogic logic = new RecordingLogic();
+            MainWindow window = new MainWindow(new Stage(), logic, temporaryFolder.resolve("addressbook.json"));
+            try {
+                window.fillInnerParts();
+                window.show();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                MenuBar menuBar = (MenuBar) window.getRoot().getScene().lookup("#menuBar");
+                List<MenuItem> editItems = menuBar.getMenus().get(1).getItems();
+                assertEquals(List.of("Undo", "Redo", "History"),
+                        editItems.stream().map(MenuItem::getText).toList());
+
+                commandBox.setText("unfinished command");
+                editItems.get(0).fire();
+                editItems.get(1).fire();
+                editItems.get(2).fire();
+                assertEquals(List.of("undo", "redo", "history"), logic.executedCommands);
+                assertEquals("Executed history", feedback.getText());
+                assertEquals("unfinished command", commandBox.getText());
+
+                commandBox.requestFocus();
+                assertSame(commandBox, window.getRoot().getScene().getFocusOwner());
+                fireShortcut(commandBox, KeyCode.Z, false, true, false);
+                fireShortcut(commandBox, KeyCode.Z, false, false, true);
+                fireShortcut(commandBox, KeyCode.Y, false, true, false);
+                fireShortcut(commandBox, KeyCode.Z, true, false, true);
+                assertEquals(List.of("undo", "redo", "history", "undo", "undo", "redo", "redo"),
+                        logic.executedCommands);
+                assertEquals("Executed redo", feedback.getText());
+                assertEquals("unfinished command", commandBox.getText());
+
+                // Unrelated or modified key presses must not trigger history commands.
+                commandBox.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.Z,
+                        false, true, true, false));
+                fireShortcut(commandBox, KeyCode.Z, true, true, false);
+                fireShortcut(commandBox, KeyCode.A, false, false, false);
+                fireShortcut(commandBox, KeyCode.Z, false, true, true);
+                fireShortcut(commandBox, KeyCode.Z, false, false, false);
+                fireShortcut(commandBox, KeyCode.Y, false, false, false);
+                fireShortcut(commandBox, KeyCode.Y, true, true, false);
+                fireShortcut(commandBox, KeyCode.Z, true, false, false);
+                assertEquals(List.of("undo", "redo", "history", "undo", "undo", "redo", "redo"),
+                        logic.executedCommands);
+                assertEquals("unfinished command", commandBox.getText());
+
+                enterCommand(window, commandBox, "list");
+                assertEquals("list", logic.executedCommands.get(logic.executedCommands.size() - 1));
+                assertEquals("", commandBox.getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void redoAcceleratorFor_usesPlatformShortcut() {
+        assertEquals(KeyCombination.valueOf("Meta+Shift+Z"), MainWindow.redoAcceleratorFor("Mac OS X"));
+        assertEquals(KeyCombination.valueOf("Ctrl+Y"), MainWindow.redoAcceleratorFor("Linux"));
+        assertEquals(KeyCombination.valueOf("Ctrl+Y"), MainWindow.redoAcceleratorFor("Windows 11"));
+    }
+
+    @Test
     public void layout_supportedLogicalViewports_keepsMainRegionsVisible() throws Exception {
         runOnFxThread(() -> {
             ModelManager model = new ModelManager();
@@ -155,6 +230,39 @@ public class MainWindowTest {
     }
 
     @Test
+    public void execute_noteAddedThenCleared_updatesCardMarker() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder().build());
+            MainWindow window = openWindow(model);
+            try {
+                Region root = (Region) window.getRoot().getScene().getRoot();
+                TextField commandBox = (TextField) root.lookup("#commandTextField");
+                layoutWindow(root, 820, 440);
+                assertFalse(root.lookup("#noteIndicator").isManaged());
+
+                enterCommand(window, commandBox, "note 1 Call next week");
+                layoutWindow(root, 820, 440);
+                assertTrue(root.lookup("#noteIndicator").isVisible());
+                assertTrue(root.lookup("#noteIndicator").isManaged());
+                assertTrue(root.lookup("#noteRow").isVisible());
+                assertEquals("Call next week", ((Label) root.lookup("#note")).getText());
+
+                enterCommand(window, commandBox, "note 1 clear");
+                layoutWindow(root, 820, 440);
+                assertFalse(((TextArea) root.lookup("#resultDisplay")).getStyleClass().contains("error"));
+                assertFalse(root.lookup("#noteIndicator").isVisible());
+                assertFalse(root.lookup("#noteIndicator").isManaged());
+                assertFalse(root.lookup("#noteRow").isVisible());
+                assertFalse(root.lookup("#noteRow").isManaged());
+                assertEquals("", ((Label) root.lookup("#note")).getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
     public void layout_populatedDetailPaneAtSmallViewports_wrapsAndScrollsWithoutExpandingWindow() throws Exception {
         runOnFxThread(() -> {
             String noteText = "First line ".repeat(15) + "\n" + "Second line ".repeat(14) + "\n"
@@ -165,9 +273,10 @@ public class MainWindowTest {
             model.addPerson(person);
             MainWindow window = openWindow(model);
             try {
-                // Selection wiring belongs to #101; exercise the embedded panel through its public API.
-                window.getDetailPane().setPerson(person);
                 Region root = (Region) window.getRoot().getScene().getRoot();
+                TextField commandBox = (TextField) root.lookup("#commandTextField");
+                enterCommand(window, commandBox, "view 1");
+                assertSelectedClient(window, person);
                 root.applyCss();
                 int[][] logicalSizes = {{853, 480}, {820, 440}};
                 for (int[] size : logicalSizes) {
@@ -175,6 +284,8 @@ public class MainWindowTest {
                     ScrollPane scroll = (ScrollPane) root.lookup("#detailScroll");
                     VBox rows = (VBox) scroll.getContent();
                     Label note = (Label) root.lookup("#note");
+                    assertTrue(root.lookup("#noteIndicator").isVisible());
+                    assertInsideViewport(root.lookup("#noteIndicator"), size[0], size[1]);
                     assertInsideViewport(root.lookup("#detailPane"), size[0], size[1]);
                     assertInsideViewport(root.lookup("#statusbarPlaceholder"), size[0], size[1]);
                     assertTrue(rows.getHeight() > scroll.getViewportBounds().getHeight());
@@ -1008,6 +1119,38 @@ public class MainWindowTest {
         commandBox.setText(command);
         commandBox.fireEvent(new ActionEvent());
         window.getRoot().getScene().getRoot().applyCss();
+    }
+
+    private static void fireShortcut(TextField commandBox, KeyCode key, boolean shift,
+            boolean control, boolean meta) {
+        commandBox.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", key, shift, control, false, meta));
+    }
+
+    private static class RecordingLogic implements Logic {
+        private final List<String> executedCommands = new ArrayList<>();
+        private final ObservableList<Person> persons = FXCollections.observableArrayList();
+        private GuiSettings guiSettings = new GuiSettings();
+
+        @Override
+        public CommandResult execute(String commandText) {
+            executedCommands.add(commandText);
+            return new CommandResult("Executed " + commandText);
+        }
+
+        @Override
+        public ObservableList<Person> getFilteredPersonList() {
+            return persons;
+        }
+
+        @Override
+        public GuiSettings getGuiSettings() {
+            return guiSettings;
+        }
+
+        @Override
+        public void setGuiSettings(GuiSettings guiSettings) {
+            this.guiSettings = guiSettings;
+        }
     }
 
     private static void runOnFxThread(Runnable action) throws Exception {

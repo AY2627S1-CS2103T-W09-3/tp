@@ -9,6 +9,24 @@ import seedu.address.model.Model;
 public abstract class Command {
 
     /**
+     * Returns whether a successful execution is eligible for history. This does not indicate execution or save
+     * success; the caller must check both, and equal before/after snapshots are still excluded by the model.
+     */
+    public boolean isUndoable() {
+        return false;
+    }
+
+    /** Returns the history command word; read only for an undoable command after successful execution. */
+    public String getCommandWord() {
+        return "";
+    }
+
+    /** Returns a specific history description; read only for an undoable command after successful execution. */
+    public String getActionDescription() {
+        return "";
+    }
+
+    /**
      * Executes the command and returns the result message.
      *
      * @param model {@code Model} which the command should operate on.

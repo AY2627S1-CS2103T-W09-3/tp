@@ -2,15 +2,21 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.HOON;
 import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -105,6 +111,52 @@ public class JsonAddressBookStorageTest {
         readBack = jsonAddressBookStorage.readAddressBook().get(); // file path not specified
         assertEquals(original, new AddressBook(readBack));
 
+    }
+
+    @Test
+    public void saveAddressBook_replacementFails_preservesPreviousFile() throws Exception {
+        Path filePath = testFolder.resolve("addressBook.json");
+        AddressBook original = new AddressBook();
+        original.addPerson(ALICE);
+        new JsonAddressBookStorage(filePath).saveAddressBook(original);
+        String previousJson = Files.readString(filePath);
+
+        AddressBook updated = new AddressBook(original);
+        updated.addPerson(BOB);
+        JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(filePath) {
+            @Override
+            void replaceDataFile(Path temporaryFile, Path destination) throws IOException {
+                throw new IOException("Simulated replacement failure");
+            }
+        };
+
+        assertThrows(IOException.class, () -> failingStorage.saveAddressBook(updated));
+        assertEquals(previousJson, Files.readString(filePath));
+        assertEquals(original, new AddressBook(failingStorage.readAddressBook().orElseThrow()));
+        try (var files = Files.list(testFolder)) {
+            assertEquals(1, files.count());
+        }
+    }
+
+    @Test
+    public void saveAddressBook_existingReadOnlyFile_throwsAccessDeniedException() throws Exception {
+        Path filePath = testFolder.resolve("readOnlyAddressBook.json");
+        AddressBook original = new AddressBook();
+        original.addPerson(ALICE);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(original);
+        assumeTrue(Files.getFileAttributeView(filePath, PosixFileAttributeView.class) != null);
+        Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(filePath);
+        String previousJson = Files.readString(filePath);
+
+        try {
+            Files.setPosixFilePermissions(filePath, Set.of(PosixFilePermission.OWNER_READ));
+            assumeTrue(!Files.isWritable(filePath));
+            assertThrows(AccessDeniedException.class, () -> storage.saveAddressBook(original));
+            assertEquals(previousJson, Files.readString(filePath));
+        } finally {
+            Files.setPosixFilePermissions(filePath, originalPermissions);
+        }
     }
 
     @Test

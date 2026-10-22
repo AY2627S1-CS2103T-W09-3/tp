@@ -28,6 +28,11 @@
           <Menu mnemonicParsing="false" text="File">
             <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Exit" />
           </Menu>
+          <Menu mnemonicParsing="false" text="Edit">
+            <MenuItem fx:id="undoMenuItem" mnemonicParsing="false" onAction="#handleUndo" text="Undo" />
+            <MenuItem fx:id="redoMenuItem" mnemonicParsing="false" onAction="#handleRedo" text="Redo" />
+            <MenuItem fx:id="historyMenuItem" mnemonicParsing="false" onAction="#handleHistory" text="History" />
+          </Menu>
           <Menu mnemonicParsing="false" text="Help">
             <MenuItem fx:id="helpMenuItem" mnemonicParsing="false" onAction="#handleHelp" text="Help" />
           </Menu>
