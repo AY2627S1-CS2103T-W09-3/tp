@@ -182,13 +182,13 @@ within the panel to read the note and tags.*
 
 **When does the panel change?**
 
-| Action | Panel behaviour |
-|---|---|
-| `view INDEX` or clicking a client card | Shows that client. |
+| Action | Panel behaviour                                                                                    |
+|---|----------------------------------------------------------------------------------------------------|
+| `view INDEX` or clicking a client card | Shows that client.                                                                                 |
 | Successful `edit`, `role` or `note` | Shows the updated client if they still match the active search/filter; otherwise clears the panel. |
-| Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index. |
-| `help`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed. |
-| Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed. |
+| Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index.                                 |
+| `help`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
+| Cancelling a pending clear | Clears the panel withoutgee deleting any clients; the cancelling input is not executed.            |
 
 Clearing the panel prevents it from showing an outdated client when a list
 change moves a different client into the same index. It does not delete data.
