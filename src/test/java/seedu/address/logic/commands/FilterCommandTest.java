@@ -12,7 +12,6 @@ import static seedu.address.testutil.TypicalPersons.ELLE;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -61,7 +60,11 @@ public class FilterCommandTest {
         for (String tagName : tagNames) {
             tags.add(new Tag(tagName));
         }
-        return new PersonMatchesFilterPredicate(Optional.ofNullable(role), tags);
+        PersonMatchesFilterPredicate.Builder builder = new PersonMatchesFilterPredicate.Builder().withTags(tags);
+        if (role != null) {
+            builder.withRole(role);
+        }
+        return builder.build();
     }
 
     @Test

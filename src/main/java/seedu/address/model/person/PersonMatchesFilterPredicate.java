@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -20,11 +21,7 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
     private final Optional<ClientRole> role;
     private final Set<Tag> tags;
 
-    /**
-     * Creates a predicate that matches the given {@code role}, if present, and any of the given {@code tags},
-     * if there are any.
-     */
-    public PersonMatchesFilterPredicate(Optional<ClientRole> role, Set<Tag> tags) {
+    private PersonMatchesFilterPredicate(Optional<ClientRole> role, Set<Tag> tags) {
         this.role = requireNonNull(role);
         this.tags = requireNonNull(tags);
     }
@@ -85,5 +82,36 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
                 .add("role", role)
                 .add("tags", tags)
                 .toString();
+    }
+
+    /**
+     * Builds a {@code PersonMatchesFilterPredicate}. A criterion that is not set always matches.
+     */
+    public static class Builder {
+        private Optional<ClientRole> role = Optional.empty();
+        private Set<Tag> tags = new HashSet<>();
+
+        /**
+         * Requires a client to have the given {@code role}, or to be both when the role is buyer or seller.
+         */
+        public Builder withRole(ClientRole role) {
+            this.role = Optional.of(requireNonNull(role));
+            return this;
+        }
+
+        /**
+         * Requires a client to have any one of the given {@code tags}, if there are any.
+         */
+        public Builder withTags(Set<Tag> tags) {
+            this.tags = new HashSet<>(requireNonNull(tags));
+            return this;
+        }
+
+        /**
+         * Returns a predicate that matches the criteria set so far.
+         */
+        public PersonMatchesFilterPredicate build() {
+            return new PersonMatchesFilterPredicate(role, tags);
+        }
     }
 }

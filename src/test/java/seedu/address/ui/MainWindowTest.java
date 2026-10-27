@@ -16,7 +16,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
@@ -900,14 +899,14 @@ public class MainWindowTest {
 
     @Test
     public void selection_editLeavesFilter_clearsInsteadOfShowingNextClient() throws Exception {
-        assertMutationClearsSelection(new PersonMatchesFilterPredicate(Optional.empty(), Set.of(new Tag("friend"))),
-                "edit 1 t/");
+        assertMutationClearsSelection(
+                new PersonMatchesFilterPredicate.Builder().withTags(Set.of(new Tag("friend"))).build(), "edit 1 t/");
     }
 
     @Test
     public void selection_roleLeavesFilter_clearsInsteadOfShowingNextClient() throws Exception {
-        assertMutationClearsSelection(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()),
-                "role 1 seller");
+        assertMutationClearsSelection(
+                new PersonMatchesFilterPredicate.Builder().withRole(ClientRole.BUYER).build(), "role 1 seller");
     }
 
     @Test

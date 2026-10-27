@@ -5,7 +5,6 @@ import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
-import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.logic.commands.FilterCommand;
@@ -37,13 +36,14 @@ public class FilterCommandParser implements Parser<FilterCommand> {
 
         argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_ROLE);
 
-        Optional<ClientRole> role = Optional.empty();
+        PersonMatchesFilterPredicate.Builder predicateBuilder = new PersonMatchesFilterPredicate.Builder();
         if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
-            role = Optional.of(parseRole(argMultimap.getValue(PREFIX_ROLE).get()));
+            predicateBuilder.withRole(parseRole(argMultimap.getValue(PREFIX_ROLE).get()));
         }
         Set<Tag> tags = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
+        predicateBuilder.withTags(tags);
 
-        return new FilterCommand(new PersonMatchesFilterPredicate(role, tags));
+        return new FilterCommand(predicateBuilder.build());
     }
 
     /**

@@ -105,8 +105,8 @@ public class AddressBookParserTest {
     public void parseCommand_filter() throws Exception {
         FilterCommand command = (FilterCommand) parser.parseCommand(
                 FilterCommand.COMMAND_WORD + " r/buyer t/urgent");
-        PersonMatchesFilterPredicate predicate =
-                new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of(new Tag("urgent")));
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder()
+                .withRole(ClientRole.BUYER).withTags(Set.of(new Tag("urgent"))).build();
         assertEquals(new FilterCommand(predicate), command);
     }
 

@@ -14,7 +14,6 @@ import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -65,7 +64,7 @@ public class RoleCommandTest {
 
     @Test
     public void execute_clientStillMatchesRoleFilter_returnsVisibleIndex() throws Exception {
-        model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+        model.updateFilteredPersonList(new PersonMatchesFilterPredicate.Builder().withRole(ClientRole.BUYER).build());
 
         CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BOTH).execute(model);
 
@@ -76,7 +75,7 @@ public class RoleCommandTest {
 
     @Test
     public void execute_clientLeavesRoleFilter_doesNotSelectClientMovingIntoOldIndex() throws Exception {
-        model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+        model.updateFilteredPersonList(new PersonMatchesFilterPredicate.Builder().withRole(ClientRole.BUYER).build());
 
         CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.SELLER).execute(model);
 

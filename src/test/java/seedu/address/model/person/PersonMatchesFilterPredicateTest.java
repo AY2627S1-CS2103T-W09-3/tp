@@ -25,15 +25,15 @@ public class PersonMatchesFilterPredicateTest {
     }
 
     private static PersonMatchesFilterPredicate roleOnly(ClientRole role) {
-        return new PersonMatchesFilterPredicate(Optional.of(role), Set.of());
+        return new PersonMatchesFilterPredicate.Builder().withRole(role).build();
     }
 
     private static PersonMatchesFilterPredicate tagsOnly(String... tagNames) {
-        return new PersonMatchesFilterPredicate(Optional.empty(), tagSet(tagNames));
+        return new PersonMatchesFilterPredicate.Builder().withTags(tagSet(tagNames)).build();
     }
 
     private static PersonMatchesFilterPredicate roleAndTags(ClientRole role, String... tagNames) {
-        return new PersonMatchesFilterPredicate(Optional.of(role), tagSet(tagNames));
+        return new PersonMatchesFilterPredicate.Builder().withRole(role).withTags(tagSet(tagNames)).build();
     }
 
     @Test
@@ -141,7 +141,7 @@ public class PersonMatchesFilterPredicateTest {
 
     @Test
     public void test_noCriteria_matchesEveryone() {
-        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate(Optional.empty(), Set.of());
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder().build();
 
         assertTrue(predicate.test(new PersonBuilder().withRole(null).withTags().build()));
         assertTrue(predicate.test(new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent").build()));
@@ -150,7 +150,8 @@ public class PersonMatchesFilterPredicateTest {
     @Test
     public void toStringMethod() {
         Set<Tag> tags = Set.of(new Tag("urgent"));
-        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), tags);
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder()
+                .withRole(ClientRole.BUYER).withTags(tags).build();
 
         String expected = PersonMatchesFilterPredicate.class.getCanonicalName()
                 + "{role=" + Optional.of(ClientRole.BUYER) + ", tags=" + tags + "}";

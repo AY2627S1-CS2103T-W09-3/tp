@@ -30,7 +30,9 @@ public class FilterCommandParserTest {
         for (String tagName : tagNames) {
             tags.add(new Tag(tagName));
         }
-        return new FilterCommand(new PersonMatchesFilterPredicate(role, tags));
+        PersonMatchesFilterPredicate.Builder builder = new PersonMatchesFilterPredicate.Builder().withTags(tags);
+        role.ifPresent(builder::withRole);
+        return new FilterCommand(builder.build());
     }
 
     @Test
