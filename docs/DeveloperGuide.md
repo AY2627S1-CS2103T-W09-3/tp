@@ -151,6 +151,14 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`JsonUtil` reads JSON from a byte stream, allowing Jackson to detect a UTF-8 or
+UTF-16 byte-order mark in a manually edited client book. If an existing client
+book still cannot be loaded, `MainApp` first copies it beside the original as
+`addressbook.json.unreadable-<unique number>.bak`, then starts with an empty
+model. It passes the backup path to `UiManager`, which warns the user where the
+original bytes were saved. The backup is created before a command can overwrite
+the data file; if the copy fails, startup does not continue with the empty book.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
