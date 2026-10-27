@@ -306,7 +306,7 @@ warnings. `DetailPaneTest` checks optional rows, wrapping and scrolling.
 
 `clear` deletes every client, so it needs two steps. `clear` warns and starts a pending state, and `clear confirm` completes it. Any other input cancels it.
 
-**Parsing.** `ClearCommandParser` accepts no argument or exactly `confirm`, and creates `ClearCommand(isConfirmed)` with the flag set only for `confirm`. Any other argument raises a `ParseException` with `Invalid command format. Use: clear.`.
+**Parsing.** `ClearCommandParser` accepts no argument or `confirm` in any letter case, after trimming, and creates `ClearCommand(isConfirmed)` with the flag set only for `confirm`. Any other argument raises a `ParseException` with `Invalid command format. Use: clear.`.
 
 **Executing.** `ClearCommand#execute(Model)` counts the clients in the whole address book, not the filtered list, because clear also deletes hidden clients. It then does one of three things:
 
@@ -328,6 +328,8 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 **Showing the pending state.** `CommandBox` and `MainWindow` read `CommandResult#isAwaitingConfirmation()` from each result. While it is true, the command box gets the `pending` style class and a prompt asking the user to confirm, and `ResultDisplay` shows the warning with the same style class. The next result removes both, so the indicator is always the same as the state held by `LogicManager`.
 
 **Why the state lives in `LogicManager`.** A `Command` is created again for every input, so it cannot remember the previous one. `Model` holds saved client data, and a pending confirmation is not data. Keeping the flag in `LogicManager` makes it testable without the UI, and the UI only has to display it.
+
+**Why `confirm` ignores case.** `clear CONFIRM` used to cancel the pending clear with only `Clear cancelled.`, which gave the user no hint that the capital letters were the problem. Roles, areas and housing types already ignore case, and confirming is a deliberate typed action, so accepting `CONFIRM` cannot delete anything by accident. `ClearCommandParser` therefore compares with `equalsIgnoreCase`. The command word `clear` is still matched exactly, like every other command word, and any other argument, such as `confrim`, is still not a confirmation and cancels a pending clear. An explanatory message for a near-miss was considered, but it needs `LogicManager` to guess what the user meant, and it changes the cancel message that many tests and guide tables rely on.
 
 **Alternatives considered.**
 * **A stateless `clear confirm`:** the warning would be a hint only, because a user could skip it by typing `clear confirm` straight away. It also gives the UI nothing to show.
@@ -942,6 +944,18 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `clear confirm`<br>
       Expected: All clients are deleted. The result box shows `Client book has been cleared!`.
+
+1. Confirming in capital letters
+
+   1. Prerequisites: Start with the five sample clients, and run `list` to show them all.
+
+   1. Test case: `clear`, then `clear CONFIRM`<br>
+      Expected: All clients are deleted. The result box shows `Client book has been cleared!`, not
+      `Clear cancelled.`.
+
+   1. Test case: Run `undo`, then `clear`, then `clear confrim`<br>
+      Expected: The five clients are back after `undo`. The misspelled confirmation is not accepted, no client is
+      deleted, and the result box shows `Clear cancelled.`.
 
 1. Cancelling a pending clear
 
