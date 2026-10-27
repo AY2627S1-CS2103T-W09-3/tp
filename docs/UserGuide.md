@@ -117,7 +117,7 @@ An `add` or `edit` command is rejected if it would match another client's:
 
 * Name, ignoring case.
 * Phone number exactly.
-* Email address exactly, including letter case.
+* Email address, ignoring case. For example, `alpha.tester@EXAMPLE.COM` matches `alpha.tester@example.com`.
 
 The existing records remain unchanged when the command is rejected.
 
