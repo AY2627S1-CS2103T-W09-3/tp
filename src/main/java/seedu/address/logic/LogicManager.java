@@ -126,6 +126,16 @@ public class LogicManager implements Logic {
     }
 
     @Override
+    public boolean canUndo() {
+        return model.canUndo();
+    }
+
+    @Override
+    public boolean canRedo() {
+        return model.canRedo();
+    }
+
+    @Override
     public GuiSettings getGuiSettings() {
         return model.getGuiSettings();
     }

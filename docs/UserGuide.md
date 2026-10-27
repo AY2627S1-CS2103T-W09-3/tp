@@ -462,6 +462,7 @@ Formats: `undo`, `redo`, `history` (no parameters)
   data but starts with empty undo and redo lists.
 * You can also use **Edit > Undo**, **Edit > Redo** and **Edit > History**. Undo shortcuts are `Ctrl+Z`
   and `Cmd+Z`; redo shortcuts are `Ctrl+Y` and `Cmd+Shift+Z`. They work while the command box has focus.
+  The Undo and Redo menu items are disabled when there is no corresponding action available.
 * If `clear` is awaiting confirmation, an Edit menu action or undo/redo shortcut cancels that
   confirmation instead of performing the action. The result box shows `Clear cancelled.`; use the
   action again after cancellation.

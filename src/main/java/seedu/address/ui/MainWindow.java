@@ -92,6 +92,7 @@ public class MainWindow extends UiPart<Stage> {
         setWindowDefaultSize(logic.getGuiSettings());
         configureResponsiveLayout();
 
+        refreshHistoryMenuItems();
         setAccelerators();
 
         helpWindow = new HelpWindow();
@@ -115,6 +116,12 @@ public class MainWindow extends UiPart<Stage> {
         undoMenuItem.setAccelerator(KeyCombination.valueOf("Shortcut+Z"));
         redoMenuItem.setAccelerator(redoAcceleratorFor(System.getProperty("os.name")));
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryShortcut);
+    }
+
+    /** Keeps the Edit menu in sync with the model's undo and redo stacks. */
+    private void refreshHistoryMenuItems() {
+        undoMenuItem.setDisable(!logic.canUndo());
+        redoMenuItem.setDisable(!logic.canRedo());
     }
 
     static KeyCombination redoAcceleratorFor(String osName) {
@@ -286,6 +293,8 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setErrorFeedbackToUser(e.getMessage());
             throw e;
+        } finally {
+            refreshHistoryMenuItems();
         }
     }
 }

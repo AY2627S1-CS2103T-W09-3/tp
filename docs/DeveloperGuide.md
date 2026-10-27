@@ -79,6 +79,12 @@ The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDi
 
 The menu bar provides `File` and `Help` actions, plus an `Edit` menu for `Undo`, `Redo` and `History`. The `Edit` actions submit the corresponding commands through `CommandBox`, so they use the same execution path and show feedback in `ResultDisplay` just like typed commands. Undo also has `Ctrl+Z` on Windows and Linux or `Cmd+Z` on macOS; redo has `Ctrl+Y` or `Cmd+Shift+Z`, respectively. These shortcuts work while the command box has focus.
 
+`Logic#canUndo()` and `Logic#canRedo()` expose the model's history availability to
+`MainWindow`. The window disables unavailable Undo and Redo menu items on
+startup and refreshes them after every command attempt, including a failed
+save that rolls back a history transition. The History menu item remains
+available even when both stacks are empty.
+
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
 The `UI` component,

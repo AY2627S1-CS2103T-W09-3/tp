@@ -20,6 +20,12 @@ public interface Logic {
      */
     CommandResult execute(String commandText) throws CommandException, ParseException;
 
+    /** Returns whether there is a saved change to undo. */
+    boolean canUndo();
+
+    /** Returns whether there is an undone change to redo. */
+    boolean canRedo();
+
     /** Returns an unmodifiable view of the filtered list of persons */
     ObservableList<Person> getFilteredPersonList();
 

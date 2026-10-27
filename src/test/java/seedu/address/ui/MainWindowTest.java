@@ -179,6 +179,47 @@ public class MainWindowTest {
     }
 
     @Test
+    public void historyMenuItems_followUndoAndRedoAvailability() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                MenuBar menuBar = (MenuBar) window.getRoot().getScene().lookup("#menuBar");
+                MenuItem undoItem = menuBar.getMenus().get(1).getItems().get(0);
+                MenuItem redoItem = menuBar.getMenus().get(1).getItems().get(1);
+                assertTrue(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                enterCommand(window, commandBox, "delete 1");
+                assertFalse(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                undoItem.fire();
+                assertTrue(undoItem.isDisable());
+                assertFalse(redoItem.isDisable());
+
+                redoItem.fire();
+                assertFalse(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                enterCommand(window, commandBox, "undo");
+                enterCommand(window, commandBox, "delete 2");
+                assertFalse(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                enterCommand(window, commandBox, "delete 99");
+                assertFalse(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
     public void redoAcceleratorFor_usesPlatformShortcut() {
         assertEquals(KeyCombination.valueOf("Meta+Shift+Z"), MainWindow.redoAcceleratorFor("Mac OS X"));
         assertEquals(KeyCombination.valueOf("Ctrl+Y"), MainWindow.redoAcceleratorFor("Linux"));
@@ -1135,6 +1176,16 @@ public class MainWindowTest {
         public CommandResult execute(String commandText) {
             executedCommands.add(commandText);
             return new CommandResult("Executed " + commandText);
+        }
+
+        @Override
+        public boolean canUndo() {
+            return true;
+        }
+
+        @Override
+        public boolean canRedo() {
+            return true;
         }
 
         @Override
