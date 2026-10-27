@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_AREA;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_HOUSING_TYPE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
@@ -12,18 +13,19 @@ import seedu.address.model.Model;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
 
 /**
- * Filters the displayed clients by role, tag, area and housing type, replacing any filter or search that is
- * active.
+ * Filters the displayed clients by role, tag, area, housing type and budget, replacing any filter or search
+ * that is active.
  */
 public class FilterCommand extends Command {
 
     public static final String COMMAND_WORD = "filter";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Filters clients by role, tag, area and housing type.\n"
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Filters clients by role, tag, area, housing type and budget.\n"
             + "Parameters: [" + PREFIX_ROLE + "ROLE] [" + PREFIX_TAG + "TAG]... [" + PREFIX_AREA + "AREA]... ["
-            + PREFIX_HOUSING_TYPE + "TYPE]...\n"
-            + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "buyer " + PREFIX_TAG + "urgent "
-            + PREFIX_AREA + "Bedok " + PREFIX_HOUSING_TYPE + "HDB";
+            + PREFIX_HOUSING_TYPE + "TYPE]... [" + PREFIX_BUDGET + "BUDGET]\n"
+            + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "buyer " + PREFIX_AREA + "Bedok "
+            + PREFIX_BUDGET + "500000-600000";
 
     private final PersonMatchesFilterPredicate predicate;
 

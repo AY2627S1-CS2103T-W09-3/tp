@@ -2,6 +2,7 @@ package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.getErrorMessageForDuplicatePrefixes;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
@@ -18,6 +19,8 @@ import seedu.address.model.person.Area;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.HousingType;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
+import seedu.address.model.person.Price;
+import seedu.address.model.person.PriceRange;
 import seedu.address.model.tag.Tag;
 
 public class FilterCommandParserTest {
@@ -100,6 +103,44 @@ public class FilterCommandParserTest {
         assertParseSuccess(parser, " h/  hdb  ", hdbOnly);
         assertParseSuccess(parser, " h/HDB h/Condo", hdbAndCondo);
         assertParseSuccess(parser, " h/condo h/hdb h/HDB", hdbAndCondo);
+    }
+
+    @Test
+    public void parse_budget_returnsFilterWithPriceRange() {
+        FilterCommand range = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withBudget(new PriceRange(new Price("500000"), new Price("600000"))).build());
+        FilterCommand singlePrice = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withBudget(new PriceRange(new Price("850000"))).build());
+
+        assertParseSuccess(parser, " b/500000-600000", range);
+        assertParseSuccess(parser, " b/500,000-600,000", range);
+        assertParseSuccess(parser, " b/  500000 - 600000  ", range);
+        assertParseSuccess(parser, " b/850000", singlePrice);
+        assertParseSuccess(parser, " b/850,000", singlePrice);
+    }
+
+    @Test
+    public void parse_budgetWithOtherCriteria_returnsFilterWithAllInAnyOrder() {
+        FilterCommand expected = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withRole(ClientRole.BUYER).withAreas(Set.of(new Area("Bedok")))
+                .withBudget(new PriceRange(new Price("500000"), new Price("600000"))).build());
+
+        assertParseSuccess(parser, " r/buyer l/Bedok b/500000-600000", expected);
+        assertParseSuccess(parser, " b/500000-600000 l/Bedok r/buyer", expected);
+    }
+
+    @Test
+    public void parse_invalidBudget_throwsParseException() {
+        for (String input : List.of(" b/", " b/abc", " b/0", " b/500000-", " b/-600000", " b/1-2-3", " r/buyer b/")) {
+            assertParseFailure(parser, input, Price.MESSAGE_CONSTRAINTS);
+        }
+        assertParseFailure(parser, " b/600000-500000", PriceRange.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_repeatedBudget_throwsParseException() {
+        assertParseFailure(parser, " b/1-2 b/3-4", getErrorMessageForDuplicatePrefixes(PREFIX_BUDGET));
+        assertParseFailure(parser, " b/100 l/Bedok b/200", getErrorMessageForDuplicatePrefixes(PREFIX_BUDGET));
     }
 
     @Test
