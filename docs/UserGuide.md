@@ -505,14 +505,19 @@ to load the same client records.
 ### Recovering from an invalid data file
 
 If the data file cannot be loaded, the application starts with an empty
-client list.
+client list and shows a warning. Before any command can replace the file,
+the application saves a copy beside it named
+`addressbook.json.unreadable-<unique number>.bak`.
 
-Do not enter commands, including `list`, `help` or `exit`: a successful
-command can overwrite the existing file with the empty list.
-Close the application using the window's close button instead.
+You can continue using the empty client book, but a successful command can
+replace `data/addressbook.json`. The `.bak` copy remains unchanged. Keep it
+until you have recovered your clients.
 
-Keep a copy of the unreadable file, then restore a valid backup using
-the steps above.
+To recover, close the application, copy the `.bak` file to a safe location,
+then repair its JSON or restore a known valid backup using the steps above.
+Copying an unreadable file back without repairing it will not restore the
+clients. JSON files saved with a UTF-8 or UTF-16 byte-order mark can be loaded
+without repair.
 
 Before manually editing the JSON file, close the application and make
 a backup. Invalid formatting, invalid field values or duplicate clients

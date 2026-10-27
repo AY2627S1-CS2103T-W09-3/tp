@@ -11,6 +11,7 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -111,6 +112,33 @@ public class JsonAddressBookStorageTest {
         readBack = jsonAddressBookStorage.readAddressBook().get(); // file path not specified
         assertEquals(original, new AddressBook(readBack));
 
+    }
+
+    @Test
+    public void readAddressBook_utf8Bom_loadsClients() throws Exception {
+        Path filePath = testFolder.resolve("utf8Bom.json");
+        AddressBook original = getTypicalAddressBook();
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(original);
+        Files.writeString(filePath, "\uFEFF" + Files.readString(filePath), StandardCharsets.UTF_8);
+
+        assertEquals(original, storage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void readAddressBook_utf16LittleEndianBom_loadsClients() throws Exception {
+        Path filePath = testFolder.resolve("utf16Bom.json");
+        AddressBook original = getTypicalAddressBook();
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(original);
+        byte[] jsonBytes = Files.readString(filePath).getBytes(StandardCharsets.UTF_16LE);
+        byte[] withBom = new byte[jsonBytes.length + 2];
+        withBom[0] = (byte) 0xFF;
+        withBom[1] = (byte) 0xFE;
+        System.arraycopy(jsonBytes, 0, withBom, 2, jsonBytes.length);
+        Files.write(filePath, withBom);
+
+        assertEquals(original, storage.readAddressBook().orElseThrow());
     }
 
     @Test

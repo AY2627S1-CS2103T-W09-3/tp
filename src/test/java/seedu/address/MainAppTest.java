@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -87,6 +88,19 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_utf8BomDataFile_listPreservesClients() throws Exception {
+        AddressBook existing = TypicalPersons.getTypicalAddressBook();
+        new JsonAddressBookStorage(addressBookPath).saveAddressBook(existing);
+        Files.writeString(addressBookPath, "\uFEFF" + Files.readString(addressBookPath), StandardCharsets.UTF_8);
+
+        app.init();
+        app.logic.execute("list");
+
+        assertEquals(existing, app.model.getAddressBook());
+        assertEquals(existing, new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+    }
+
+    @Test
     public void init_existingEmptyClientBook_doesNotLoadSamples() throws Exception {
         new JsonAddressBookStorage(addressBookPath).saveAddressBook(new AddressBook());
         String originalJson = Files.readString(addressBookPath);
@@ -106,6 +120,26 @@ public class MainAppTest {
 
         assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
         assertEquals(invalidJson, Files.readString(addressBookPath));
+        Path backup = findUnreadableDataBackup();
+        assertEquals(invalidJson, Files.readString(backup));
+
+        app.logic.execute("list");
+
+        assertEquals(invalidJson, Files.readString(backup));
+        assertEquals(new AddressBook(), new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void init_emptyDataFile_backsUpFileBeforeNextCommand() throws Exception {
+        Files.createFile(addressBookPath);
+
+        app.init();
+
+        Path backup = findUnreadableDataBackup();
+        assertEquals(0, Files.size(backup));
+        app.logic.execute("list");
+        assertEquals(0, Files.size(backup));
+        assertEquals(new AddressBook(), new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
     }
 
     @Test
@@ -144,6 +178,13 @@ public class MainAppTest {
         assertEquals(app.model.getUserPrefs(), new JsonUserPrefsStorage(userPrefsPath).readUserPrefs().orElseThrow());
         assertTrue(logHandler.messages.stream()
                 .anyMatch(message -> message.contains("Stopping EstateBookUltraProMax")));
+    }
+
+    private Path findUnreadableDataBackup() throws Exception {
+        try (var files = Files.list(temporaryFolder)) {
+            return files.filter(path -> path.getFileName().toString().startsWith("addressbook.json.unreadable-"))
+                    .findFirst().orElseThrow();
+        }
     }
 
     /**

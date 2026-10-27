@@ -3,8 +3,10 @@ package seedu.address;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -47,6 +49,7 @@ public class MainApp extends Application {
 
     private final Path userPrefsFilePath;
     private final Path addressBookFilePath;
+    private Path unreadableDataBackupPath;
 
     /**
      * Creates an application using the standard storage locations.
@@ -77,14 +80,14 @@ public class MainApp extends Application {
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getAddressBookFilePath());
+        ui = new UiManager(logic, storage.getAddressBookFilePath(), unreadableDataBackupPath);
     }
 
     /**
      * Loads existing client data, or loads and saves sample clients if the data file is missing.
-     * An unreadable existing file is left unchanged and starts with an empty client book.
+     * An unreadable existing file is backed up before starting with an empty client book.
      */
-    private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
+    private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) throws IOException {
         logger.info("Using data file : " + storage.getAddressBookFilePath());
 
         Optional<ReadOnlyAddressBook> addressBookOptional;
@@ -92,8 +95,10 @@ public class MainApp extends Application {
         try {
             addressBookOptional = storage.readAddressBook();
         } catch (DataLoadingException e) {
+            unreadableDataBackupPath = backUpUnreadableDataFile(storage.getAddressBookFilePath());
             logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
-                    + " Will be starting with an empty client book.");
+                    + " A backup was saved at " + unreadableDataBackupPath
+                    + ". Will be starting with an empty client book.");
             return new ModelManager(new AddressBook(), userPrefs);
         }
 
@@ -112,6 +117,19 @@ public class MainApp extends Application {
         }
 
         return new ModelManager(initialData, userPrefs);
+    }
+
+    /** Keeps an unreadable data file recoverable before any command can replace it. */
+    private Path backUpUnreadableDataFile(Path dataFilePath) throws IOException {
+        Path source = dataFilePath.toAbsolutePath();
+        Path backup = Files.createTempFile(source.getParent(), source.getFileName() + ".unreadable-", ".bak");
+        try {
+            Files.copy(source, backup, StandardCopyOption.REPLACE_EXISTING);
+            return backup;
+        } catch (IOException e) {
+            Files.deleteIfExists(backup);
+            throw e;
+        }
     }
 
     /**

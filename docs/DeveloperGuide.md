@@ -924,11 +924,13 @@ testers are expected to do more *exploratory* testing.
       value such as `"role" : "landlord"`.
 
    1. Relaunch the app.<br>
-      Expected: The app does not crash and starts with an empty client list because the file cannot be loaded.
+      Expected: The app does not crash, starts with an empty client list, and warns that the unreadable file was
+      copied to `data/addressbook.json.unreadable-<unique number>.bak`.
 
    1. Run `list`.<br>
       Expected: The result box shows `Listed all clients.` and the corrupted file is replaced with a valid empty
-      client book. Restore the backup after completing the test.
+      client book. The `.bak` copy still contains the corrupted file's original bytes. Restore the valid backup
+      made before this test after completing it.
 
 ### Clearing all clients with confirmation
 
