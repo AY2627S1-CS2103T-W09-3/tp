@@ -421,16 +421,21 @@ loses every area.
 
 ### Filter command
 
-`filter` narrows the displayed clients by role and tag. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.
+`filter` narrows the displayed clients by role, tag, preferred area, preferred housing type, budget and asking price. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.
 
-**Parsing.** `FilterCommandParser` tokenizes the arguments with `PREFIX_ROLE` and `PREFIX_TAG`. It rejects any text before the first prefix, rejects a second `r/`, and parses the role with `ClientRole.fromString` after trimming it. The tags go through `ParserUtil#parseTags`. Both parts are optional, and the parser creates `FilterCommand` with a `PersonMatchesFilterPredicate` holding an `Optional<ClientRole>` and a `Set<Tag>`.
+**Parsing.** `FilterCommandParser` tokenizes the arguments with `PREFIX_ROLE`, `PREFIX_TAG`, `PREFIX_AREA`, `PREFIX_HOUSING_TYPE`, `PREFIX_BUDGET` and `PREFIX_ASKING_PRICE`. It rejects any text before the first prefix and rejects a second `r/`, `b/` or `s/`. The role is parsed with `ClientRole.fromString` after trimming it, the tags with `ParserUtil#parseTags`, the areas with `ParserUtil#parseAreas` and the housing types with `ParserUtil#parseHousingTypes`. The budget and the asking price go through `ParserUtil#parsePriceRange`, which reads either one price or `MIN-MAX` using `ParserUtil#parsePrice`, so prices follow the same rules as in `add`, and rejects a minimum above the maximum. Every part is optional. The parser collects the parts that were given with `PersonMatchesFilterPredicate.Builder` and creates `FilterCommand` with the predicate that `build()` returns.
 
-**The predicate.** `PersonMatchesFilterPredicate#test` is true only when both parts match:
+**The predicate.** `PersonMatchesFilterPredicate#test` is true only when every part matches. The constructor is private, because six mostly empty arguments are easy to mix up, so callers use the builder and leave unused parts out:
 
 * **Role.** A missing role always matches. `buyer` matches `BUYER` and `BOTH`, `seller` matches `SELLER` and `BOTH`, and `both` matches only `BOTH`. A client with no role never matches a given role.
 * **Tags.** No tags always match. Otherwise, one matching tag is enough, and tag names are compared ignoring case.
+* **Areas and housing types.** These work like tags. No values always match, one matching value is enough, and a client with none never matches a given value.
+* **Budget.** A client matches when the budget range overlaps the filter's range, with both ends included, so `PriceRange#overlaps` checks `filterMin <= budgetMax && budgetMin <= filterMax`. A single price is a range with the same minimum and maximum, so it matches every budget that includes it. A client without a budget never matches.
+* **Asking price.** A client matches when the asking price is inside the filter's range, with both ends included, as checked by `PriceRange#contains`. A single price therefore matches only that exact price. A client without an asking price never matches.
 
-So the role and the tags combine with AND, and the tags among themselves with OR.
+So different parts combine with AND, and the values within the tags, the areas and the housing types with OR.
+
+`PriceRange` is a new immutable class in `seedu.address.model.person` that holds a minimum and a maximum `Price`. It is separate from `Budget`, because a `Budget` describes what a client has recorded, while a `PriceRange` describes a query. The two are used for different purposes: the query side allows one price, which is stored as a range with equal ends, and has no `Budget` rules about being a full range.
 
 **Executing.** `FilterCommand#execute(Model)` calls `Model#updateFilteredPersonList(predicate)`. This overwrites the predicate on the single `FilteredList`, so a filter does not stack with an earlier filter or `find`, and `find` and `list` replace a filter in the same way. It then counts the displayed clients and the clients in the whole address book, and shows `Showing X of Y clients.`. Y is the whole book, not the filtered list.
 
@@ -443,6 +448,7 @@ The following activity diagram shows how the active filter is set, and what happ
 **Why the filter is not cleared by mutations.** An agent who filters 60 clients down to 8 and then updates one of them should stay in that view. Resetting to the full list after every command would lose it.
 
 **Alternatives considered.**
+* **Treating a single budget as an exact match:** a client who wants to spend $800,000 to $1,200,000 would then not show up for `b/850000`, which is the question an agent actually asks. Asking prices are different, because a property has one price, so an exact match is the natural reading there.
 * **A second predicate that is combined with `find`:** this makes the visible list depend on the order of earlier commands, and the user has no way to see which parts are active. One predicate that is replaced is easier to explain.
 * **Clearing the filter after every mutation:** simple to implement, but it loses the view, as described above.
 
@@ -505,6 +511,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *` | new property agent | view concise help within the application | learn the available commands without leaving my workflow |
 | `* *` | user ready to begin | clear all sample or experimental data | start with a clean client list |
 | `* *` | property agent | filter contacts by buyer or seller role | focus on the relevant side of my client pipeline |
+| `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
+| `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
+| `* *` | property agent | filter clients by preferred housing type | find clients who want the kind of property I am listing |
+| `* *` | property agent | filter sellers by asking price | find sellers whose property is in the price range I am working on |
 | `* *` | property agent | detect possible duplicate contacts | avoid splitting one client's information across multiple records |
 | `*` | property agent | create a backup of my client records | reduce the risk of losing important information |
 | `*` | property agent | restore my client records from a valid backup | recover my information after data loss or device replacement |
@@ -526,8 +536,6 @@ backlog below the shipped features is visible.
 | `* *` | property agent | record a client's current follow-up status | know what action I need to take next |
 | `* *` | property agent | record the next follow-up date | contact the client at an appropriate time |
 | `* *` | property agent | view clients whose follow-ups are due or overdue | prioritise clients who require my attention |
-| `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
-| `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
 | `* *` | property agent | sort contacts by name, latest update, or next follow-up | review my clients in an order suitable for my current task |
 | `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
 | `* *` | long-time property agent | archive an inactive client | reduce clutter without permanently losing past information |
@@ -1043,7 +1051,7 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `note 1   ` (an index followed by only spaces)<br>
       Expected: No note is changed. The result box shows `Error: Notes should be 1 to 500 characters.`.
 
-### Filtering clients by role and tag
+### Filtering clients by role, tag and requirements
 
 1. Filtering by role
 
@@ -1074,6 +1082,50 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `filter r/buyer t/urgent`<br>
       Expected: No clients are displayed, because no buyer (including both) is tagged `urgent`. The result box shows
       `Showing 0 of 5 clients.`.
+
+1. Filtering by area and housing type
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `filter l/Bishan l/Tampines`<br>
+      Expected: Clients who want either area are displayed: `Alicia Tan` and `Cheryl Goh`. The result box shows
+      `Showing 2 of 5 clients.`.
+
+   1. Test case: `filter h/HDB`<br>
+      Expected: `Alicia Tan` and `Cheryl Goh` are displayed. The result box shows `Showing 2 of 5 clients.`.
+
+   1. Test case: `filter l/Tampines h/EC`<br>
+      Expected: Only `Cheryl Goh` is displayed, because a client must match both the area and the housing type. The
+      result box shows `Showing 1 of 5 clients.`.
+
+1. Filtering by budget
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `filter b/850000`<br>
+      Expected: Clients whose budget includes $850,000 are displayed: `Alicia Tan` ($800,000 to $1,200,000) and
+      `Cheryl Goh` ($700,000 to $900,000). The result box shows `Showing 2 of 5 clients.`.
+
+   1. Test case: `filter b/1000000-1500000`<br>
+      Expected: Only `Alicia Tan` is displayed, because only that budget overlaps the range. The result box shows
+      `Showing 1 of 5 clients.`.
+
+1. Filtering by asking price
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `filter r/seller s/900000-1000000`<br>
+      Expected: Only `Nur Aisyah` is displayed, because that seller asks $950,000. The result box shows
+      `Showing 1 of 5 clients.`.
+
+1. Rejecting invalid requirement filters
+
+   1. Test case: `filter b/600000-500000`<br>
+      Expected: The displayed list does not change. The result box shows `The minimum price must not exceed the
+      maximum.`.
+
+   1. Test case: `filter b/500000 b/600000`<br>
+      Expected: The displayed list does not change. The result box shows `Multiple values specified for the following single-valued field(s): b/`.
 
 1. Restoring the full list
 
