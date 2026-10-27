@@ -8,7 +8,7 @@ import seedu.address.model.Model;
 import seedu.address.model.person.PersonMatchesSearchTermsPredicate;
 
 /**
- * Finds and lists all clients whose name, phone or email contains any of the argument keywords,
+ * Finds and lists all clients where every one of the argument keywords is contained in their name, phone or email,
  * ignoring case.
  */
 public class FindCommand extends Command {
@@ -16,7 +16,7 @@ public class FindCommand extends Command {
     public static final String COMMAND_WORD = "find";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Finds clients whose name, phone or email contains any keyword.\n"
+            + ": Finds clients whose name, phone or email contains every keyword.\n"
             + "Parameters: KEYWORD [MORE_KEYWORDS]\n"
             + "Example: " + COMMAND_WORD + " John";
 
