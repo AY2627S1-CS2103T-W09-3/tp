@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonMatchesSearchTermsPredicateTest {
+    private static final String GEYLANG = "Blk 30 Geylang Street 29, #06-40";
+
 
     @Test
     public void equals() {
@@ -170,9 +172,44 @@ public class PersonMatchesSearchTermsPredicateTest {
         predicate = new PersonMatchesSearchTermsPredicate(List.of("Carol"));
         assertFalse(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
 
-        // Keywords match address only
-        predicate = new PersonMatchesSearchTermsPredicate(List.of("Main", "Street"));
-        assertFalse(predicate.test(new PersonBuilder().withName("Alice").withAddress("Main Street").build()));
+        // Keywords match the note only
+        predicate = new PersonMatchesSearchTermsPredicate(List.of("corner", "unit"));
+        assertFalse(predicate.test(new PersonBuilder().withName("Alice").withNote("Prefers a corner unit").build()));
+    }
+
+    @Test
+    public void test_addressMatchesKeyword_returnsTrue() {
+        // Whole word, and every word of the address
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Geylang")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Blk", "Street", "Geylang"))
+                .test(personWithAddress(GEYLANG)));
+
+        // Start, middle and end of the address, and part of a word
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Blk")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("eyla")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("06-40")).test(personWithAddress(GEYLANG)));
+
+        // Mixed case, and the punctuation and unit number
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("gEyLaNg")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("#06")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("29,")).test(personWithAddress(GEYLANG)));
+    }
+
+    @Test
+    public void test_addressAndAnotherFieldMatchKeywords_returnsTrue() {
+        Person person = new PersonBuilder().withName("Alice Bob").withPhone("91234567")
+                .withEmail("alice@gmail.com").withAddress(GEYLANG).build();
+
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Alice", "Geylang")).test(person));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("912", "Geylang", "gmail")).test(person));
+    }
+
+    @Test
+    public void test_addressMatchesButAnotherKeywordDoesNot_returnsFalse() {
+        Person person = new PersonBuilder().withName("Alice Bob").withAddress(GEYLANG).build();
+
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("Geylang", "Carol")).test(person));
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("Bishan")).test(person));
     }
 
     @Test
@@ -183,6 +220,11 @@ public class PersonMatchesSearchTermsPredicateTest {
         String expected = PersonMatchesSearchTermsPredicate.class.getCanonicalName()
                 + "{searchTerms=" + searchTerms + "}";
         assertEquals(expected, predicate.toString());
+    }
+
+    private static Person personWithAddress(String address) {
+        return new PersonBuilder().withName("Bob").withPhone("81111111").withEmail("p@example.com")
+                .withAddress(address).build();
     }
 
     private static Person personWithName(String name) {
