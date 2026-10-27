@@ -80,6 +80,18 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_nameWithExtraSpaces_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withName("Alpha Tester").withPhone("90010001")
+                .withEmail("alpha.tester@example.com").build();
+        Person personWithExtraSpaces = new PersonBuilder().withName("Alpha  Tester").withPhone("90010301")
+                .withEmail("alpha.spaces@example.com").build();
+        AddCommand addCommand = new AddCommand(personWithExtraSpaces);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, Messages.MESSAGE_DUPLICATE_NAME, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
     public void execute_personWithSamePhone_throwsCommandException() {
         Person personWithSamePhone = new PersonBuilder().withPhone(ALICE.getPhone().value).build();
         AddCommand addCommand = new AddCommand(personWithSamePhone);

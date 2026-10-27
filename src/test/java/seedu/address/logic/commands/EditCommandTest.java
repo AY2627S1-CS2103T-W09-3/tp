@@ -234,6 +234,16 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_nameOfOtherPersonWithExtraSpaces_failure() {
+        Person secondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
+        String nameWithExtraSpaces = secondPerson.getName().fullName.replace(" ", "   ");
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(nameWithExtraSpaces).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        assertCommandFailure(editCommand, model, Messages.MESSAGE_DUPLICATE_NAME);
+    }
+
+    @Test
     public void execute_duplicatePersonFilteredList_failure() {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
