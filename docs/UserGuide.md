@@ -348,10 +348,12 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 
 * A keyword matches any part of a name, phone number, or email address, ignoring case. The part can be at the start, in the middle, or at the end.
   For example, `ali` matches `Alicia Tan`, `8456` matches `84567890`, and `raj.k` matches `raj.kumar@example.com`.
-* Multiple keywords use OR matching: a client appears if any keyword matches their name, phone number, or email address.
+* Multiple keywords use AND matching: a client appears only if **every** keyword matches their name, phone number, or email address.
+  Different keywords can match different fields, so `Alicia 8123` matches a client named Alicia whose phone number contains `8123`.
+  Each extra keyword narrows the results, so add the rest of a client's name to find one client.
 * Keyword order does not matter.
 * Short keywords match many clients. For example, `a` appears in every sample client's email address, so it shows all of them.
-  Check the count in the result line, and type more of the name, phone number, or email address to narrow the list.
+  Check the count in the result line, and add another keyword or type more of the name, phone number, or email address to narrow the list.
 * Entering `find` without keywords shows an error and leaves the displayed list unchanged.
 * Notes are not searched. A note is free-text working detail in which any word may appear, so matching it would return clients for the wrong reason.
 * Use `list` to show all clients again.
@@ -364,7 +366,9 @@ Examples using the sample clients:
 * `find ali` finds Alicia Tan by part of her name.
 * `find 8456` finds Raj Kumar by part of his phone number, `84567890`.
 * `find raj.k` finds Raj Kumar by part of his email address, `raj.kumar@example.com`.
-* `find Alicia 82345678` finds Alicia Tan by name and Benjamin Lim by phone number.
+* `find ali tan` finds Alicia Tan, because both keywords match her name.
+* `find tan 8123` finds Alicia Tan, because `tan` matches her name and `8123` matches her phone number, `81234567`.
+* `find Alicia 82345678` shows no clients (`Showing 0 of 5 clients.`), because `82345678` is Benjamin Lim's phone number and not Alicia Tan's.
 * `find 5678` finds Benjamin Lim, Nur Aisyah, Raj Kumar and Cheryl Goh, because all four phone numbers contain `5678`.
   The result shows `Showing 4 of 5 clients.`.
 
