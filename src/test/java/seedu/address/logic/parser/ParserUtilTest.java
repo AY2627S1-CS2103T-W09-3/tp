@@ -235,9 +235,16 @@ public class ParserUtilTest {
 
     @Test
     public void parsePriceRange_invalidPrice_throwsParseException() {
-        for (String input : List.of("", "  ", "abc", "0", "1000-", "-1000", "-", "abc-2000", "1000-abc",
-                "1000-2000-3000", "1,00-2000", "1000-2000.5")) {
+        for (String input : List.of("", "  ", "abc", "0", "abc-2000", "1000-abc", "1,00-2000", "1000-2000.5")) {
             assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parsePriceRange(input));
+        }
+    }
+
+    @Test
+    public void parsePriceRange_malformedRange_throwsParseException() {
+        for (String input : List.of("1000-", "-1000", "-", "1000 -", "1000-2000-3000")) {
+            assertThrows(ParseException.class, PriceRange.MESSAGE_INVALID_FORMAT, () ->
+                    ParserUtil.parsePriceRange(input));
         }
     }
 

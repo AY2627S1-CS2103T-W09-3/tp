@@ -383,7 +383,7 @@ Format: `filter [r/ROLE] [t/TAG]…​ [l/AREA]…​ [h/TYPE]…​ [b/BUDGET] 
 * `TYPE` is `HDB`, `Condo`, `EC` or `Landed`, ignoring case. Repeat `h/` to give several housing types. A client matches if **any** of their preferred housing types is one of them (OR).
 * `BUDGET` is a price range written `MIN-MAX`, such as `b/500000-600000`, or a single price, such as `b/850000`. A client matches if their budget has at least one price in common with it, counting both ends. So `b/850000` shows every client whose budget includes $850,000, and `b/900000-1000000` shows every client whose budget overlaps that range. Only one `b/` may be given.
 * `PRICE` is also a range written `MIN-MAX`, or a single price. A client matches if their asking price is within the range, counting both ends, so `s/850000` shows only clients asking exactly $850,000. Only one `s/` may be given.
-* Prices follow the same rules as in `add` and `edit`: whole dollars from 1 to 1,000,000,000, with optional correctly placed commas. A range with a minimum above its maximum is rejected.
+* Prices follow the same rules as in `add` and `edit`: whole dollars from 1 to 1,000,000,000, with optional correctly placed commas. A range must be two prices joined by a hyphen, such as `500000-600000`, and one with a minimum above its maximum is rejected.
 * A client with no preferred area, no preferred housing type, no budget or no asking price never matches a filter on that field.
 * When several kinds of criteria are given, a client must match **all** of them (AND), but only one of the values within `t/`, `l/` or `h/` (OR). For example, `filter r/buyer l/Bedok h/HDB` shows buyers who want Bedok **and** an HDB flat.
 * All parts are optional. `filter` with nothing after it shows every client.

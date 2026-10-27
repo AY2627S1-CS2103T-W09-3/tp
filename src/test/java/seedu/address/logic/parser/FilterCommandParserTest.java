@@ -132,8 +132,11 @@ public class FilterCommandParserTest {
 
     @Test
     public void parse_invalidBudget_throwsParseException() {
-        for (String input : List.of(" b/", " b/abc", " b/0", " b/500000-", " b/-600000", " b/1-2-3", " r/buyer b/")) {
+        for (String input : List.of(" b/", " b/abc", " b/0", " r/buyer b/")) {
             assertParseFailure(parser, input, Price.MESSAGE_CONSTRAINTS);
+        }
+        for (String input : List.of(" b/500000-", " b/-600000", " b/1-2-3")) {
+            assertParseFailure(parser, input, PriceRange.MESSAGE_INVALID_FORMAT);
         }
         assertParseFailure(parser, " b/600000-500000", PriceRange.MESSAGE_CONSTRAINTS);
     }
@@ -169,8 +172,11 @@ public class FilterCommandParserTest {
 
     @Test
     public void parse_invalidAskingPrice_throwsParseException() {
-        for (String input : List.of(" s/", " s/abc", " s/0", " s/800000-", " s/-900000", " s/1-2-3", " r/seller s/")) {
+        for (String input : List.of(" s/", " s/abc", " s/0", " r/seller s/")) {
             assertParseFailure(parser, input, Price.MESSAGE_CONSTRAINTS);
+        }
+        for (String input : List.of(" s/800000-", " s/-900000", " s/1-2-3")) {
+            assertParseFailure(parser, input, PriceRange.MESSAGE_INVALID_FORMAT);
         }
         assertParseFailure(parser, " s/900000-800000", PriceRange.MESSAGE_CONSTRAINTS);
     }

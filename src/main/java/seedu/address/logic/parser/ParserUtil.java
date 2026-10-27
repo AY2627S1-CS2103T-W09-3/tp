@@ -112,7 +112,8 @@ public class ParserUtil {
      * A single price gives a range that holds only that price.
      * Leading and trailing whitespaces, including those around the hyphen, will be trimmed.
      *
-     * @throws ParseException if a price is invalid or the minimum exceeds the maximum.
+     * @throws ParseException if a range is not two prices joined by a hyphen, a price is invalid or the minimum
+     *     exceeds the maximum.
      */
     public static PriceRange parsePriceRange(String priceRange) throws ParseException {
         requireNonNull(priceRange);
@@ -122,8 +123,8 @@ public class ParserUtil {
         }
 
         String[] range = trimmedPriceRange.split("-", -1);
-        if (range.length != 2) {
-            throw new ParseException(Price.MESSAGE_CONSTRAINTS);
+        if (range.length != 2 || range[0].isBlank() || range[1].isBlank()) {
+            throw new ParseException(PriceRange.MESSAGE_INVALID_FORMAT);
         }
 
         Price min = parsePrice(range[0]);
