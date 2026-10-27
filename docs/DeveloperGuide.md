@@ -435,7 +435,7 @@ loses every area.
 
 So different parts combine with AND, and the values within the tags, the areas and the housing types with OR.
 
-`PriceRange` is a new immutable class in `seedu.address.model.person` that holds a minimum and a maximum `Price`. It is separate from `Budget`, because a `Budget` describes what a client has recorded, while a `PriceRange` describes a query. The two are used for different purposes: the query side allows one price, which is stored as a range with equal ends, and has no `Budget` rules about being a full range.
+`PriceRange` is a new immutable class in `seedu.address.model.person` that holds a minimum and a maximum `Price`, and it rejects a minimum above the maximum. It is separate from `Budget`, which describes what a client has recorded, because it is a query: it has a constructor for a single price, which is stored as a range with equal ends, and it knows how to compare itself with a `Budget` (`overlaps`) and with a `Price` (`contains`). The constructor of `PriceRange` throws `IllegalArgumentException` for a reversed range, and `ParserUtil#parsePriceRange` turns that into a `ParseException` with `PriceRange.MESSAGE_CONSTRAINTS`.
 
 **Executing.** `FilterCommand#execute(Model)` calls `Model#updateFilteredPersonList(predicate)`. This overwrites the predicate on the single `FilteredList`, so a filter does not stack with an earlier filter or `find`, and `find` and `list` replace a filter in the same way. It then counts the displayed clients and the clients in the whole address book, and shows `Showing X of Y clients.`. Y is the whole book, not the filtered list.
 
