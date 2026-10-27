@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
@@ -11,6 +12,7 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -64,6 +66,34 @@ public class RoleCommandTest {
     }
 
     @Test
+    public void execute_none_clearsRoleAndPreservesOtherDetails() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person editedClient = new PersonBuilder(original).withRole(null).build();
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.setPerson(original, editedClient);
+
+        RoleCommand command = new RoleCommand(INDEX_FIRST_PERSON, null);
+        String expectedMessage = String.format(RoleCommand.MESSAGE_ROLE_CLEARED, editedClient.getName());
+
+        assertCommandSuccess(command, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
+        assertNull(model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased()).getRole());
+        assertEquals("Cleared role for " + editedClient.getName(), command.getActionDescription());
+    }
+
+    @Test
+    public void execute_noneWhenAlreadyUnassigned_reportsNoChange() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person unassigned = new PersonBuilder(original).withRole(null).build();
+        model.setPerson(original, unassigned);
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        RoleCommand command = new RoleCommand(INDEX_FIRST_PERSON, null);
+        String expectedMessage = String.format(RoleCommand.MESSAGE_ROLE_ALREADY_UNASSIGNED, unassigned.getName());
+
+        assertCommandSuccess(command, model, new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
+        assertEquals("", command.getActionDescription());
+    }
+
+    @Test
     public void execute_clientStillMatchesRoleFilter_returnsVisibleIndex() throws Exception {
         model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
 
@@ -85,11 +115,22 @@ public class RoleCommandTest {
     }
 
     @Test
+    public void execute_none_clientLeavesRoleFilter() throws Exception {
+        model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+
+        CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, null).execute(model);
+
+        assertEquals(List.of(CARL), model.getFilteredPersonList());
+        assertTrue(result.getViewIndex().isEmpty());
+    }
+
+    @Test
     public void execute_invalidIndexUnfilteredList_failure() {
         Index invalidIndex = Index.fromZeroBased(model.getFilteredPersonList().size());
         RoleCommand command = new RoleCommand(invalidIndex, ClientRole.SELLER);
 
-        assertCommandFailure(command, model, RoleCommand.MESSAGE_INVALID_CLIENT_INDEX);
+        assertCommandFailure(command, model, String.format(RoleCommand.MESSAGE_INVALID_CLIENT_INDEX,
+                model.getFilteredPersonList().size()));
     }
 
     @Test
@@ -97,7 +138,23 @@ public class RoleCommandTest {
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
         RoleCommand command = new RoleCommand(INDEX_SECOND_PERSON, ClientRole.SELLER);
 
-        assertCommandFailure(command, model, RoleCommand.MESSAGE_INVALID_CLIENT_INDEX);
+        assertCommandFailure(command, model, String.format(RoleCommand.MESSAGE_INVALID_CLIENT_INDEX, 1));
+    }
+
+    @Test
+    public void execute_zeroIndex_failureShowsDisplayedRange() {
+        RoleCommand command = new RoleCommand(BigInteger.ZERO, null);
+
+        assertCommandFailure(command, model, String.format(RoleCommand.MESSAGE_INVALID_CLIENT_INDEX,
+                model.getFilteredPersonList().size()));
+    }
+
+    @Test
+    public void execute_emptyDisplayedList_failureShowsNoClients() {
+        Model emptyModel = new ModelManager();
+        RoleCommand command = new RoleCommand(BigInteger.ZERO, null);
+
+        assertCommandFailure(command, emptyModel, RoleCommand.MESSAGE_NO_DISPLAYED_CLIENTS);
     }
 
     @Test
@@ -111,6 +168,17 @@ public class RoleCommandTest {
     }
 
     @Test
+    public void execute_clearedRole_survivesStorageRoundTrip(@TempDir Path tempDir) throws Exception {
+        new RoleCommand(INDEX_FIRST_PERSON, null).execute(model);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(tempDir.resolve("clientbook.json"));
+
+        storage.saveAddressBook(model.getAddressBook());
+
+        assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
+        assertNull(storage.readAddressBook().orElseThrow().getPersonList().get(0).getRole());
+    }
+
+    @Test
     public void equals() {
         RoleCommand firstBuyerCommand = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BUYER);
 
@@ -119,5 +187,7 @@ public class RoleCommandTest {
         assertFalse(firstBuyerCommand.equals(null));
         assertFalse(firstBuyerCommand.equals(new RoleCommand(INDEX_SECOND_PERSON, ClientRole.BUYER)));
         assertFalse(firstBuyerCommand.equals(new RoleCommand(INDEX_FIRST_PERSON, ClientRole.SELLER)));
+        assertFalse(firstBuyerCommand.equals(new RoleCommand(INDEX_FIRST_PERSON, null)));
+        assertTrue(new RoleCommand(INDEX_FIRST_PERSON, null).equals(new RoleCommand(INDEX_FIRST_PERSON, null)));
     }
 }

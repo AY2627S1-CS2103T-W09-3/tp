@@ -2,7 +2,8 @@ package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
 
-import seedu.address.commons.core.index.Index;
+import java.math.BigInteger;
+
 import seedu.address.logic.commands.RoleCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.ClientRole;
@@ -24,24 +25,26 @@ public class RoleCommandParser implements Parser<RoleCommand> {
             } catch (ParseException pe) {
                 throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT, pe);
             }
-            throw new ParseException(ClientRole.MESSAGE_CONSTRAINTS);
+            throw new ParseException(RoleCommand.MESSAGE_INVALID_ROLE);
         }
 
         if (arguments.length != 2) {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
 
-        Index index;
-        try {
-            index = ParserUtil.parseIndex(arguments[0]);
-        } catch (ParseException pe) {
-            throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT, pe);
+        if (!arguments[0].matches("-?\\d+")) {
+            throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        }
+        BigInteger oneBasedIndex = new BigInteger(arguments[0]);
+
+        if (arguments[1].equalsIgnoreCase("none")) {
+            return new RoleCommand(oneBasedIndex, null);
         }
 
         if (!ClientRole.isValidRole(arguments[1])) {
-            throw new ParseException(ClientRole.MESSAGE_CONSTRAINTS);
+            throw new ParseException(RoleCommand.MESSAGE_INVALID_ROLE);
         }
 
-        return new RoleCommand(index, ClientRole.fromString(arguments[1]));
+        return new RoleCommand(oneBasedIndex, ClientRole.fromString(arguments[1]));
     }
 }

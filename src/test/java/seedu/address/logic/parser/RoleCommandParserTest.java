@@ -4,6 +4,8 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailur
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
+import java.math.BigInteger;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.RoleCommand;
@@ -21,13 +23,21 @@ public class RoleCommandParserTest {
                 new RoleCommand(INDEX_FIRST_PERSON, ClientRole.SELLER));
         assertParseSuccess(parser, " 1 Both ",
                 new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BOTH));
+        assertParseSuccess(parser, " 1 none ",
+                new RoleCommand(INDEX_FIRST_PERSON, null));
+        assertParseSuccess(parser, " 1 NONE ",
+                new RoleCommand(INDEX_FIRST_PERSON, null));
+        assertParseSuccess(parser, " 0 none ", new RoleCommand(BigInteger.ZERO, null));
+        assertParseSuccess(parser, " 00 buyer ", new RoleCommand(BigInteger.ZERO, ClientRole.BUYER));
+        assertParseSuccess(parser, " -1 none ", new RoleCommand(BigInteger.valueOf(-1), null));
+        assertParseSuccess(parser, " 2147483648 none ",
+                new RoleCommand(new BigInteger("2147483648"), null));
     }
 
     @Test
     public void parse_invalidFormat_failure() {
         String[] invalidInputs = {
-            "", "buyer", "0 buyer", "-1 buyer", "1.5 buyer", "abc buyer",
-            "2147483648 buyer", "1 buyer extra"
+            "", "buyer", "1.5 buyer", "abc buyer", "1 buyer extra"
         };
 
         for (String input : invalidInputs) {
@@ -40,7 +50,7 @@ public class RoleCommandParserTest {
         String[] invalidInputs = {"1", "1 agent", "1 buyer-seller"};
 
         for (String input : invalidInputs) {
-            assertParseFailure(parser, input, ClientRole.MESSAGE_CONSTRAINTS);
+            assertParseFailure(parser, input, RoleCommand.MESSAGE_INVALID_ROLE);
         }
     }
 }

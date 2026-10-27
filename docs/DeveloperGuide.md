@@ -163,21 +163,26 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Client role command
 
-The `role` command assigns a transaction role to an existing client. It uses the
+The `role` command assigns or clears a transaction role for an existing client. It uses the
 client's one-based index in the currently displayed client list.
 
 **Format:** `role INDEX ROLE`
 
 * `INDEX` must be a positive integer that refers to a client in the currently
   displayed list.
-* `ROLE` must be `buyer`, `seller`, or `both`. Role values are
+* `ROLE` must be `buyer`, `seller`, `both`, or `none`. Role values are
   case-insensitive.
-* After a successful update, the client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+* After an assignment, the client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+  After `none`, the client has no role badge.
   The displayed list is not reset, so a search or filter that is active stays active.
 
 The success message follows this format:
 
 `Role updated: CLIENT_NAME is now marked as DISPLAY_ROLE`
+
+Clearing a role with `none` instead shows `Role cleared: CLIENT_NAME has no assigned role`.
+If the client is already unassigned, it shows `Role unchanged: CLIENT_NAME already has no assigned role`.
+That case does not change the client or add an undo-history entry.
 
 The examples below are independent and assume that `Alicia Tan` is client 1 in
 the currently displayed list.
@@ -187,14 +192,17 @@ the currently displayed list.
 | `role 1 buyer` | Alicia Tan's role becomes `Buyer`. The result box shows `Role updated: Alicia Tan is now marked as Buyer`. |
 | `role 1 seller` | Alicia Tan's role becomes `Seller`. The result box shows `Role updated: Alicia Tan is now marked as Seller`. |
 | `role 1 both` | Alicia Tan's role becomes `Buyer, Seller`. The result box shows `Role updated: Alicia Tan is now marked as Buyer, Seller`. |
+| `role 1 none` | Alicia Tan has no assigned role or role badge. The result box shows `Role cleared: Alicia Tan has no assigned role`. |
+| `role 1 none` again | Alicia Tan remains unassigned. The result box shows `Role unchanged: Alicia Tan already has no assigned role`. |
 
 Invalid inputs do not change the client's role:
 
 | Situation | Expected result |
 |-----------|-----------------|
 | The command format or index syntax is invalid | `Error: Invalid command format. Use: role INDEX ROLE.` |
-| The role is missing or is not `buyer`, `seller`, or `both` | `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.` |
-| The positive index is outside the currently displayed list | `Error: The client index provided is invalid.` |
+| The role is missing or is not `buyer`, `seller`, `both`, or `none` | `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.` |
+| The index is zero or outside the currently displayed list | `Error: Invalid client index: Enter a number between 1 and N for the displayed list.` Here, `N` is the number of displayed clients. |
+| No clients are displayed | `Error: Invalid client index: No clients are currently displayed.` |
 
 The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
 
@@ -203,6 +211,8 @@ The following sequence diagram shows how the `role 1 buyer` command is processed
 ### Client role storage
 
 A client's role is a dedicated `ClientRole` field on `Person`, not a tag. `ClientRole` is an enum with exactly three declared values, and each value carries two strings: the token the user types and the data file stores, and the text the interface shows.
+
+The command token `none` is not an enum value or a stored role. It clears the optional field, so the `role` key is omitted when the client book is saved. Undo and redo treat this as an ordinary role change.
 
 | Stored token | Shown to the user |
 |--------------|-------------------|
@@ -579,7 +589,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
-* 3b. The role is missing or is not buyer, seller, or both.
+* 3b. The role is missing or is not buyer, seller, both, or none.
   * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles.
 
   Use case resumes at step 3.
@@ -627,7 +637,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 1. Agent requests to list all clients.
 2. EstateBookUltraProMax displays the clients and their assigned roles.
-3. Agent identifies a client from the displayed list and requests to change the client's role to buyer, seller, or both.
+3. Agent identifies a client from the displayed list and requests to change the client's role to buyer, seller, both, or none.
 4. EstateBookUltraProMax updates the client's role and displays the updated client.
 
    Use case ends.
@@ -643,7 +653,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
-* 3b. The role is missing or is not buyer, seller, or both.
+* 3b. The role is missing or is not buyer, seller, both, or none.
   * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles without updating the client's role.
 
   Use case resumes at step 3.
@@ -820,6 +830,14 @@ testers are expected to do more *exploratory* testing.
       Expected: Alicia's badge changes to `Buyer, Seller`. The result box shows
       `Role updated: Alicia Tan is now marked as Buyer, Seller`.
 
+   1. Test case: `role 1 none`<br>
+      Expected: Alicia has no role badge. The result box shows
+      `Role cleared: Alicia Tan has no assigned role`. Exit and restart the app to confirm the role stays cleared.
+
+   1. Test case: `role 1 none` again<br>
+      Expected: Alicia remains unassigned. The result box shows
+      `Role unchanged: Alicia Tan already has no assigned role`. No new undo-history entry is added.
+
 ### Rejecting invalid role commands
 
 1. Rejecting invalid formats, roles, and indexes
@@ -827,18 +845,20 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: Run `list` and note the current role of client 1.
 
    1. Test case: `role 0 buyer`<br>
-      Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
+      Expected: No role is changed. With five clients displayed, the result box shows
+      `Error: Invalid client index: Enter a number between 1 and 5 for the displayed list.`
 
    1. Test case: `role 1`<br>
       Expected: No role is changed. The result box shows
-      `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+      `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.`
 
    1. Test case: `role 1 landlord`<br>
       Expected: No role is changed. The result box shows
-      `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+      `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.`
 
    1. Test case: `role 999 buyer`<br>
-      Expected: No role is changed. The result box shows `Error: The client index provided is invalid.`
+      Expected: No role is changed. With five clients displayed, the result box shows
+      `Error: Invalid client index: Enter a number between 1 and 5 for the displayed list.`
 
    1. Test case: `role 1 buyer extra`<br>
       Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`

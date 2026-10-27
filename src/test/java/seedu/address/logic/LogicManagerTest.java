@@ -2,6 +2,7 @@ package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
@@ -28,6 +29,7 @@ import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.RoleCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -323,6 +325,53 @@ public class LogicManagerTest {
 
         assertEquals(List.of(clients[2]), model.getFilteredPersonList());
         assertEquals(3, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_roleNone_savesClearedRoleAndSupportsUndoRedo() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withRole(ClientRole.BUYER).build());
+
+        logic.execute("role 1 none");
+
+        assertNull(model.getAddressBook().getPersonList().get(0).getRole());
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        assertNull(storage.readAddressBook().orElseThrow().getPersonList().get(0).getRole());
+
+        logic.execute("undo");
+        assertEquals(ClientRole.BUYER, model.getAddressBook().getPersonList().get(0).getRole());
+
+        logic.execute("redo");
+        assertNull(model.getAddressBook().getPersonList().get(0).getRole());
+    }
+
+    @Test
+    public void execute_roleNoneWhenAlreadyUnassigned_preservesRedoHistory() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withRole(null).build());
+        logic.execute("role 1 buyer");
+        logic.execute("undo");
+
+        CommandResult result = logic.execute("role 1 none");
+
+        assertEquals("Role unchanged: Amy Bee already has no assigned role", result.getFeedbackToUser());
+        assertNull(model.getAddressBook().getPersonList().get(0).getRole());
+        assertTrue(model.canRedo());
+        logic.execute("redo");
+        assertEquals(ClientRole.BUYER, model.getAddressBook().getPersonList().get(0).getRole());
+    }
+
+    @Test
+    public void execute_roleNoneWithInvalidIndex_reportsDisplayedRangeWithoutChangingClient() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withRole(ClientRole.BUYER).build());
+        AddressBookSnapshot before = model.captureSnapshot();
+        String expectedMessage = String.format(RoleCommand.MESSAGE_INVALID_CLIENT_INDEX, 1);
+
+        assertThrows(CommandException.class, expectedMessage, () -> logic.execute("role 0 none"));
+        assertThrows(CommandException.class, expectedMessage, () -> logic.execute("role -1 none"));
+        assertThrows(CommandException.class, expectedMessage, () -> logic.execute("role 999 none"));
+        assertThrows(CommandException.class, expectedMessage, () -> logic.execute("role 2147483648 none"));
+
+        assertEquals(before, model.captureSnapshot());
+        assertFalse(model.canUndo());
     }
 
     @Test

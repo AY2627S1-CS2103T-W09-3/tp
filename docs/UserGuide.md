@@ -292,17 +292,19 @@ Inputs that are rejected:
 | `h/Shophouse` | `Error: Housing type must be HDB, Condo, EC, or Landed.` |
 | `b/1-2 b/3-4` | `Error: Multiple values specified for the following single-valued field(s): b/` |
 
-### Assigning a client's role: `role`
+### Assigning or clearing a client's role: `role`
 
-Marks a client as a buyer, a seller, or both.
+Marks a client as a buyer, a seller, or both, or removes an assigned role.
 
 Format: `role INDEX ROLE`
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
-* `ROLE` accepts `buyer`, `seller`, or `both`, ignoring case.
-* The client card displays `Buyer`, `Seller`, or `Buyer, Seller`.
+  If it is outside the displayed list, the error states the current valid range (from 1 to the number of displayed clients).
+* `ROLE` accepts `buyer`, `seller`, `both`, or `none`, ignoring case. Use `none` to remove an assigned role.
+* The client card displays `Buyer`, `Seller`, or `Buyer, Seller` for assigned roles. It shows no role badge after `none`.
 * Newly added clients have no role assigned.
-* Assigning a role replaces any existing role.
+* Assigning a role replaces any existing role. Clearing a role leaves the client's other details unchanged.
+* If the client already has no role, `none` reports that nothing changed and does not add an undo-history entry.
 * After a successful role change, the current search or filter stays active. The client leaves the list if the new role no longer matches it. Enter `list` to show all clients.
 
 Examples:
@@ -310,9 +312,16 @@ Examples:
 * `role 1 buyer` marks the first displayed client as a buyer.
 * `role 2 both` marks the second displayed client as both a buyer and a seller.
   The role badge displays `Buyer, Seller`.
+* `role 1 none` removes the first displayed client's assigned role.
 
 For example, if the first displayed client is John Doe, `role 1 buyer` displays:
 `Role updated: John Doe is now marked as Buyer`
+
+For a client named John Doe, `role 1 none` displays:
+`Role cleared: John Doe has no assigned role`
+
+Repeating the command displays:
+`Role unchanged: John Doe already has no assigned role`
 
 ### Adding or clearing a client note: `note`
 
