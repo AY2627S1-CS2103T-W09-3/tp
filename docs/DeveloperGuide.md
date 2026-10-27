@@ -200,7 +200,8 @@ Invalid inputs do not change the client's role:
 | Situation | Expected result |
 |-----------|-----------------|
 | The command format or index syntax is invalid | `Error: Invalid command format. Use: role INDEX ROLE.` |
-| The role is missing or is not `buyer`, `seller`, `both`, or `none` | `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.` |
+| The role is missing | `Error: Invalid command format. Use: role INDEX ROLE.` |
+| The role is not `buyer`, `seller`, `both`, or `none` | `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.` |
 | The index is zero or outside the currently displayed list | `Error: Invalid client index: Enter a number between 1 and N for the displayed list.` Here, `N` is the number of displayed clients. |
 | No clients are displayed | `Error: Invalid client index: No clients are currently displayed.` |
 
@@ -590,7 +591,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
   Use case resumes at step 3.
 
 * 3b. The role is missing or is not buyer, seller, both, or none.
-  * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles.
+  * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or an error indicating the permitted roles if it is invalid.
 
   Use case resumes at step 3.
 
@@ -654,7 +655,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
   Use case resumes at step 3.
 
 * 3b. The role is missing or is not buyer, seller, both, or none.
-  * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles without updating the client's role.
+  * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or an error indicating the permitted roles if it is invalid, without updating the client's role.
 
   Use case resumes at step 3.
 
@@ -850,7 +851,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `role 1`<br>
       Expected: No role is changed. The result box shows
-      `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.`
+      `Error: Invalid command format. Use: role INDEX ROLE.`
 
    1. Test case: `role 1 landlord`<br>
       Expected: No role is changed. The result box shows

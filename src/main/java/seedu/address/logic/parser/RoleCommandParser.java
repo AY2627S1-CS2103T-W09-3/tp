@@ -19,15 +19,6 @@ public class RoleCommandParser implements Parser<RoleCommand> {
         String trimmedArgs = args.trim();
         String[] arguments = trimmedArgs.isEmpty() ? new String[0] : trimmedArgs.split("\\s+");
 
-        if (arguments.length == 1) {
-            try {
-                ParserUtil.parseIndex(arguments[0]);
-            } catch (ParseException pe) {
-                throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT, pe);
-            }
-            throw new ParseException(RoleCommand.MESSAGE_INVALID_ROLE);
-        }
-
         if (arguments.length != 2) {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
