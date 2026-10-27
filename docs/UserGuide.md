@@ -202,7 +202,7 @@ shows no note indicator.*
 | `view INDEX` or clicking a client card | Shows that client.                                                                                 |
 | Successful `edit`, `role` or `note` | Shows the updated client if they still match the active search/filter; otherwise clears the panel. |
 | Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index.                                 |
-| `help`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
+| `help`, `history`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
 | Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed.               |
 
 Clearing the panel prevents it from showing an outdated client when a list
@@ -458,6 +458,7 @@ Formats: `undo`, `redo`, `history` (no parameters)
   the undone `add` can no longer be redone.
 * If there is nothing to undo or redo, the command reports that no action is available. If both lists are
   empty, `history` reports that there is no history.
+* `history` does not change the client list or close an open client profile, even when both history lists are empty.
 * History is kept only for the current app session. Closing and reopening the app keeps the saved client
   data but starts with empty undo and redo lists.
 * You can also use **Edit > Undo**, **Edit > Redo** and **Edit > History**. Undo shortcuts are `Ctrl+Z`

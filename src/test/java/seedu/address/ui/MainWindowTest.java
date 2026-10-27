@@ -968,6 +968,40 @@ public class MainWindowTest {
     }
 
     @Test
+    public void selection_history_preservesSelectedClientWithAndWithoutEntries() throws Exception {
+        runOnFxThread(() -> {
+            for (boolean hasHistory : List.of(false, true)) {
+                ModelManager model = new ModelManager();
+                model.addPerson(AMY);
+                if (hasHistory) {
+                    var before = model.captureSnapshot();
+                    model.addPerson(BOB);
+                    model.recordChange(before, model.captureSnapshot(), "add", "Added client Bob Choo");
+                }
+                Person selectedPerson = hasHistory ? BOB : AMY;
+                MainWindow window = openWindow(model);
+                try {
+                    TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                    TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                    enterCommand(window, commandBox, hasHistory ? "view 2" : "view 1");
+                    assertSelectedClient(window, selectedPerson);
+
+                    enterCommand(window, commandBox, "history");
+                    assertFalse(feedback.getStyleClass().contains("error"));
+                    assertEquals(hasHistory, feedback.getText().startsWith("Undo history:"));
+                    assertSelectedClient(window, selectedPerson);
+
+                    MenuBar menuBar = (MenuBar) window.getRoot().getScene().lookup("#menuBar");
+                    menuBar.getMenus().get(1).getItems().get(2).fire();
+                    assertSelectedClient(window, selectedPerson);
+                } finally {
+                    window.getRoot().close();
+                }
+            }
+        });
+    }
+
+    @Test
     public void selection_commandsWithoutViewIndex_clearPanelEvenIfListIsUnchanged() throws Exception {
         runOnFxThread(() -> {
             for (String command : List.of("filter t/friend", "find Amy Bob", "find Nobody", "list",
