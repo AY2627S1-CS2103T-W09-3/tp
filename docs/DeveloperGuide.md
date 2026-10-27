@@ -234,6 +234,8 @@ A note is free-text working detail kept on a client: where a negotiation stands,
 
 **Why `find` does not search notes.** `find` matches name, phone number and email. Notes contain free-text working details, so searching them could return unrelated clients. Users can read a note in the detail panel and replace it with `note`.
 
+**Why `find` requires every keyword.** `PersonMatchesSearchTermsPredicate` tests that every keyword is contained in the client's name, phone number or email address, and a keyword may be matched by a different field from another keyword. An agent adds a keyword to make a search more specific, so `find Alex Yu` must not show everyone named Alex or Yu. Matching any keyword was considered, as in AB3, but it made the list grow as the agent typed more, and a quoted phrase would not help the agent who types the words without quotes. The cost is that one search can no longer find two different clients by their names, so the agent runs two searches. With no keywords, the predicate never matches, but `FindCommandParser` rejects that input first.
+
 ### Detailed client view
 
 The `view INDEX` command and the detail panel form one feature. The command
@@ -588,7 +590,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 **MSS**
 
-1. Agent requests to find a client using one or more keywords that match part of the client's name, phone number or email address.
+1. Agent requests to find a client using one or more keywords, each of which matches part of the client's name, phone number or email address.
 2. EstateBookUltraProMax displays a list of matching clients.
 3. Agent identifies a client from the displayed results and requests changes to the client's contact details.
 4. EstateBookUltraProMax updates the specified details and displays the updated client.
@@ -987,11 +989,23 @@ testers are expected to do more *exploratory* testing.
       Expected: Only `Raj Kumar` is displayed, matched by part of his email address `raj.kumar@example.com`. The
       result box shows `Showing 1 of 5 clients.`.
 
-1. Multiple keywords use OR matching
+1. Multiple keywords use AND matching
+
+   1. Test case: `find ali tan`<br>
+      Expected: Only `Alicia Tan` is displayed, because both keywords match her name. The result box shows
+      `Showing 1 of 5 clients.`.
+
+   1. Test case: `find tan 8123`<br>
+      Expected: Only `Alicia Tan` is displayed, because `tan` matches her name and `8123` matches her phone number
+      `81234567`. The result box shows `Showing 1 of 5 clients.`.
 
    1. Test case: `find Alicia 82345678`<br>
-      Expected: `Alicia Tan` and `Benjamin Lim` are displayed, matched by name and phone number respectively. The
-      result box shows `Showing 2 of 5 clients.`.
+      Expected: No clients are displayed, because `82345678` is the phone number of `Benjamin Lim` and not of
+      `Alicia Tan`. The result box shows `Showing 0 of 5 clients.`.
+
+   1. Test case: `find a`, then `find a li`<br>
+      Expected: `find a` shows all five clients, because every sample email address contains `a`. The second
+      command shows only `Alicia Tan` and `Benjamin Lim`, so the extra keyword narrows the list.
 
 1. No matching clients
 
