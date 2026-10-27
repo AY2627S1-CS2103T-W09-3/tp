@@ -56,8 +56,7 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
             return true;
         }
 
-        return person.getTags().stream().anyMatch(personTag ->
-                tags.stream().anyMatch(tag -> tag.tagName.equalsIgnoreCase(personTag.tagName)));
+        return person.getTags().stream().anyMatch(tags::contains);
     }
 
     @Override

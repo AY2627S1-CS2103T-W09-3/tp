@@ -3,6 +3,8 @@ package seedu.address.model.tag;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.Locale;
+
 /**
  * Represents a Tag in the address book.
  * Guarantees: immutable; name is valid as declared in {@link #isValidTagName(String)}
@@ -13,6 +15,7 @@ public class Tag {
     public static final String VALIDATION_REGEX = "\\p{Alnum}+";
 
     public final String tagName;
+    private final String canonicalTagName;
 
     /**
      * Constructs a {@code Tag}.
@@ -23,6 +26,7 @@ public class Tag {
         requireNonNull(tagName);
         checkArgument(isValidTagName(tagName), MESSAGE_CONSTRAINTS);
         this.tagName = tagName;
+        canonicalTagName = tagName.toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -43,12 +47,12 @@ public class Tag {
             return false;
         }
 
-        return tagName.equals(otherTag.tagName);
+        return canonicalTagName.equals(otherTag.canonicalTagName);
     }
 
     @Override
     public int hashCode() {
-        return tagName.hashCode();
+        return canonicalTagName.hashCode();
     }
 
     /**

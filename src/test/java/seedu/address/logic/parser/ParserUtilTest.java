@@ -205,6 +205,13 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parseTags_caseVariantDuplicates_returnsSingleTag() throws Exception {
+        Set<Tag> actualTagSet = ParserUtil.parseTags(List.of("urgent", "URGENT"));
+
+        assertEquals(Set.of(new Tag("urgent")), actualTagSet);
+    }
+
+    @Test
     public void parseBudget_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> ParserUtil.parseBudget(null));
     }
