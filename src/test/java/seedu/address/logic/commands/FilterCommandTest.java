@@ -43,11 +43,12 @@ public class FilterCommandTest {
             .withBudget(new Budget(new Price("800000"), new Price("1200000"))).build();
     private static final Person SELLER_URGENT_FRIENDS = new PersonBuilder(BENSON).withRole(ClientRole.SELLER)
             .withTags("urgent", "friends").withAreas(Set.of(new Area("Bishan")))
-            .withHousingTypes(Set.of(HousingType.HDB)).build();
+            .withHousingTypes(Set.of(HousingType.HDB)).withAskingPrice(new Price("950000")).build();
     private static final Person BOTH_FRIENDS = new PersonBuilder(CARL).withRole(ClientRole.BOTH)
             .withTags("friends").withAreas(Set.of(new Area("Orchard")))
             .withHousingTypes(Set.of(HousingType.LANDED))
-            .withBudget(new Budget(new Price("700000"), new Price("900000"))).build();
+            .withBudget(new Budget(new Price("700000"), new Price("900000")))
+            .withAskingPrice(new Price("850000")).build();
     private static final Person BUYER_NO_TAGS = new PersonBuilder(DANIEL).withRole(ClientRole.BUYER)
             .withTags().withBudget(new Budget(new Price("1000000"), new Price("1500000"))).build();
     private static final Person NO_ROLE_URGENT = new PersonBuilder(ELLE).withRole(null)
@@ -102,6 +103,15 @@ public class FilterCommandTest {
     private static PersonMatchesFilterPredicate budgetPredicate(ClientRole role, PriceRange priceRange) {
         PersonMatchesFilterPredicate.Builder builder = new PersonMatchesFilterPredicate.Builder()
                 .withBudget(priceRange);
+        if (role != null) {
+            builder.withRole(role);
+        }
+        return builder.build();
+    }
+
+    private static PersonMatchesFilterPredicate askingPricePredicate(ClientRole role, PriceRange priceRange) {
+        PersonMatchesFilterPredicate.Builder builder = new PersonMatchesFilterPredicate.Builder()
+                .withAskingPrice(priceRange);
         if (role != null) {
             builder.withRole(role);
         }
@@ -300,6 +310,57 @@ public class FilterCommandTest {
     @Test
     public void execute_budgetNobodyHas_showsNoClients() {
         PersonMatchesFilterPredicate predicate = budgetPredicate(null, new PriceRange(new Price("5000000")));
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 0 of 5 clients.", expectedModel);
+        assertEquals(List.of(), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_askingPrice_showsClientsWithExactlyThatPrice() {
+        PersonMatchesFilterPredicate predicate = askingPricePredicate(null, new PriceRange(new Price("850000")));
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 1 of 5 clients.", expectedModel);
+        assertEquals(List.of(BOTH_FRIENDS), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_askingPriceRange_showsClientsWithAPriceInIt() {
+        PriceRange range = new PriceRange(new Price("800000"), new Price("1000000"));
+        PersonMatchesFilterPredicate predicate = askingPricePredicate(null, range);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 2 of 5 clients.", expectedModel);
+        assertEquals(List.of(SELLER_URGENT_FRIENDS, BOTH_FRIENDS), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_askingPriceAndRole_showsClientsMatchingBoth() {
+        PriceRange range = new PriceRange(new Price("800000"), new Price("1000000"));
+        PersonMatchesFilterPredicate predicate = askingPricePredicate(ClientRole.BUYER, range);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        // The seller's asking price is in the range, but a seller is not a buyer.
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 1 of 5 clients.", expectedModel);
+        assertEquals(List.of(BOTH_FRIENDS), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_budgetAndAskingPrice_showsClientsMatchingBoth() {
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder()
+                .withBudget(new PriceRange(new Price("800000"))).withAskingPrice(new PriceRange(new Price("850000")))
+                .build();
+        expectedModel.updateFilteredPersonList(predicate);
+
+        // The buyer's budget also includes $800,000, but the buyer has no asking price.
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 1 of 5 clients.", expectedModel);
+        assertEquals(List.of(BOTH_FRIENDS), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_askingPriceNobodyHas_showsNoClients() {
+        PersonMatchesFilterPredicate predicate = askingPricePredicate(null, new PriceRange(new Price("5000000")));
         expectedModel.updateFilteredPersonList(predicate);
 
         assertCommandSuccess(new FilterCommand(predicate), model, "Showing 0 of 5 clients.", expectedModel);

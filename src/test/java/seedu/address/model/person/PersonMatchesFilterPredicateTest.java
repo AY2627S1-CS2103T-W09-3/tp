@@ -56,6 +56,10 @@ public class PersonMatchesFilterPredicateTest {
         return new PersonMatchesFilterPredicate.Builder().withBudget(priceRange).build();
     }
 
+    private static PersonMatchesFilterPredicate askingPriceOnly(PriceRange priceRange) {
+        return new PersonMatchesFilterPredicate.Builder().withAskingPrice(priceRange).build();
+    }
+
     private static PersonMatchesFilterPredicate roleOnly(ClientRole role) {
         return new PersonMatchesFilterPredicate.Builder().withRole(role).build();
     }
@@ -110,6 +114,13 @@ public class PersonMatchesFilterPredicateTest {
         assertTrue(budgetOnly(priceRange("1000", "2000")).equals(budgetOnly(priceRange("1000", "2000"))));
         assertFalse(budgetOnly(priceRange("1000", "2000")).equals(budgetOnly(priceRange("1000", "3000"))));
         assertFalse(budgetOnly(priceRange("1000", "2000")).equals(housingTypesOnly(HousingType.HDB)));
+
+        // different asking price -> returns false
+        assertTrue(askingPriceOnly(priceRange("1000", "2000")).equals(askingPriceOnly(priceRange("1000", "2000"))));
+        assertFalse(askingPriceOnly(priceRange("1000", "2000")).equals(askingPriceOnly(priceRange("1000", "3000"))));
+
+        // the same range as a budget and as an asking price -> returns false
+        assertFalse(askingPriceOnly(priceRange("1000", "2000")).equals(budgetOnly(priceRange("1000", "2000"))));
     }
 
     @Test
@@ -334,6 +345,57 @@ public class PersonMatchesFilterPredicateTest {
     }
 
     @Test
+    public void test_askingPrice_matchesPricesWithinTheRange() {
+        Person person = new PersonBuilder().withAskingPrice(new Price("950000")).build();
+
+        // range around the asking price, and ranges that only touch it
+        assertTrue(askingPriceOnly(priceRange("900000", "1000000")).test(person));
+        assertTrue(askingPriceOnly(priceRange("950000", "1000000")).test(person));
+        assertTrue(askingPriceOnly(priceRange("900000", "950000")).test(person));
+
+        // range that does not include the asking price
+        assertFalse(askingPriceOnly(priceRange("100000", "949999")).test(person));
+        assertFalse(askingPriceOnly(priceRange("950001", "1000000")).test(person));
+    }
+
+    @Test
+    public void test_singleAskingPrice_matchesOnlyThatPrice() {
+        Person person = new PersonBuilder().withAskingPrice(new Price("950000")).build();
+
+        assertTrue(askingPriceOnly(new PriceRange(new Price("950000"))).test(person));
+        assertFalse(askingPriceOnly(new PriceRange(new Price("949999"))).test(person));
+        assertFalse(askingPriceOnly(new PriceRange(new Price("950001"))).test(person));
+    }
+
+    @Test
+    public void test_clientWithNoAskingPrice_neverMatchesAnAskingPrice() {
+        Person noAskingPrice = new PersonBuilder().withAskingPrice(null).withBudget(budget("800000", "1200000"))
+                .build();
+
+        assertFalse(askingPriceOnly(priceRange("1", "1000000000")).test(noAskingPrice));
+        assertFalse(askingPriceOnly(new PriceRange(new Price("900000"))).test(noAskingPrice));
+    }
+
+    @Test
+    public void test_budgetAndAskingPrice_bothMustMatch() {
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder()
+                .withBudget(new PriceRange(new Price("800000")))
+                .withAskingPrice(priceRange("800000", "900000")).build();
+
+        // budget and asking price both match
+        assertTrue(predicate.test(new PersonBuilder().withBudget(budget("700000", "900000"))
+                .withAskingPrice(new Price("850000")).build()));
+
+        // only the budget matches
+        assertFalse(predicate.test(new PersonBuilder().withBudget(budget("700000", "900000"))
+                .withAskingPrice(new Price("950000")).build()));
+
+        // only the asking price matches
+        assertFalse(predicate.test(new PersonBuilder().withBudget(budget("100000", "200000"))
+                .withAskingPrice(new Price("850000")).build()));
+    }
+
+    @Test
     public void test_noCriteria_matchesEveryone() {
         PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder().build();
 
@@ -349,7 +411,8 @@ public class PersonMatchesFilterPredicateTest {
 
         String expected = PersonMatchesFilterPredicate.class.getCanonicalName()
                 + "{role=" + Optional.of(ClientRole.BUYER) + ", tags=" + tags + ", areas=" + Set.of()
-                + ", housingTypes=" + Set.of() + ", budget=" + Optional.empty() + "}";
+                + ", housingTypes=" + Set.of() + ", budget=" + Optional.empty()
+                + ", askingPrice=" + Optional.empty() + "}";
         assertEquals(expected, predicate.toString());
     }
 }

@@ -2,6 +2,7 @@ package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.getErrorMessageForDuplicatePrefixes;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ASKING_PRICE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
@@ -141,6 +142,43 @@ public class FilterCommandParserTest {
     public void parse_repeatedBudget_throwsParseException() {
         assertParseFailure(parser, " b/1-2 b/3-4", getErrorMessageForDuplicatePrefixes(PREFIX_BUDGET));
         assertParseFailure(parser, " b/100 l/Bedok b/200", getErrorMessageForDuplicatePrefixes(PREFIX_BUDGET));
+    }
+
+    @Test
+    public void parse_askingPrice_returnsFilterWithPriceRange() {
+        FilterCommand range = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withAskingPrice(new PriceRange(new Price("800000"), new Price("900000"))).build());
+        FilterCommand singlePrice = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withAskingPrice(new PriceRange(new Price("850000"))).build());
+
+        assertParseSuccess(parser, " s/800000-900000", range);
+        assertParseSuccess(parser, " s/800,000 - 900,000", range);
+        assertParseSuccess(parser, " s/850000", singlePrice);
+        assertParseSuccess(parser, " s/  850,000  ", singlePrice);
+    }
+
+    @Test
+    public void parse_budgetAndAskingPrice_areKeptApart() {
+        FilterCommand expected = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withBudget(new PriceRange(new Price("500000"), new Price("600000")))
+                .withAskingPrice(new PriceRange(new Price("800000"), new Price("900000"))).build());
+
+        assertParseSuccess(parser, " b/500000-600000 s/800000-900000", expected);
+        assertParseSuccess(parser, " s/800000-900000 b/500000-600000", expected);
+    }
+
+    @Test
+    public void parse_invalidAskingPrice_throwsParseException() {
+        for (String input : List.of(" s/", " s/abc", " s/0", " s/800000-", " s/-900000", " s/1-2-3", " r/seller s/")) {
+            assertParseFailure(parser, input, Price.MESSAGE_CONSTRAINTS);
+        }
+        assertParseFailure(parser, " s/900000-800000", PriceRange.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_repeatedAskingPrice_throwsParseException() {
+        assertParseFailure(parser, " s/1-2 s/3-4", getErrorMessageForDuplicatePrefixes(PREFIX_ASKING_PRICE));
+        assertParseFailure(parser, " s/100 b/100 s/200", getErrorMessageForDuplicatePrefixes(PREFIX_ASKING_PRICE));
     }
 
     @Test

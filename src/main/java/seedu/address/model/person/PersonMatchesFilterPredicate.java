@@ -12,7 +12,8 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
 
 /**
- * Tests that a {@code Person} matches the role, the tags, the areas, the housing types and the budget given.
+ * Tests that a {@code Person} matches the role, the tags, the areas, the housing types, the budget and the asking
+ * price given.
  * A role of buyer matches buyers and clients who are both, a role of seller matches sellers and clients who are
  * both, and a role of both matches only clients who are both. A client with no role never matches a role.
  * A tag matches if the person has a tag with the same name, ignoring case, and a person matches the tags
@@ -20,8 +21,9 @@ import seedu.address.model.tag.Tag;
  * given, and a client with no preferred areas never matches. A person matches the housing types in the same way,
  * using their preferred housing types. A person matches the budget if their budget shares at least one price with
  * the range given, so a single price matches the budgets that include it, and a client with no budget never
- * matches. Every criterion that is given must match, and a missing role, no tags, no areas, no housing types or
- * no budget always match.
+ * matches. A person matches the asking price if it is within the range given, including both ends, so a single
+ * price matches only that price, and a client with no asking price never matches. Every criterion that is given
+ * must match, and a missing role, no tags, no areas, no housing types, no budget or no asking price always match.
  */
 public class PersonMatchesFilterPredicate implements Predicate<Person> {
     private final Optional<ClientRole> role;
@@ -29,20 +31,22 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
     private final Set<Area> areas;
     private final Set<HousingType> housingTypes;
     private final Optional<PriceRange> budget;
+    private final Optional<PriceRange> askingPrice;
 
     private PersonMatchesFilterPredicate(Optional<ClientRole> role, Set<Tag> tags, Set<Area> areas,
-            Set<HousingType> housingTypes, Optional<PriceRange> budget) {
+            Set<HousingType> housingTypes, Optional<PriceRange> budget, Optional<PriceRange> askingPrice) {
         this.role = requireNonNull(role);
         this.tags = requireNonNull(tags);
         this.areas = requireNonNull(areas);
         this.housingTypes = requireNonNull(housingTypes);
         this.budget = requireNonNull(budget);
+        this.askingPrice = requireNonNull(askingPrice);
     }
 
     @Override
     public boolean test(Person person) {
         return matchesRole(person) && matchesTags(person) && matchesAreas(person) && matchesHousingTypes(person)
-                && matchesBudget(person);
+                && matchesBudget(person) && matchesAskingPrice(person);
     }
 
     private boolean matchesRole(Person person) {
@@ -96,6 +100,15 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
         return personBudget != null && budget.get().overlaps(personBudget);
     }
 
+    private boolean matchesAskingPrice(Person person) {
+        if (askingPrice.isEmpty()) {
+            return true;
+        }
+
+        Price personAskingPrice = person.getAskingPrice();
+        return personAskingPrice != null && askingPrice.get().contains(personAskingPrice);
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -109,12 +122,12 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
 
         return role.equals(otherPredicate.role) && tags.equals(otherPredicate.tags)
                 && areas.equals(otherPredicate.areas) && housingTypes.equals(otherPredicate.housingTypes)
-                && budget.equals(otherPredicate.budget);
+                && budget.equals(otherPredicate.budget) && askingPrice.equals(otherPredicate.askingPrice);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(role, tags, areas, housingTypes, budget);
+        return Objects.hash(role, tags, areas, housingTypes, budget, askingPrice);
     }
 
     @Override
@@ -125,6 +138,7 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
                 .add("areas", areas)
                 .add("housingTypes", housingTypes)
                 .add("budget", budget)
+                .add("askingPrice", askingPrice)
                 .toString();
     }
 
@@ -137,6 +151,7 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
         private Set<Area> areas = new HashSet<>();
         private Set<HousingType> housingTypes = new HashSet<>();
         private Optional<PriceRange> budget = Optional.empty();
+        private Optional<PriceRange> askingPrice = Optional.empty();
 
         /**
          * Requires a client to have the given {@code role}, or to be both when the role is buyer or seller.
@@ -180,10 +195,18 @@ public class PersonMatchesFilterPredicate implements Predicate<Person> {
         }
 
         /**
+         * Requires a client to have an asking price within the given {@code askingPrice} range.
+         */
+        public Builder withAskingPrice(PriceRange askingPrice) {
+            this.askingPrice = Optional.of(requireNonNull(askingPrice));
+            return this;
+        }
+
+        /**
          * Returns a predicate that matches the criteria set so far.
          */
         public PersonMatchesFilterPredicate build() {
-            return new PersonMatchesFilterPredicate(role, tags, areas, housingTypes, budget);
+            return new PersonMatchesFilterPredicate(role, tags, areas, housingTypes, budget, askingPrice);
         }
     }
 }
