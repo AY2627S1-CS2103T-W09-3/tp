@@ -56,11 +56,12 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         Set<HousingType> housingTypes = ParserUtil.parseHousingTypes(argMultimap.getAllValues(PREFIX_HOUSING_TYPE));
         predicateBuilder.withHousingTypes(housingTypes);
         if (argMultimap.getValue(PREFIX_BUDGET).isPresent()) {
-            predicateBuilder.withBudget(ParserUtil.parsePriceRange(argMultimap.getValue(PREFIX_BUDGET).get()));
+            predicateBuilder.withBudget(
+                    ParserUtil.parsePriceRange(argMultimap.getValue(PREFIX_BUDGET).get(), "budget"));
         }
         if (argMultimap.getValue(PREFIX_ASKING_PRICE).isPresent()) {
             predicateBuilder.withAskingPrice(
-                    ParserUtil.parsePriceRange(argMultimap.getValue(PREFIX_ASKING_PRICE).get()));
+                    ParserUtil.parsePriceRange(argMultimap.getValue(PREFIX_ASKING_PRICE).get(), "asking price"));
         }
 
         return new FilterCommand(predicateBuilder.build());

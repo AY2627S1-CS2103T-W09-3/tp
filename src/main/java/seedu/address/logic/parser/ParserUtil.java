@@ -111,12 +111,14 @@ public class ParserUtil {
      * Parses a {@code String priceRange} in the form {@code MIN-MAX}, or a single price, into a {@code PriceRange}.
      * A single price gives a range that holds only that price.
      * Leading and trailing whitespaces, including those around the hyphen, will be trimmed.
+     * {@code fieldName} names the field in the error message, such as {@code budget}.
      *
      * @throws ParseException if a range is not two prices joined by a hyphen, a price is invalid or the minimum
      *     exceeds the maximum.
      */
-    public static PriceRange parsePriceRange(String priceRange) throws ParseException {
+    public static PriceRange parsePriceRange(String priceRange, String fieldName) throws ParseException {
         requireNonNull(priceRange);
+        requireNonNull(fieldName);
         String trimmedPriceRange = priceRange.trim();
         if (!trimmedPriceRange.contains("-")) {
             return new PriceRange(parsePrice(trimmedPriceRange));
@@ -132,7 +134,7 @@ public class ParserUtil {
         try {
             return new PriceRange(min, max);
         } catch (IllegalArgumentException e) {
-            throw new ParseException(PriceRange.MESSAGE_CONSTRAINTS, e);
+            throw new ParseException(String.format(PriceRange.MESSAGE_REVERSED_RANGE, fieldName), e);
         }
     }
 

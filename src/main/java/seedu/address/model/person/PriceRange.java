@@ -11,6 +11,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 public class PriceRange {
 
     public static final String MESSAGE_CONSTRAINTS = "The minimum price must not exceed the maximum.";
+    public static final String MESSAGE_REVERSED_RANGE = "The minimum %1$s must not exceed the maximum.";
     public static final String MESSAGE_INVALID_FORMAT =
             "A price range should be one price, or a minimum and a maximum price joined by a hyphen, "
             + "such as 500000-600000.";

@@ -230,13 +230,14 @@ public class ParserUtilTest {
 
     @Test
     public void parsePriceRange_null_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> ParserUtil.parsePriceRange(null));
+        assertThrows(NullPointerException.class, () -> ParserUtil.parsePriceRange(null, "budget"));
     }
 
     @Test
     public void parsePriceRange_invalidPrice_throwsParseException() {
         for (String input : List.of("", "  ", "abc", "0", "abc-2000", "1000-abc", "1,00-2000", "1000-2000.5")) {
-            assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parsePriceRange(input));
+            assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () ->
+                    ParserUtil.parsePriceRange(input, "budget"));
         }
     }
 
@@ -244,33 +245,36 @@ public class ParserUtilTest {
     public void parsePriceRange_malformedRange_throwsParseException() {
         for (String input : List.of("1000-", "-1000", "-", "1000 -", "1000-2000-3000")) {
             assertThrows(ParseException.class, PriceRange.MESSAGE_INVALID_FORMAT, () ->
-                    ParserUtil.parsePriceRange(input));
+                    ParserUtil.parsePriceRange(input, "budget"));
         }
     }
 
     @Test
     public void parsePriceRange_reversedRange_throwsParseException() {
-        assertThrows(ParseException.class, PriceRange.MESSAGE_CONSTRAINTS, () ->
-                ParserUtil.parsePriceRange("2000-1000"));
+        assertThrows(ParseException.class, String.format(PriceRange.MESSAGE_REVERSED_RANGE, "budget"), () ->
+                ParserUtil.parsePriceRange("2000-1000", "budget"));
+        assertThrows(ParseException.class, String.format(PriceRange.MESSAGE_REVERSED_RANGE, "asking price"), () ->
+                ParserUtil.parsePriceRange("2000-1000", "asking price"));
     }
 
     @Test
     public void parsePriceRange_validRange_returnsPriceRange() throws Exception {
         PriceRange expectedPriceRange = new PriceRange(new Price("1000"), new Price("2000"));
 
-        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1000-2000"));
-        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1,000-2,000"));
-        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange(WHITESPACE + "1000 - 2000" + WHITESPACE));
-        assertEquals(new PriceRange(new Price("1500")), ParserUtil.parsePriceRange("1500-1500"));
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1000-2000", "budget"));
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1,000-2,000", "budget"));
+        assertEquals(expectedPriceRange,
+                ParserUtil.parsePriceRange(WHITESPACE + "1000 - 2000" + WHITESPACE, "budget"));
+        assertEquals(new PriceRange(new Price("1500")), ParserUtil.parsePriceRange("1500-1500", "budget"));
     }
 
     @Test
     public void parsePriceRange_singlePrice_returnsRangeHoldingOnlyThatPrice() throws Exception {
         PriceRange expectedPriceRange = new PriceRange(new Price("1500"));
 
-        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1500"));
-        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1,500"));
-        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange(WHITESPACE + "1500" + WHITESPACE));
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1500", "budget"));
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1,500", "budget"));
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange(WHITESPACE + "1500" + WHITESPACE, "budget"));
     }
 
     @Test

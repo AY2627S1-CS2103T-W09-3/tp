@@ -138,7 +138,8 @@ public class FilterCommandParserTest {
         for (String input : List.of(" b/500000-", " b/-600000", " b/1-2-3")) {
             assertParseFailure(parser, input, PriceRange.MESSAGE_INVALID_FORMAT);
         }
-        assertParseFailure(parser, " b/600000-500000", PriceRange.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " b/600000-500000",
+                String.format(PriceRange.MESSAGE_REVERSED_RANGE, "budget"));
     }
 
     @Test
@@ -178,7 +179,8 @@ public class FilterCommandParserTest {
         for (String input : List.of(" s/800000-", " s/-900000", " s/1-2-3")) {
             assertParseFailure(parser, input, PriceRange.MESSAGE_INVALID_FORMAT);
         }
-        assertParseFailure(parser, " s/900000-800000", PriceRange.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " s/900000-800000",
+                String.format(PriceRange.MESSAGE_REVERSED_RANGE, "asking price"));
     }
 
     @Test
