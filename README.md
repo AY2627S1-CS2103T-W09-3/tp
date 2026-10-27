@@ -5,7 +5,7 @@
 
 # EstateBookUltraProMax
 
-EstateBookUltraProMax is a desktop contact book for property agents who manage
+EstateBookUltraProMax is a desktop client book for property agents who manage
 many buyers and sellers at once. Every action is a short command typed into the
 command box, and the result appears in the GUI.
 

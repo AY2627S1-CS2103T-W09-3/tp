@@ -8,7 +8,7 @@ title: EstateBookUltraProMax
 
 ![Ui](images/Ui.png)
 
-**EstateBookUltraProMax is a desktop contact book for property agents who manage many buyers and sellers at once.** While it has a GUI, most of the user interactions happen using a CLI (Command Line Interface).
+**EstateBookUltraProMax is a desktop client book for property agents who manage many buyers and sellers at once.** While it has a GUI, most of the user interactions happen using a CLI (Command Line Interface).
 
 * If you are interested in using EstateBookUltraProMax, head over to the [_Quick Start_ section of the **User Guide**](UserGuide.html#quick-start).
 * If you are interested in developing EstateBookUltraProMax, the [**Developer Guide**](DeveloperGuide.html) is a good place to start.

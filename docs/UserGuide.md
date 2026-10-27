@@ -3,7 +3,7 @@ layout: page
 title: User Guide
 ---
 
-EstateBookUltraProMax is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, EstateBookUltraProMax can help you manage contacts faster than traditional GUI applications.
+EstateBookUltraProMax is a **desktop client book for property agents who manage many buyers and sellers at once, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, EstateBookUltraProMax can help you manage your clients faster than traditional GUI applications. Each client is recorded as a buyer, a seller, or both, together with their contact details and requirements.
 
 * Table of Contents
 {:toc}
