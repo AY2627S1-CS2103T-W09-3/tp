@@ -17,6 +17,7 @@ import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Price;
+import seedu.address.model.person.PriceRange;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -103,6 +104,34 @@ public class ParserUtil {
             return new Budget(min, max);
         } catch (IllegalArgumentException e) {
             throw new ParseException(Budget.MESSAGE_CONSTRAINTS, e);
+        }
+    }
+
+    /**
+     * Parses a {@code String priceRange} in the form {@code MIN-MAX}, or a single price, into a {@code PriceRange}.
+     * A single price gives a range that holds only that price.
+     * Leading and trailing whitespaces, including those around the hyphen, will be trimmed.
+     *
+     * @throws ParseException if a price is invalid or the minimum exceeds the maximum.
+     */
+    public static PriceRange parsePriceRange(String priceRange) throws ParseException {
+        requireNonNull(priceRange);
+        String trimmedPriceRange = priceRange.trim();
+        if (!trimmedPriceRange.contains("-")) {
+            return new PriceRange(parsePrice(trimmedPriceRange));
+        }
+
+        String[] range = trimmedPriceRange.split("-", -1);
+        if (range.length != 2) {
+            throw new ParseException(Price.MESSAGE_CONSTRAINTS);
+        }
+
+        Price min = parsePrice(range[0]);
+        Price max = parsePrice(range[1]);
+        try {
+            return new PriceRange(min, max);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException(PriceRange.MESSAGE_CONSTRAINTS, e);
         }
     }
 
