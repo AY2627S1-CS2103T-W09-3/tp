@@ -62,6 +62,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.ModelManager;
+import seedu.address.model.history.CommandHistory;
 import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
@@ -172,6 +173,40 @@ public class MainWindowTest {
                 enterCommand(window, commandBox, "list");
                 assertEquals("list", logic.executedCommands.get(logic.executedCommands.size() - 1));
                 assertEquals("", commandBox.getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void unavailableHistoryShortcuts_doNotMarkUnsubmittedTextAsFailed() throws Exception {
+        runOnFxThread(() -> {
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            try {
+                window.fillInnerParts();
+                window.show();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                commandBox.setText("delete 2");
+                commandBox.requestFocus();
+
+                fireShortcut(commandBox, KeyCode.Z, false, false, true);
+                assertEquals("Error: " + CommandHistory.MESSAGE_NOTHING_TO_UNDO, feedback.getText());
+                assertEquals("delete 2", commandBox.getText());
+                assertFalse(commandBox.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+                assertTrue(feedback.getStyleClass().contains("error"));
+
+                fireShortcut(commandBox, KeyCode.Z, true, false, true);
+                assertEquals("Error: " + CommandHistory.MESSAGE_NOTHING_TO_REDO, feedback.getText());
+                assertEquals("delete 2", commandBox.getText());
+                assertFalse(commandBox.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+
+                enterCommand(window, commandBox, "undo");
+                assertTrue(commandBox.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             } finally {
                 window.getRoot().close();
             }
