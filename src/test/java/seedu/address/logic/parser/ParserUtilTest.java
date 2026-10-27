@@ -2,6 +2,12 @@ package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
@@ -302,5 +308,35 @@ public class ParserUtilTest {
     public void parseHousingTypes_collectionWithInvalidType_throwsParseException() {
         assertThrows(ParseException.class, HousingType.MESSAGE_CONSTRAINTS, ()
                 -> ParserUtil.parseHousingTypes(List.of("HDB", INVALID_HOUSING_TYPE)));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_unknownToken_throwsParseException() {
+        String expected = String.format(MESSAGE_UNKNOWN_PREFIX, "bb/") + "\nusage";
+
+        assertThrows(ParseException.class, expected, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel a/1 Road bb/400000-600000", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_uppercaseUnknownToken_throwsParseException() {
+        String expected = String.format(MESSAGE_UNKNOWN_PREFIX, "BB/") + "\nusage";
+
+        assertThrows(ParseException.class, expected, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel BB/400000-600000", "usage",
+                        PREFIX_NAME, PREFIX_BUDGET));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_tokenBeforeAnyKnownPrefix_doesNotThrow() throws Exception {
+        ParserUtil.rejectUnknownPrefixes("bb/400000-600000 n/Rachel", "usage", PREFIX_NAME);
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_knownPrefixesAndHarmlessSlashes_doesNotThrow() throws Exception {
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel a/Blk 5/6, #08-45 t/2br/3ba", "usage",
+                PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG);
+        ParserUtil.rejectUnknownPrefixes(" N/Rachel P/91234567", "usage", PREFIX_NAME, PREFIX_PHONE);
     }
 }

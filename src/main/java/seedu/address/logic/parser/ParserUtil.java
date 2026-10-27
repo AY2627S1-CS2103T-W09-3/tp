@@ -1,10 +1,14 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
@@ -26,6 +30,8 @@ public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
 
+    private static final Pattern PREFIX_TOKEN_PATTERN = Pattern.compile("(?<!\\S)[A-Za-z]{1,3}/");
+
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
      * trimmed.
@@ -37,6 +43,34 @@ public class ParserUtil {
             throw new ParseException(MESSAGE_INVALID_INDEX);
         }
         return Index.fromOneBased(Integer.parseInt(trimmedIndex));
+    }
+
+    /**
+     * Throws a {@code ParseException} if {@code args} contains a token shaped like a prefix that is not one of
+     * {@code knownPrefixes}, so a mistyped prefix is reported instead of being read as part of the previous value.
+     *
+     * <p>Only tokens that follow a recognised prefix are reported. A token before the first recognised prefix sits in
+     * the preamble, which the command parsers already reject with their own message.
+     *
+     * @param usage Command usage shown with the error, usually a command's {@code MESSAGE_USAGE}.
+     */
+    public static void rejectUnknownPrefixes(String args, String usage, Prefix... knownPrefixes)
+            throws ParseException {
+        requireNonNull(args);
+        Set<String> known = new HashSet<>();
+        for (Prefix prefix : knownPrefixes) {
+            known.add(prefix.getPrefix().toLowerCase(Locale.ROOT));
+        }
+        boolean seenKnownPrefix = false;
+        Matcher matcher = PREFIX_TOKEN_PATTERN.matcher(args);
+        while (matcher.find()) {
+            String token = matcher.group();
+            if (known.contains(token.toLowerCase(Locale.ROOT))) {
+                seenKnownPrefix = true;
+            } else if (seenKnownPrefix) {
+                throw new ParseException(String.format(MESSAGE_UNKNOWN_PREFIX, token) + "\n" + usage);
+            }
+        }
     }
 
     /**

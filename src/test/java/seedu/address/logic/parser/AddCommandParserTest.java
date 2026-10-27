@@ -262,6 +262,15 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_mistypedRequirementPrefix_failure() {
+        String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
+        String expected = String.format(Messages.MESSAGE_UNKNOWN_PREFIX, "bb/") + "\n"
+                + AddCommand.MESSAGE_USAGE;
+
+        assertParseFailure(parser, validPerson + " bb/400000-600000", expected);
+    }
+
+    @Test
     public void parse_repeatedBudgetOrPrice_failure() {
         String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
 

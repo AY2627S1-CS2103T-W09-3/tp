@@ -72,6 +72,14 @@ public class EditCommandParserTest {
     private EditCommandParser parser = new EditCommandParser();
 
     @Test
+    public void parse_mistypedRequirementPrefix_failure() {
+        String expected = String.format(Messages.MESSAGE_UNKNOWN_PREFIX, "bb/") + "\n"
+                + EditCommand.MESSAGE_USAGE;
+
+        assertParseFailure(parser, "1 a/1 Road bb/400000-600000", expected);
+    }
+
+    @Test
     public void parse_missingParts_failure() {
         // no index specified
         assertParseFailure(parser, VALID_NAME_AMY, MESSAGE_INVALID_FORMAT);
