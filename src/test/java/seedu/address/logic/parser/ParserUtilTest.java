@@ -18,6 +18,7 @@ import seedu.address.model.person.Budget;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.Note;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Price;
 import seedu.address.model.tag.Tag;
@@ -156,6 +157,34 @@ public class ParserUtilTest {
         String emailWithWhitespace = WHITESPACE + VALID_EMAIL + WHITESPACE;
         Email expectedEmail = new Email(VALID_EMAIL);
         assertEquals(expectedEmail, ParserUtil.parseEmail(emailWithWhitespace));
+    }
+
+    @Test
+    public void parseNote_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseNote(null));
+    }
+
+    @Test
+    public void parseNote_invalidValue_throwsParseException() {
+        assertThrows(ParseException.class, () -> ParserUtil.parseNote("   "));
+        assertThrows(ParseException.class, () -> ParserUtil.parseNote("a".repeat(Note.MAX_LENGTH + 1)));
+    }
+
+    @Test
+    public void parseNote_escapedNewline_decodesNewline() throws Exception {
+        assertEquals(new Note("First line\nSecond line"), ParserUtil.parseNote("First line\\nSecond line"));
+    }
+
+    @Test
+    public void parseNote_escapedBackslashes_decodesLiteralBackslashes() throws Exception {
+        assertEquals(new Note("Saved at C:\\new folder\\notes"),
+                ParserUtil.parseNote("Saved at C:\\\\new folder\\\\notes"));
+    }
+
+    @Test
+    public void parseNote_unknownAndTrailingEscapes_preservesBackslashes() throws Exception {
+        assertEquals(new Note("Keep \\t literal and trailing \\"),
+                ParserUtil.parseNote("Keep \\t literal and trailing \\"));
     }
 
     @Test

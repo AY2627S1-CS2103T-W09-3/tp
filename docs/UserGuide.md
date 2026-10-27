@@ -324,8 +324,9 @@ Formats:
 * `note INDEX clear` to clear a note.
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
-* `TEXT` can contain spaces and must contain between 1 and 500 characters after `\n` is decoded and surrounding whitespace is removed.
+* `TEXT` can contain spaces and must contain between 1 and 500 characters after escape sequences are decoded and surrounding whitespace is removed.
 * Type the two characters `\n` where a line break should appear in the note.
+* Type `\\` where a literal backslash should appear. For example, type `\\n` to store the two characters `\n` without creating a line break.
 * Only the exact lowercase text `clear`, after surrounding whitespace is removed, clears the note.
 * Other capitalization and text containing `clear` are stored as ordinary note text.
 * The currently displayed client filter remains active after setting or clearing a note.
@@ -335,6 +336,7 @@ Examples:
 
 * `note 1 Call again next Monday` adds or replaces the first displayed client's note.
 * `note 2 First line\nSecond line` stores a note containing two lines.
+* `note 2 Saved at C:\\new folder\\notes` stores `Saved at C:\new folder\notes` without changing either `\n` into a line break.
 * `note 3 clear` clears the third displayed client's note.
 * `note 1 Clear` stores `Clear` as ordinary note text.
 * `note 1 CLEAR` stores `CLEAR` as ordinary note text.

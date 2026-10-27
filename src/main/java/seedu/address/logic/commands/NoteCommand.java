@@ -23,6 +23,7 @@ public class NoteCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Sets or clears the note of the client identified by the index number used in the displayed list.\n"
             + "Parameters: INDEX TEXT | INDEX clear\n"
+            + "Use \\n for a line break and \\\\ for a literal backslash.\n"
             + "Example: " + COMMAND_WORD + " 1 Prefers a corner unit\n"
             + "Example: " + COMMAND_WORD + " 1 clear";
 
