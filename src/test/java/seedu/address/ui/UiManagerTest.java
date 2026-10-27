@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -68,6 +69,30 @@ public class UiManagerTest {
         assertEquals("The data file could not be read. An empty client book was opened.", ui.alertHeader);
         assertTrue(ui.alertContent.contains(backup.toString()));
         assertTrue(ui.alertContent.contains("Please keep this backup"));
+    }
+
+    @Test
+    public void start_withoutUnreadableDataBackup_doesNotShowRecoveryWarning() throws Exception {
+        Path dataFile = temporaryFolder.resolve("addressbook.json");
+        StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+        FutureTask<RecordingUiManager> startUi = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            RecordingUiManager ui = new RecordingUiManager(new LogicManager(new ModelManager(), storage),
+                    dataFile, null);
+            try {
+                ui.start(stage);
+                return ui;
+            } finally {
+                stage.close();
+            }
+        });
+
+        Platform.runLater(startUi);
+        RecordingUiManager ui = startUi.get(10, TimeUnit.SECONDS);
+
+        assertNull(ui.alertType);
+        assertNull(ui.alertTitle);
     }
 
     private static class RecordingUiManager extends UiManager {
