@@ -85,7 +85,7 @@ These rules apply when adding or editing clients.
 
 | Field | Rules |
 |---|---|
-| Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. |
+| Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. Extra spaces between words are reduced to one, so `n/Alpha  Tester` is stored as `Alpha Tester`. |
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
 | Address | Cannot be blank. |
@@ -115,7 +115,7 @@ Prefix rules:
 
 An `add` or `edit` command is rejected if it would match another client's:
 
-* Name, ignoring case.
+* Name, ignoring case and extra spaces. For example, `Alpha  Tester` (with two spaces) matches `Alpha Tester`.
 * Phone number exactly.
 * Email address exactly, including letter case.
 
