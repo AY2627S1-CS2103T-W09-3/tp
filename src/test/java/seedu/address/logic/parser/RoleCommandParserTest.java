@@ -26,7 +26,7 @@ public class RoleCommandParserTest {
     @Test
     public void parse_invalidFormat_failure() {
         String[] invalidInputs = {
-            "", "buyer", "0 buyer", "-1 buyer", "1.5 buyer", "abc buyer",
+            "", "buyer", "1", "1   ", "0 buyer", "-1 buyer", "1.5 buyer", "abc buyer",
             "2147483648 buyer", "1 buyer extra"
         };
 
@@ -36,8 +36,8 @@ public class RoleCommandParserTest {
     }
 
     @Test
-    public void parse_blankOrInvalidRole_failure() {
-        String[] invalidInputs = {"1", "1 agent", "1 buyer-seller"};
+    public void parse_invalidRole_failure() {
+        String[] invalidInputs = {"1 agent", "1 buyer-seller"};
 
         for (String input : invalidInputs) {
             assertParseFailure(parser, input, ClientRole.MESSAGE_CONSTRAINTS);
