@@ -202,6 +202,8 @@ shows no note indicator.*
 | `view INDEX` or clicking a client card | Shows that client.                                                                                 |
 | Successful `edit`, `role` or `note` | Shows the updated client if they still match the active search/filter; otherwise clears the panel. |
 | Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index.                                 |
+| Successful `undo` or `redo` | Clears the panel. Select a client again using their current index. |
+| `undo` or `redo` with no available action | Keeps the current selection. |
 | `help`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
 | Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed.               |
 
