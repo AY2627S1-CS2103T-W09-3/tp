@@ -28,6 +28,7 @@ import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -162,6 +163,40 @@ public class LogicManagerTest {
         JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
         ReadOnlyAddressBook reloadedAddressBook = storage.readAddressBook().orElseThrow();
         assertEquals(List.of(expectedPerson), reloadedAddressBook.getPersonList());
+    }
+
+    @Test
+    public void execute_readOnlyCommandsWithUnwritableStorage_succeed() throws Exception {
+        model.addPerson(AMY);
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_AD_EXCEPTION));
+
+        assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("list").getFeedbackToUser());
+        assertEquals(Messages.getShowingMessage(1, 1), logic.execute("find Amy").getFeedbackToUser());
+        assertEquals(String.format(ViewCommand.MESSAGE_SUCCESS, AMY.getName()),
+                logic.execute("view 1").getFeedbackToUser());
+        assertTrue(logic.execute("clear").isAwaitingConfirmation());
+    }
+
+    @Test
+    public void execute_readOnlyCommand_doesNotSave() throws Exception {
+        model.addPerson(AMY);
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("list");
+        logic.execute("find Amy");
+        logic.execute("view 1");
+        logic.execute("clear");
+
+        assertEquals(0, storage.getSaveCount());
+    }
+
+    @Test
+    public void execute_modifyingCommand_savesOnce() throws Exception {
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("add" + NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY);
+
+        assertEquals(1, storage.getSaveCount());
     }
 
     @Test
@@ -423,11 +458,15 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_storageFailsAfterClearWarning_doesNotStartPendingClear() throws Exception {
+    public void execute_clearWarningWithUnwritableStorage_warnsThenClearsOnlyOnConfirm() throws Exception {
         model.addPerson(AMY);
         logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
 
-        assertCommandException("clear", String.format(
+        // The warning does not write, so an unwritable location still shows it.
+        assertTrue(logic.execute("clear").isAwaitingConfirmation());
+
+        // Confirming does write, so the failure surfaces there and the data is restored.
+        assertCommandException("clear confirm", String.format(
                 LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
         assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
         assertEquals(1, model.getAddressBook().getPersonList().size());
@@ -543,5 +582,36 @@ public class LogicManagerTest {
         JsonUserPrefsStorage userPrefsStorage =
                 new JsonUserPrefsStorage(temporaryFolder.resolve("ExceptionUserPrefs.json"));
         return new StorageManager(addressBookStorage, userPrefsStorage);
+    }
+
+    /**
+     * Points {@code logic} at a storage that counts saves, and returns it.
+     */
+    private CountingAddressBookStorage createCountingStorage() {
+        CountingAddressBookStorage addressBookStorage =
+                new CountingAddressBookStorage(temporaryFolder.resolve("countingAddressBook.json"));
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("countingUserPrefs.json"));
+        logic = new LogicManager(model, new StorageManager(addressBookStorage, userPrefsStorage));
+        return addressBookStorage;
+    }
+
+    /** An address book storage that records how many times saving was attempted. */
+    private static class CountingAddressBookStorage extends JsonAddressBookStorage {
+        private int saveCount;
+
+        CountingAddressBookStorage(Path filePath) {
+            super(filePath);
+        }
+
+        @Override
+        public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+            saveCount++;
+            super.saveAddressBook(addressBook);
+        }
+
+        int getSaveCount() {
+            return saveCount;
+        }
     }
 }

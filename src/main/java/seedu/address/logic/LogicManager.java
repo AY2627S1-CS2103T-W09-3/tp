@@ -71,14 +71,18 @@ public class LogicManager implements Logic {
         CommandResult commandResult = command.execute(model);
         AddressBookSnapshot after = model.captureSnapshot();
 
-        try {
-            storage.saveAddressBook(model.getAddressBook());
-        } catch (AccessDeniedException e) {
-            rollbackFailedSave(command, before);
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException ioe) {
-            rollbackFailedSave(command, before);
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+        // Only write when the command changed the client data, so read-only commands keep working when the data
+        // location cannot be written.
+        if (!after.equals(before)) {
+            try {
+                storage.saveAddressBook(model.getAddressBook());
+            } catch (AccessDeniedException e) {
+                rollbackFailedSave(command, before);
+                throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
+            } catch (IOException ioe) {
+                rollbackFailedSave(command, before);
+                throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+            }
         }
 
         if (command.isUndoable()) {
