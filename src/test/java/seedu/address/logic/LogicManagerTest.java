@@ -369,6 +369,20 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_clearThenConfirmInCapitals_clears() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        logic.execute("clear");
+
+        CommandResult cleared = logic.execute("clear CONFIRM");
+
+        assertEquals(ClearCommand.MESSAGE_SUCCESS, cleared.getFeedbackToUser());
+        assertFalse(cleared.isAwaitingConfirmation());
+        assertTrue(model.getAddressBook().getPersonList().isEmpty());
+        assertEquals("Cleared 2 clients", model.getUndoHistory().get(0).getActionDescription());
+    }
+
+    @Test
     public void execute_clearThenOtherCommand_cancelsWithoutExecutingIt() throws Exception {
         model.addPerson(AMY);
         logic.execute("clear");
@@ -410,6 +424,14 @@ public class LogicManagerTest {
         model.addPerson(AMY);
 
         assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_clearConfirmInCapitalsWithoutPendingClear_throwsCommandException() {
+        model.addPerson(AMY);
+
+        assertCommandException("clear CONFIRM", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
         assertEquals(1, model.getAddressBook().getPersonList().size());
     }
 

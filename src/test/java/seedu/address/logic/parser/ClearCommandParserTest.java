@@ -26,8 +26,15 @@ public class ClearCommandParserTest {
     }
 
     @Test
+    public void parse_confirmInAnyCase_returnsConfirmedClearCommand() {
+        for (String input : List.of("CONFIRM", "Confirm", "cOnFiRm", " \t CONFIRM  ")) {
+            assertParseSuccess(parser, input, new ClearCommand(true));
+        }
+    }
+
+    @Test
     public void parse_unknownArguments_throwsParseException() {
-        for (String input : List.of("abc", "3", "confirm now", "confirm confirm", "CONFIRM", "confirmed")) {
+        for (String input : List.of("abc", "3", "confirm now", "confirm confirm", "confirmed", "CONFIRMED", "conf")) {
             assertParseFailure(parser, input, "Invalid command format. Use: clear.");
         }
     }
