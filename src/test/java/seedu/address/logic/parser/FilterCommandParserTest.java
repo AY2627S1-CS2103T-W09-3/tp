@@ -14,6 +14,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FilterCommand;
+import seedu.address.model.person.Area;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.model.tag.Tag;
@@ -31,6 +32,16 @@ public class FilterCommandParserTest {
             tags.add(new Tag(tagName));
         }
         PersonMatchesFilterPredicate.Builder builder = new PersonMatchesFilterPredicate.Builder().withTags(tags);
+        role.ifPresent(builder::withRole);
+        return new FilterCommand(builder.build());
+    }
+
+    private static FilterCommand filterOfAreas(Optional<ClientRole> role, String... areaNames) {
+        Set<Area> areas = new HashSet<>();
+        for (String areaName : areaNames) {
+            areas.add(new Area(areaName));
+        }
+        PersonMatchesFilterPredicate.Builder builder = new PersonMatchesFilterPredicate.Builder().withAreas(areas);
         role.ifPresent(builder::withRole);
         return new FilterCommand(builder.build());
     }
@@ -67,6 +78,32 @@ public class FilterCommandParserTest {
 
         assertParseSuccess(parser, " r/buyer t/urgent", expected);
         assertParseSuccess(parser, " t/urgent r/buyer", expected);
+    }
+
+    @Test
+    public void parse_areasOnly_returnsFilterWithAreas() {
+        assertParseSuccess(parser, " l/Bedok", filterOfAreas(Optional.empty(), "Bedok"));
+        assertParseSuccess(parser, " l/Bedok l/Tampines", filterOfAreas(Optional.empty(), "Bedok", "Tampines"));
+        assertParseSuccess(parser, " l/toa payoh", filterOfAreas(Optional.empty(), "Toa Payoh"));
+        assertParseSuccess(parser, " l/  BEDOK  ", filterOfAreas(Optional.empty(), "Bedok"));
+    }
+
+    @Test
+    public void parse_roleTagsAndAreas_returnsFilterWithAllInAnyOrder() {
+        Set<Tag> tags = Set.of(new Tag("urgent"));
+        Set<Area> areas = Set.of(new Area("Bedok"));
+        FilterCommand expected = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withRole(ClientRole.BUYER).withTags(tags).withAreas(areas).build());
+
+        assertParseSuccess(parser, " r/buyer t/urgent l/Bedok", expected);
+        assertParseSuccess(parser, " l/Bedok t/urgent r/buyer", expected);
+    }
+
+    @Test
+    public void parse_invalidArea_throwsParseException() {
+        for (String input : List.of(" l/", " l/Narnia", " l/Bedok l/", " l/Toa  Payoh", " r/buyer l/Bishan East")) {
+            assertParseFailure(parser, input, Area.MESSAGE_CONSTRAINTS);
+        }
     }
 
     @Test

@@ -24,6 +24,18 @@ public class PersonMatchesFilterPredicateTest {
         return tags;
     }
 
+    private static Set<Area> areaSet(String... areaNames) {
+        Set<Area> areas = new HashSet<>();
+        for (String areaName : areaNames) {
+            areas.add(new Area(areaName));
+        }
+        return areas;
+    }
+
+    private static PersonMatchesFilterPredicate areasOnly(String... areaNames) {
+        return new PersonMatchesFilterPredicate.Builder().withAreas(areaSet(areaNames)).build();
+    }
+
     private static PersonMatchesFilterPredicate roleOnly(ClientRole role) {
         return new PersonMatchesFilterPredicate.Builder().withRole(role).build();
     }
@@ -63,6 +75,11 @@ public class PersonMatchesFilterPredicateTest {
 
         // role missing -> returns false
         assertFalse(predicate.equals(tagsOnly("urgent")));
+
+        // different areas -> returns false
+        assertTrue(areasOnly("Bedok").equals(areasOnly("Bedok")));
+        assertFalse(areasOnly("Bedok").equals(areasOnly("Bishan")));
+        assertFalse(areasOnly("Bedok").equals(roleOnly(ClientRole.BUYER)));
     }
 
     @Test
@@ -140,6 +157,54 @@ public class PersonMatchesFilterPredicateTest {
     }
 
     @Test
+    public void test_areas_matchAnyPreferredAreaIgnoringCase() {
+        Person person = new PersonBuilder().withAreas(areaSet("Bishan", "Toa Payoh")).build();
+
+        // one area
+        assertTrue(areasOnly("Bishan").test(person));
+
+        // mixed case
+        assertTrue(areasOnly("bishan").test(person));
+        assertTrue(areasOnly("TOA PAYOH").test(person));
+
+        // any one of several areas
+        assertTrue(areasOnly("Orchard", "Bishan").test(person));
+
+        // no matching area
+        assertFalse(areasOnly("Orchard", "Tampines").test(person));
+    }
+
+    @Test
+    public void test_clientWithNoAreas_neverMatchesAnArea() {
+        Person noAreas = new PersonBuilder().withAreas(Set.of()).build();
+
+        assertFalse(areasOnly("Bishan").test(noAreas));
+        assertFalse(areasOnly("Bishan", "Orchard").test(noAreas));
+    }
+
+    @Test
+    public void test_roleTagsAndAreas_allMustMatch() {
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder()
+                .withRole(ClientRole.BUYER).withTags(tagSet("urgent")).withAreas(areaSet("Bishan")).build();
+
+        // role, tag and area all match
+        assertTrue(predicate.test(new PersonBuilder().withRole(ClientRole.BUYER).withTags("urgent")
+                .withAreas(areaSet("Bishan")).build()));
+
+        // only the role and the tag match
+        assertFalse(predicate.test(new PersonBuilder().withRole(ClientRole.BUYER).withTags("urgent")
+                .withAreas(areaSet("Orchard")).build()));
+
+        // only the role and the area match
+        assertFalse(predicate.test(new PersonBuilder().withRole(ClientRole.BUYER).withTags("weekend")
+                .withAreas(areaSet("Bishan")).build()));
+
+        // only the tag and the area match
+        assertFalse(predicate.test(new PersonBuilder().withRole(ClientRole.SELLER).withTags("urgent")
+                .withAreas(areaSet("Bishan")).build()));
+    }
+
+    @Test
     public void test_noCriteria_matchesEveryone() {
         PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder().build();
 
@@ -154,7 +219,7 @@ public class PersonMatchesFilterPredicateTest {
                 .withRole(ClientRole.BUYER).withTags(tags).build();
 
         String expected = PersonMatchesFilterPredicate.class.getCanonicalName()
-                + "{role=" + Optional.of(ClientRole.BUYER) + ", tags=" + tags + "}";
+                + "{role=" + Optional.of(ClientRole.BUYER) + ", tags=" + tags + ", areas=" + Set.of() + "}";
         assertEquals(expected, predicate.toString());
     }
 }

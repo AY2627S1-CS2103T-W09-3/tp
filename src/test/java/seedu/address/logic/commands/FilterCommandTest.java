@@ -20,6 +20,7 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.Area;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
@@ -33,15 +34,15 @@ import seedu.address.testutil.PersonBuilder;
 public class FilterCommandTest {
 
     private static final Person BUYER_URGENT = new PersonBuilder(ALICE).withRole(ClientRole.BUYER)
-            .withTags("urgent").build();
+            .withTags("urgent").withAreas(Set.of(new Area("Bishan"), new Area("Tampines"))).build();
     private static final Person SELLER_URGENT_FRIENDS = new PersonBuilder(BENSON).withRole(ClientRole.SELLER)
-            .withTags("urgent", "friends").build();
+            .withTags("urgent", "friends").withAreas(Set.of(new Area("Bishan"))).build();
     private static final Person BOTH_FRIENDS = new PersonBuilder(CARL).withRole(ClientRole.BOTH)
-            .withTags("friends").build();
+            .withTags("friends").withAreas(Set.of(new Area("Orchard"))).build();
     private static final Person BUYER_NO_TAGS = new PersonBuilder(DANIEL).withRole(ClientRole.BUYER)
             .withTags().build();
     private static final Person NO_ROLE_URGENT = new PersonBuilder(ELLE).withRole(null)
-            .withTags("urgent").build();
+            .withTags("urgent").withAreas(Set.of(new Area("Tampines"))).build();
 
     private Model model = new ModelManager(getClientBook(), new UserPrefs());
     private Model expectedModel = new ModelManager(getClientBook(), new UserPrefs());
@@ -61,6 +62,18 @@ public class FilterCommandTest {
             tags.add(new Tag(tagName));
         }
         PersonMatchesFilterPredicate.Builder builder = new PersonMatchesFilterPredicate.Builder().withTags(tags);
+        if (role != null) {
+            builder.withRole(role);
+        }
+        return builder.build();
+    }
+
+    private static PersonMatchesFilterPredicate areaPredicate(ClientRole role, String... areaNames) {
+        Set<Area> areas = new HashSet<>();
+        for (String areaName : areaNames) {
+            areas.add(new Area(areaName));
+        }
+        PersonMatchesFilterPredicate.Builder builder = new PersonMatchesFilterPredicate.Builder().withAreas(areas);
         if (role != null) {
             builder.withRole(role);
         }
@@ -146,6 +159,42 @@ public class FilterCommandTest {
     @Test
     public void execute_noMatch_showsZeroOfTotal() {
         PersonMatchesFilterPredicate predicate = predicate(ClientRole.SELLER, "weekend");
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 0 of 5 clients.", expectedModel);
+        assertEquals(List.of(), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_area_showsClientsWithThatArea() {
+        PersonMatchesFilterPredicate predicate = areaPredicate(null, "Bishan");
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 2 of 5 clients.", expectedModel);
+        assertEquals(List.of(BUYER_URGENT, SELLER_URGENT_FRIENDS), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_severalAreas_showsClientsWithAnyOfThem() {
+        PersonMatchesFilterPredicate predicate = areaPredicate(null, "Orchard", "Tampines");
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 3 of 5 clients.", expectedModel);
+        assertEquals(List.of(BUYER_URGENT, BOTH_FRIENDS, NO_ROLE_URGENT), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_areaAndRole_showsClientsMatchingBoth() {
+        PersonMatchesFilterPredicate predicate = areaPredicate(ClientRole.SELLER, "Bishan", "Orchard");
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new FilterCommand(predicate), model, "Showing 2 of 5 clients.", expectedModel);
+        assertEquals(List.of(SELLER_URGENT_FRIENDS, BOTH_FRIENDS), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_areaNobodyHas_showsNoClients() {
+        PersonMatchesFilterPredicate predicate = areaPredicate(null, "Yishun");
         expectedModel.updateFilteredPersonList(predicate);
 
         assertCommandSuccess(new FilterCommand(predicate), model, "Showing 0 of 5 clients.", expectedModel);

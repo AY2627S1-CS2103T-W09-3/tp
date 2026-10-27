@@ -1,6 +1,7 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_AREA;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
@@ -10,15 +11,16 @@ import seedu.address.model.Model;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
 
 /**
- * Filters the displayed clients by role and tag, replacing any filter or search that is active.
+ * Filters the displayed clients by role, tag and area, replacing any filter or search that is active.
  */
 public class FilterCommand extends Command {
 
     public static final String COMMAND_WORD = "filter";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Filters clients by role and tag.\n"
-            + "Parameters: [" + PREFIX_ROLE + "ROLE] [" + PREFIX_TAG + "TAG]...\n"
-            + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "buyer " + PREFIX_TAG + "urgent";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Filters clients by role, tag and area.\n"
+            + "Parameters: [" + PREFIX_ROLE + "ROLE] [" + PREFIX_TAG + "TAG]... [" + PREFIX_AREA + "AREA]...\n"
+            + "Example: " + COMMAND_WORD + " " + PREFIX_ROLE + "buyer " + PREFIX_TAG + "urgent "
+            + PREFIX_AREA + "Bedok";
 
     private final PersonMatchesFilterPredicate predicate;
 

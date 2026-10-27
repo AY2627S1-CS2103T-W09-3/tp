@@ -2,6 +2,7 @@ package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_AREA;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ROLE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
@@ -9,6 +10,7 @@ import java.util.Set;
 
 import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Area;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.model.tag.Tag;
@@ -21,14 +23,14 @@ public class FilterCommandParser implements Parser<FilterCommand> {
     /**
      * Parses the given {@code String} of arguments in the context of the FilterCommand
      * and returns a FilterCommand object for execution.
-     * Both the role and the tags are optional, so no argument filters nothing out.
+     * The role, the tags and the areas are all optional, so no argument filters nothing out.
      *
-     * @throws ParseException if the arguments have text before the prefixes, an invalid role or tag,
+     * @throws ParseException if the arguments have text before the prefixes, an invalid role, tag or area,
      *     or more than one role.
      */
     public FilterCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_ROLE, PREFIX_TAG);
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_ROLE, PREFIX_TAG, PREFIX_AREA);
 
         if (!argMultimap.getPreamble().isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, FilterCommand.MESSAGE_USAGE));
@@ -42,6 +44,8 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         }
         Set<Tag> tags = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
         predicateBuilder.withTags(tags);
+        Set<Area> areas = ParserUtil.parseAreas(argMultimap.getAllValues(PREFIX_AREA));
+        predicateBuilder.withAreas(areas);
 
         return new FilterCommand(predicateBuilder.build());
     }
