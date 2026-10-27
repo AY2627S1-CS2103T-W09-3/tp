@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.commands.FilterCommand;
 import seedu.address.model.person.Area;
 import seedu.address.model.person.ClientRole;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.model.tag.Tag;
 
@@ -89,14 +90,35 @@ public class FilterCommandParserTest {
     }
 
     @Test
-    public void parse_roleTagsAndAreas_returnsFilterWithAllInAnyOrder() {
+    public void parse_housingTypesOnly_returnsFilterWithHousingTypes() {
+        FilterCommand hdbOnly = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withHousingTypes(Set.of(HousingType.HDB)).build());
+        FilterCommand hdbAndCondo = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
+                .withHousingTypes(Set.of(HousingType.HDB, HousingType.CONDO)).build());
+
+        assertParseSuccess(parser, " h/HDB", hdbOnly);
+        assertParseSuccess(parser, " h/  hdb  ", hdbOnly);
+        assertParseSuccess(parser, " h/HDB h/Condo", hdbAndCondo);
+        assertParseSuccess(parser, " h/condo h/hdb h/HDB", hdbAndCondo);
+    }
+
+    @Test
+    public void parse_roleTagsAreasAndHousingTypes_returnsFilterWithAllInAnyOrder() {
         Set<Tag> tags = Set.of(new Tag("urgent"));
         Set<Area> areas = Set.of(new Area("Bedok"));
         FilterCommand expected = new FilterCommand(new PersonMatchesFilterPredicate.Builder()
-                .withRole(ClientRole.BUYER).withTags(tags).withAreas(areas).build());
+                .withRole(ClientRole.BUYER).withTags(tags).withAreas(areas)
+                .withHousingTypes(Set.of(HousingType.HDB)).build());
 
-        assertParseSuccess(parser, " r/buyer t/urgent l/Bedok", expected);
-        assertParseSuccess(parser, " l/Bedok t/urgent r/buyer", expected);
+        assertParseSuccess(parser, " r/buyer t/urgent l/Bedok h/HDB", expected);
+        assertParseSuccess(parser, " h/HDB l/Bedok t/urgent r/buyer", expected);
+    }
+
+    @Test
+    public void parse_invalidHousingType_throwsParseException() {
+        for (String input : List.of(" h/", " h/Shophouse", " h/HDB h/", " h/Condominium", " r/buyer h/Flat")) {
+            assertParseFailure(parser, input, HousingType.MESSAGE_CONSTRAINTS);
+        }
     }
 
     @Test

@@ -36,6 +36,14 @@ public class PersonMatchesFilterPredicateTest {
         return new PersonMatchesFilterPredicate.Builder().withAreas(areaSet(areaNames)).build();
     }
 
+    private static Set<HousingType> housingTypeSet(HousingType... housingTypes) {
+        return new HashSet<>(Set.of(housingTypes));
+    }
+
+    private static PersonMatchesFilterPredicate housingTypesOnly(HousingType... housingTypes) {
+        return new PersonMatchesFilterPredicate.Builder().withHousingTypes(housingTypeSet(housingTypes)).build();
+    }
+
     private static PersonMatchesFilterPredicate roleOnly(ClientRole role) {
         return new PersonMatchesFilterPredicate.Builder().withRole(role).build();
     }
@@ -80,6 +88,11 @@ public class PersonMatchesFilterPredicateTest {
         assertTrue(areasOnly("Bedok").equals(areasOnly("Bedok")));
         assertFalse(areasOnly("Bedok").equals(areasOnly("Bishan")));
         assertFalse(areasOnly("Bedok").equals(roleOnly(ClientRole.BUYER)));
+
+        // different housing types -> returns false
+        assertTrue(housingTypesOnly(HousingType.HDB).equals(housingTypesOnly(HousingType.HDB)));
+        assertFalse(housingTypesOnly(HousingType.HDB).equals(housingTypesOnly(HousingType.EC)));
+        assertFalse(housingTypesOnly(HousingType.HDB).equals(areasOnly("Bedok")));
     }
 
     @Test
@@ -205,6 +218,49 @@ public class PersonMatchesFilterPredicateTest {
     }
 
     @Test
+    public void test_housingTypes_matchAnyPreferredHousingType() {
+        Person person = new PersonBuilder().withHousingTypes(housingTypeSet(HousingType.HDB, HousingType.CONDO))
+                .build();
+
+        // one housing type
+        assertTrue(housingTypesOnly(HousingType.HDB).test(person));
+        assertTrue(housingTypesOnly(HousingType.CONDO).test(person));
+
+        // any one of several housing types
+        assertTrue(housingTypesOnly(HousingType.LANDED, HousingType.HDB).test(person));
+
+        // no matching housing type
+        assertFalse(housingTypesOnly(HousingType.EC).test(person));
+        assertFalse(housingTypesOnly(HousingType.EC, HousingType.LANDED).test(person));
+    }
+
+    @Test
+    public void test_clientWithNoHousingTypes_neverMatchesAHousingType() {
+        Person noHousingTypes = new PersonBuilder().withHousingTypes(Set.of()).build();
+
+        assertFalse(housingTypesOnly(HousingType.HDB).test(noHousingTypes));
+        assertFalse(housingTypesOnly(HousingType.HDB, HousingType.EC).test(noHousingTypes));
+    }
+
+    @Test
+    public void test_areasAndHousingTypes_bothMustMatch() {
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder()
+                .withAreas(areaSet("Bishan")).withHousingTypes(housingTypeSet(HousingType.HDB)).build();
+
+        // area and housing type both match
+        assertTrue(predicate.test(new PersonBuilder().withAreas(areaSet("Bishan"))
+                .withHousingTypes(housingTypeSet(HousingType.HDB, HousingType.CONDO)).build()));
+
+        // only the area matches
+        assertFalse(predicate.test(new PersonBuilder().withAreas(areaSet("Bishan"))
+                .withHousingTypes(housingTypeSet(HousingType.EC)).build()));
+
+        // only the housing type matches
+        assertFalse(predicate.test(new PersonBuilder().withAreas(areaSet("Orchard"))
+                .withHousingTypes(housingTypeSet(HousingType.HDB)).build()));
+    }
+
+    @Test
     public void test_noCriteria_matchesEveryone() {
         PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder().build();
 
@@ -219,7 +275,8 @@ public class PersonMatchesFilterPredicateTest {
                 .withRole(ClientRole.BUYER).withTags(tags).build();
 
         String expected = PersonMatchesFilterPredicate.class.getCanonicalName()
-                + "{role=" + Optional.of(ClientRole.BUYER) + ", tags=" + tags + ", areas=" + Set.of() + "}";
+                + "{role=" + Optional.of(ClientRole.BUYER) + ", tags=" + tags + ", areas=" + Set.of()
+                + ", housingTypes=" + Set.of() + "}";
         assertEquals(expected, predicate.toString());
     }
 }
