@@ -1168,7 +1168,8 @@ testers are expected to do more *exploratory* testing.
 
    1. Expected: The window shows the client list on the left and the detail panel on the right. Until a client is
       selected, the detail panel shows `Select a client to see details.`. The status bar shows the data file path
-      and the displayed client count.
+      and the displayed client count. During a search or filter, it shows the displayed and total counts and a
+      reminder to use `list` to show all clients.
 
 1. Selecting a client updates the panel
 

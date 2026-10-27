@@ -1,5 +1,6 @@
 package seedu.address.logic;
 
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.commands.CommandResult;
@@ -22,6 +23,12 @@ public interface Logic {
 
     /** Returns an unmodifiable view of the filtered list of persons */
     ObservableList<Person> getFilteredPersonList();
+
+    /** Returns all clients, including those hidden by the current find or filter command. */
+    ObservableList<Person> getPersonList();
+
+    /** Returns whether a find or filter command is active. */
+    ObservableValue<Boolean> personListFilteredProperty();
 
     /**
      * Returns the user prefs' GUI settings.
