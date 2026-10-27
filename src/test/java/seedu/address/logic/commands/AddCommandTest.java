@@ -100,6 +100,19 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_personWithEmailInDifferentCase_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withName("Alpha Tester").withPhone("90010001")
+                .withEmail("alpha.tester@example.com").build();
+        Person personWithEmailInUpperCase = new PersonBuilder().withName("Email Case Test").withPhone("90010302")
+                .withEmail("alpha.tester@EXAMPLE.COM").build();
+        AddCommand addCommand = new AddCommand(personWithEmailInUpperCase);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+        String expectedMessage = String.format(Messages.MESSAGE_DUPLICATE_EMAIL, existingPerson.getName());
+
+        assertThrows(CommandException.class, expectedMessage, () -> addCommand.execute(modelStub));
+    }
+
+    @Test
     public void execute_personWithSameNameOnly_throwsCommandException() {
         Person personWithSameName = new PersonBuilder().withName(ALICE.getName().fullName).build();
         AddCommand addCommand = new AddCommand(personWithSameName);
