@@ -2,8 +2,10 @@ package seedu.address;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -140,6 +142,16 @@ public class MainAppTest {
         app.logic.execute("list");
         assertEquals(0, Files.size(backup));
         assertEquals(new AddressBook(), new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void backUpUnreadableDataFile_copyFails_removesEmptyBackup() throws Exception {
+        assertThrows(IOException.class, () -> app.backUpUnreadableDataFile(addressBookPath));
+
+        try (var files = Files.list(temporaryFolder)) {
+            assertTrue(files.noneMatch(path -> path.getFileName().toString().startsWith(
+                    "addressbook.json.unreadable-")));
+        }
     }
 
     @Test

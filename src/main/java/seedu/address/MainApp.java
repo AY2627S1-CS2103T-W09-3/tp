@@ -120,7 +120,7 @@ public class MainApp extends Application {
     }
 
     /** Keeps an unreadable data file recoverable before any command can replace it. */
-    private Path backUpUnreadableDataFile(Path dataFilePath) throws IOException {
+    Path backUpUnreadableDataFile(Path dataFilePath) throws IOException {
         Path source = dataFilePath.toAbsolutePath();
         Path backup = Files.createTempFile(source.getParent(), source.getFileName() + ".unreadable-", ".bak");
         try {
