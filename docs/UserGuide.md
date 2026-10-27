@@ -428,12 +428,14 @@ Format: `clear`, then `clear confirm`
 3. Enter any other non-empty input to cancel. The result box shows `Clear cancelled.` and nothing is deleted.
 
 * `N` is the total number of clients, including clients hidden by a search filter.
+* `confirm` ignores case, so `clear CONFIRM` and `clear Confirm` also delete all clients. The command word `clear` must still be lowercase, as with every command.
+* Anything else after `clear`, such as `clear confrim`, is not a confirmation. It cancels a pending clear and shows `Clear cancelled.`.
 * The input that cancels is not run as a command. For example, entering `exit` while a confirmation is
   pending cancels it but does not exit, so enter `exit` again.
 * Pressing Enter on a completely empty command box does nothing and the confirmation stays pending.
   A single space counts as input and cancels.
 * If there are no clients, `clear` shows `The client book is already empty.` and no confirmation is pending.
-* `clear confirm` only works straight after `clear`. Otherwise it shows `No clear is pending. Type clear first.`
+* `clear confirm` only works straight after `clear`. Otherwise it shows `No clear is pending. Type clear first.`, however `confirm` is capitalised.
 * When no clear is pending, any other word after `clear` shows `Invalid command format. Use: clear.`
 * A pending confirmation is not saved, so closing the app cancels it.
 
