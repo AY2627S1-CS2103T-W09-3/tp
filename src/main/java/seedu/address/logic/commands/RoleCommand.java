@@ -43,13 +43,13 @@ public class RoleCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         actionDescription = "";
         requireNonNull(model);
-        List<Person> lastShownList = model.getFilteredPersonList();
+        List<Person> displayedClients = model.getFilteredPersonList();
 
-        if (index.getZeroBased() >= lastShownList.size()) {
+        if (index.getZeroBased() >= displayedClients.size()) {
             throw new CommandException(MESSAGE_INVALID_CLIENT_INDEX);
         }
 
-        Person clientToEdit = lastShownList.get(index.getZeroBased());
+        Person clientToEdit = displayedClients.get(index.getZeroBased());
         Person editedClient = new Person(
                 clientToEdit.getName(), clientToEdit.getPhone(), clientToEdit.getEmail(),
                 clientToEdit.getAddress(), role, clientToEdit.getNote(), clientToEdit.getTags(),

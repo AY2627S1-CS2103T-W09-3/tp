@@ -67,14 +67,14 @@ public class LogicManager implements Logic {
             }
         }
 
-        AddressBookSnapshot before = model.captureSnapshot();
+        AddressBookSnapshot beforeCommand = model.captureSnapshot();
         CommandResult commandResult = command.execute(model);
-        AddressBookSnapshot after = model.captureSnapshot();
+        AddressBookSnapshot afterCommand = model.captureSnapshot();
 
-        saveAddressBookOrRollback(command, before);
+        saveAddressBookOrRollback(command, beforeCommand);
 
         if (command.isUndoable()) {
-            model.recordChange(before, after, command.getCommandWord(), command.getActionDescription());
+            model.recordChange(beforeCommand, afterCommand, command.getCommandWord(), command.getActionDescription());
         }
 
         isClearPending = commandResult.isAwaitingConfirmation();
@@ -84,14 +84,14 @@ public class LogicManager implements Logic {
     /**
      * Saves the current address book, restoring data and history if saving fails.
      */
-    private void saveAddressBookOrRollback(Command command, AddressBookSnapshot before) throws CommandException {
+    private void saveAddressBookOrRollback(Command command, AddressBookSnapshot beforeCommand) throws CommandException {
         try {
             storage.saveAddressBook(model.getAddressBook());
         } catch (AccessDeniedException e) {
-            rollbackFailedSave(command, before);
+            rollbackFailedSave(command, beforeCommand);
             throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
         } catch (IOException ioe) {
-            rollbackFailedSave(command, before);
+            rollbackFailedSave(command, beforeCommand);
             throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
         }
     }
@@ -99,7 +99,7 @@ public class LogicManager implements Logic {
     /**
      * Reverts the data and stack transition made before a failed save.
      */
-    private void rollbackFailedSave(Command command, AddressBookSnapshot before) {
+    private void rollbackFailedSave(Command command, AddressBookSnapshot beforeCommand) {
         try {
             if (command instanceof UndoCommand undoCommand) {
                 assert undoCommand.getUndoneEntry() != null : "Successful undo must retain its history entry";
@@ -108,7 +108,7 @@ public class LogicManager implements Logic {
                 assert redoCommand.getRedoneEntry() != null : "Successful redo must retain its history entry";
                 model.rollbackRedo(redoCommand.getRedoneEntry());
             } else {
-                model.restoreSnapshot(before);
+                model.restoreSnapshot(beforeCommand);
             }
         } catch (HistoryOperationException e) {
             throw new IllegalStateException("Could not restore history after a failed save", e);
