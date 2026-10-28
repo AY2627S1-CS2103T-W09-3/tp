@@ -26,8 +26,9 @@ public class HistoryCommandsTest {
                 new UndoCommand().execute(model));
         assertThrows(CommandException.class, CommandHistory.MESSAGE_NOTHING_TO_REDO, () ->
                 new RedoCommand().execute(model));
-        assertEquals(HistoryCommand.MESSAGE_EMPTY_HISTORY,
-                new HistoryCommand().execute(model).getFeedbackToUser());
+        CommandResult historyResult = new HistoryCommand().execute(model);
+        assertEquals(HistoryCommand.MESSAGE_EMPTY_HISTORY, historyResult.getFeedbackToUser());
+        assertEquals(CommandResult.preservingSelection(HistoryCommand.MESSAGE_EMPTY_HISTORY), historyResult);
     }
 
     @Test
@@ -39,8 +40,9 @@ public class HistoryCommandsTest {
         assertEquals("Undid: Added client Bob Choo", undo.execute(model).getFeedbackToUser());
         assertSame(bob, undo.getUndoneEntry());
         assertEquals(List.of(ALICE), model.getAddressBook().getPersonList());
-        assertEquals("Undo history:\n1. Added client Alice Pauline\nRedo history:\n1. Added client Bob Choo",
-                new HistoryCommand().execute(model).getFeedbackToUser());
+        String expectedHistory = "Undo history:\n1. Added client Alice Pauline"
+                + "\nRedo history:\n1. Added client Bob Choo";
+        assertEquals(CommandResult.preservingSelection(expectedHistory), new HistoryCommand().execute(model));
 
         RedoCommand redo = new RedoCommand();
         assertEquals("Redid: Added client Bob Choo", redo.execute(model).getFeedbackToUser());

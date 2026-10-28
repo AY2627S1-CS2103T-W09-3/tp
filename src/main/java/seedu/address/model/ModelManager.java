@@ -8,6 +8,9 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import seedu.address.commons.core.GuiSettings;
@@ -27,6 +30,7 @@ public class ModelManager implements Model {
     private final VersionedAddressBook versionedAddressBook;
     private final UserPrefs userPrefs;
     private final FilteredList<Person> filteredPersons;
+    private final BooleanBinding personListFiltered;
 
     /**
      * Initializes a ModelManager with the given addressBook and userPrefs.
@@ -39,7 +43,10 @@ public class ModelManager implements Model {
         this.addressBook = new AddressBook(addressBook);
         versionedAddressBook = new VersionedAddressBook(this.addressBook);
         this.userPrefs = new UserPrefs(userPrefs);
-        filteredPersons = new FilteredList<>(this.addressBook.getPersonList());
+        filteredPersons = new FilteredList<>(this.addressBook.getPersonList(), PREDICATE_SHOW_ALL_PERSONS);
+        personListFiltered = Bindings.createBooleanBinding(() ->
+                filteredPersons.getPredicate() != PREDICATE_SHOW_ALL_PERSONS,
+                filteredPersons.predicateProperty());
     }
 
     public ModelManager() {
@@ -176,6 +183,11 @@ public class ModelManager implements Model {
     @Override
     public ObservableList<Person> getFilteredPersonList() {
         return filteredPersons;
+    }
+
+    @Override
+    public ObservableValue<Boolean> personListFilteredProperty() {
+        return personListFiltered;
     }
 
     @Override

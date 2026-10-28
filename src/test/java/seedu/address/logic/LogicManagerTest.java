@@ -2,6 +2,7 @@ package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
@@ -28,6 +29,7 @@ import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.RoleCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -92,6 +94,14 @@ public class LogicManagerTest {
     public void execute_invalidCommandFormat_throwsParseException() {
         String invalidCommand = "uicfhmowqewca";
         assertParseException(invalidCommand, MESSAGE_UNKNOWN_COMMAND);
+    }
+
+    @Test
+    public void execute_missingRole_reportsCommandFormat() {
+        assertParseException("role", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1 buyer extra", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1 agent", RoleCommand.MESSAGE_INVALID_ROLE);
     }
 
     @Test
@@ -392,6 +402,50 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_roleNone_savesClearedRoleAndSupportsUndoRedo() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withRole(ClientRole.BUYER).build());
+
+        logic.execute("role 1 none");
+
+        assertNull(model.getAddressBook().getPersonList().get(0).getRole());
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        assertNull(storage.readAddressBook().orElseThrow().getPersonList().get(0).getRole());
+
+        logic.execute("undo");
+        assertEquals(ClientRole.BUYER, model.getAddressBook().getPersonList().get(0).getRole());
+
+        logic.execute("redo");
+        assertNull(model.getAddressBook().getPersonList().get(0).getRole());
+    }
+
+    @Test
+    public void execute_roleNoneWhenAlreadyUnassigned_preservesRedoHistory() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withRole(null).build());
+        logic.execute("role 1 buyer");
+        logic.execute("undo");
+
+        CommandResult result = logic.execute("role 1 none");
+
+        assertEquals("Role unchanged: Amy Bee already has no assigned role", result.getFeedbackToUser());
+        assertNull(model.getAddressBook().getPersonList().get(0).getRole());
+        assertTrue(model.canRedo());
+        logic.execute("redo");
+        assertEquals(ClientRole.BUYER, model.getAddressBook().getPersonList().get(0).getRole());
+    }
+
+    @Test
+    public void execute_roleNoneWithInvalidIndex_doesNotChangeClient() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withRole(ClientRole.BUYER).build());
+        AddressBookSnapshot before = model.captureSnapshot();
+        String expectedMessage = RoleCommand.MESSAGE_INVALID_CLIENT_INDEX;
+
+        assertCommandException("role 999 none", expectedMessage);
+
+        assertEquals(before, model.captureSnapshot());
+        assertFalse(model.canUndo());
+    }
+
+    @Test
     public void execute_filterThenEdit_keepsFilterAndClientLeavesWhenNoLongerMatching() throws Exception {
         Person[] clients = addFilterTestClients();
         logic.execute("filter t/urgent");
@@ -428,6 +482,20 @@ public class LogicManagerTest {
         assertFalse(model.canUndo());
 
         CommandResult cleared = logic.execute("clear confirm");
+        assertEquals(ClearCommand.MESSAGE_SUCCESS, cleared.getFeedbackToUser());
+        assertFalse(cleared.isAwaitingConfirmation());
+        assertTrue(model.getAddressBook().getPersonList().isEmpty());
+        assertEquals("Cleared 2 clients", model.getUndoHistory().get(0).getActionDescription());
+    }
+
+    @Test
+    public void execute_clearThenConfirmInCapitals_clears() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        logic.execute("clear");
+
+        CommandResult cleared = logic.execute("clear CONFIRM");
+
         assertEquals(ClearCommand.MESSAGE_SUCCESS, cleared.getFeedbackToUser());
         assertFalse(cleared.isAwaitingConfirmation());
         assertTrue(model.getAddressBook().getPersonList().isEmpty());
@@ -476,6 +544,14 @@ public class LogicManagerTest {
         model.addPerson(AMY);
 
         assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_clearConfirmInCapitalsWithoutPendingClear_throwsCommandException() {
+        model.addPerson(AMY);
+
+        assertCommandException("clear CONFIRM", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
         assertEquals(1, model.getAddressBook().getPersonList().size());
     }
 

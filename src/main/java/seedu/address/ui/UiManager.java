@@ -25,15 +25,17 @@ public class UiManager implements Ui {
 
     private Logic logic;
     private Path dataFilePath;
+    private Path unreadableDataBackupPath;
     private MainWindow mainWindow;
 
     /**
      * Creates a {@code UiManager} with the given {@code Logic} and the data file path
-     * to show in the status bar.
+     * to show in the status bar, and an optional backup of unreadable data.
      */
-    public UiManager(Logic logic, Path dataFilePath) {
+    public UiManager(Logic logic, Path dataFilePath, Path unreadableDataBackupPath) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.unreadableDataBackupPath = unreadableDataBackupPath;
     }
 
     @Override
@@ -47,6 +49,12 @@ public class UiManager implements Ui {
             mainWindow = new MainWindow(primaryStage, logic, dataFilePath);
             mainWindow.show(); //This should be called before creating other UI parts
             mainWindow.fillInnerParts();
+            if (unreadableDataBackupPath != null) {
+                showAlertDialogAndWait(AlertType.WARNING, "Client data could not be loaded",
+                        "The data file could not be read. An empty client book was opened.",
+                        "A copy of your original data was saved at:\n" + unreadableDataBackupPath
+                                + "\nPlease keep this backup until you have recovered your clients.");
+            }
 
         } catch (Throwable e) {
             logger.severe(StringUtil.getDetails(e));
