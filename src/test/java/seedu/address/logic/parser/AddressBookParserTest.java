@@ -67,6 +67,7 @@ public class AddressBookParserTest {
         assertEquals(new ClearCommand(false), parser.parseCommand(ClearCommand.COMMAND_WORD));
         assertEquals(new ClearCommand(true),
                 parser.parseCommand(ClearCommand.COMMAND_WORD + " " + ClearCommand.CONFIRM_WORD));
+        assertEquals(new ClearCommand(true), parser.parseCommand(ClearCommand.COMMAND_WORD + " CONFIRM"));
         assertThrows(ParseException.class, ClearCommand.MESSAGE_INVALID_FORMAT, ()
                 -> parser.parseCommand(ClearCommand.COMMAND_WORD + " 3"));
     }

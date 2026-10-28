@@ -92,6 +92,7 @@ public class MainWindow extends UiPart<Stage> {
         setWindowDefaultSize(logic.getGuiSettings());
         configureResponsiveLayout();
 
+        refreshHistoryMenuItems();
         setAccelerators();
 
         helpWindow = new HelpWindow();
@@ -115,6 +116,12 @@ public class MainWindow extends UiPart<Stage> {
         undoMenuItem.setAccelerator(KeyCombination.valueOf("Shortcut+Z"));
         redoMenuItem.setAccelerator(redoAcceleratorFor(System.getProperty("os.name")));
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryShortcut);
+    }
+
+    /** Keeps the Edit menu in sync with the model's undo and redo stacks. */
+    private void refreshHistoryMenuItems() {
+        undoMenuItem.setDisable(!logic.canUndo());
+        redoMenuItem.setDisable(!logic.canRedo());
     }
 
     static KeyCombination redoAcceleratorFor(String osName) {
@@ -183,7 +190,8 @@ public class MainWindow extends UiPart<Stage> {
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
-        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.getFilteredPersonList());
+        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.getFilteredPersonList(),
+                logic.getPersonList(), logic.personListFilteredProperty());
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
         commandBox = new CommandBox(this::executeCommand);
@@ -262,7 +270,8 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
-            if (!commandResult.isAwaitingConfirmation() && !commandResult.isShowHelp()) {
+            if (!commandResult.isAwaitingConfirmation() && !commandResult.isShowHelp()
+                    && !commandResult.shouldPreserveSelection()) {
                 commandResult.getViewIndex().ifPresentOrElse(personListPanel::selectPerson,
                         personListPanel::clearSelection);
             }
@@ -286,6 +295,8 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setErrorFeedbackToUser(e.getMessage());
             throw e;
+        } finally {
+            refreshHistoryMenuItems();
         }
     }
 }
