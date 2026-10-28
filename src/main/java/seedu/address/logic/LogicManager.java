@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.commons.util.JsonUtil;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
@@ -16,9 +19,11 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.AddressBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
+import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.history.AddressBookSnapshot;
 import seedu.address.model.history.HistoryOperationException;
 import seedu.address.model.person.Person;
+import seedu.address.storage.JsonSerializableAddressBook;
 import seedu.address.storage.Storage;
 
 /**
@@ -68,12 +73,13 @@ public class LogicManager implements Logic {
         }
 
         AddressBookSnapshot before = model.captureSnapshot();
+        String persistedBefore = persistenceSignature(model.getAddressBook());
         CommandResult commandResult = command.execute(model);
         AddressBookSnapshot after = model.captureSnapshot();
 
-        // Only write when the command changed the client data, so read-only commands keep working when the data
-        // location cannot be written.
-        if (!after.equals(before)) {
+        // Compare what saving would write instead of comparing the model, so an edit that the model considers equal,
+        // such as a tag that differs only in letter casing, is still saved.
+        if (!persistenceSignature(model.getAddressBook()).equals(persistedBefore)) {
             try {
                 storage.saveAddressBook(model.getAddressBook());
             } catch (AccessDeniedException e) {
@@ -122,6 +128,18 @@ public class LogicManager implements Logic {
             // Input that cannot be parsed cancels the pending clear like any other input.
         }
         return null;
+    }
+
+    /**
+     * Returns the JSON that saving {@code addressBook} would write, so a command counts as a change when what is
+     * persisted changes, even if the model considers the before and after states equal.
+     */
+    private static String persistenceSignature(ReadOnlyAddressBook addressBook) {
+        try {
+            return JsonUtil.toJsonString(new JsonSerializableAddressBook(addressBook));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Could not serialise the client data to be saved", e);
+        }
     }
 
     @Override

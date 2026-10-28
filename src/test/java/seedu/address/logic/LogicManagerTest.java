@@ -200,6 +200,37 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_changeThatSnapshotsCannotSee_stillSaves() throws Exception {
+        // A model whose snapshots never differ stands in for a field that model equality ignores.
+        AddressBookSnapshot blindSnapshot = new ModelManager().captureSnapshot();
+        model = new ModelManager() {
+            @Override
+            public AddressBookSnapshot captureSnapshot() {
+                return blindSnapshot;
+            }
+        };
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("add" + NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY);
+
+        assertEquals(1, storage.getSaveCount());
+        assertEquals(1, storage.readAddressBook().orElseThrow().getPersonList().size());
+    }
+
+    @Test
+    public void execute_readOnlyCommandsWithTaggedClients_doNotSave() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withTags("urgent", "friend").build());
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("list");
+        logic.execute("view 1");
+        logic.execute("find Amy");
+        logic.execute("history");
+
+        assertEquals(0, storage.getSaveCount());
+    }
+
+    @Test
     public void execute_storageThrowsIoException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
