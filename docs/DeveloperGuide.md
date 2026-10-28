@@ -232,9 +232,11 @@ A note is free-text working detail kept on a client: where a negotiation stands,
 
 **Display.** `DetailPane` displays the selected client's note in its existing note row, with wrapping and preserved line breaks. The row is hidden when no note exists, and the profile scrolls vertically when needed. `NoteCommand` returns the updated client's index when that client remains in the filtered list, so the UI selects the replacement `Person` and refreshes the profile. See [Detailed client view](#detailed-client-view) for the selection rules.
 
-**Why `find` does not search notes.** `find` matches name, phone number and email. Notes contain free-text working details, so searching them could return unrelated clients. Users can read a note in the detail panel and replace it with `note`.
+**Why `find` does not search notes.** `find` matches name, phone number, email and address. Notes contain free-text working details, so searching them could return unrelated clients. Users can read a note in the detail panel and replace it with `note`.
 
-**Why `find` requires every keyword.** `PersonMatchesSearchTermsPredicate` tests that every keyword is contained in the client's name, phone number or email address, and a keyword may be matched by a different field from another keyword. An agent adds a keyword to make a search more specific, so `find Alex Yu` must not show everyone named Alex or Yu. Matching any keyword was considered, as in AB3, but it made the list grow as the agent typed more, and a quoted phrase would not help the agent who types the words without quotes. The cost is that one search can no longer find two different clients by their names, so the agent runs two searches. With no keywords, the predicate never matches, but `FindCommandParser` rejects that input first.
+**Why `find` requires every keyword.** `PersonMatchesSearchTermsPredicate` tests that every keyword is contained in the client's name, phone number, email address or address, and a keyword may be matched by a different field from another keyword. An agent adds a keyword to make a search more specific, so `find Alex Yu` must not show everyone named Alex or Yu. Matching any keyword was considered, as in AB3, but it made the list grow as the agent typed more, and a quoted phrase would not help the agent who types the words without quotes. The cost is that one search can no longer find two different clients by their names, so the agent runs two searches.
+
+**Why `find` searches the address.** An agent often remembers where a client lives or wants to buy but not their name, and the address is already stored in the client record. `PersonMatchesSearchTermsPredicate#test` therefore treats the address as a fourth field, with the same case-insensitive substring rule as the other three, so the agent has no extra prefix to learn and `find Bishan` works the same way as `find Alicia`. The preferred areas (`l/`) and the tags are not searched, because `filter l/` and `filter t/` already cover them with exact values, and a keyword that is a block number or a word such as `Street` can now match many clients, as a short name keyword already could. With no keywords, the predicate never matches, but `FindCommandParser` rejects that input first.
 
 ### Detailed client view
 
@@ -495,6 +497,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | property agent | delete a wrongly created contact | remove records that should not exist |
 | `* * *` | property agent | find a client using any part of the client's name | locate the client's details without going through the entire list |
 | `* * *` | property agent | find a client using any part of their phone number or email address | identify an incoming caller or message quickly |
+| `* * *` | property agent | find a client using any part of their address | locate a client when I remember where they live but not their name |
 | `* * *` | property agent | record whether a client is a buyer, seller, or both | understand my relationship with the client at a glance |
 | `* * *` | property agent | record a client's address | retain the client's important contact information |
 | `* * *` | property agent | record a buyer's budget range | avoid proposing properties outside the buyer's means |
@@ -590,7 +593,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 **MSS**
 
-1. Agent requests to find a client using one or more keywords, each of which matches part of the client's name, phone number or email address.
+1. Agent requests to find a client using one or more keywords, each of which matches part of the client's name, phone number, email address or address.
 2. EstateBookUltraProMax displays a list of matching clients.
 3. Agent identifies a client from the displayed results and requests changes to the client's contact details.
 4. EstateBookUltraProMax updates the specified details and displays the updated client.
@@ -972,7 +975,7 @@ testers are expected to do more *exploratory* testing.
    1. Exit the app, delete `data/addressbook.json` from this test folder, then relaunch the JAR.<br>
       Expected: The app recreates `data/addressbook.json` and displays the five sample clients.
 
-### Searching clients by name, phone or email
+### Searching clients by name, phone, email or address
 
 1. Partial matching, ignoring case
 
@@ -989,6 +992,14 @@ testers are expected to do more *exploratory* testing.
       Expected: Only `Raj Kumar` is displayed, matched by part of his email address `raj.kumar@example.com`. The
       result box shows `Showing 1 of 5 clients.`.
 
+   1. Test case: `find bishan`<br>
+      Expected: Only `Alicia Tan` is displayed, matched by part of her address `Blk 123 Bishan Street 12, #08-45`.
+      The result box shows `Showing 1 of 5 clients.`.
+
+   1. Test case: `find Street`<br>
+      Expected: `Alicia Tan`, `Benjamin Lim`, `Nur Aisyah` and `Raj Kumar` are displayed, because all four addresses
+      contain `Street`. The result box shows `Showing 4 of 5 clients.`.
+
 1. Multiple keywords use AND matching
 
    1. Test case: `find ali tan`<br>
@@ -1001,6 +1012,14 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `find Alicia 82345678`<br>
       Expected: No clients are displayed, because `82345678` is the phone number of `Benjamin Lim` and not of
+      `Alicia Tan`. The result box shows `Showing 0 of 5 clients.`.
+
+   1. Test case: `find Tampines Benjamin`<br>
+      Expected: Only `Benjamin Lim` is displayed, because `Tampines` matches his address and `Benjamin` matches his
+      name. The result box shows `Showing 1 of 5 clients.`.
+
+   1. Test case: `find Punggol Alicia`<br>
+      Expected: No clients are displayed, because `Punggol` is in the address of `Cheryl Goh` and not of
       `Alicia Tan`. The result box shows `Showing 0 of 5 clients.`.
 
    1. Test case: `find a`, then `find a li`<br>

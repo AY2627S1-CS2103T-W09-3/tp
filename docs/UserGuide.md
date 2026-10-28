@@ -342,18 +342,19 @@ Examples:
 
 ### Finding clients: `find`
 
-Finds clients whose name, phone number, or email address contains a keyword.
+Finds clients whose name, phone number, email address, or address contains a keyword.
 
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
-* A keyword matches any part of a name, phone number, or email address, ignoring case. The part can be at the start, in the middle, or at the end.
-  For example, `ali` matches `Alicia Tan`, `8456` matches `84567890`, and `raj.k` matches `raj.kumar@example.com`.
-* Multiple keywords use AND matching: a client appears only if **every** keyword matches their name, phone number, or email address.
+* A keyword matches any part of a name, phone number, email address, or address, ignoring case. The part can be at the start, in the middle, or at the end.
+  For example, `ali` matches `Alicia Tan`, `8456` matches `84567890`, `raj.k` matches `raj.kumar@example.com`, and `bishan` matches `Blk 123 Bishan Street 12, #08-45`.
+* Multiple keywords use AND matching: a client appears only if **every** keyword matches their name, phone number, email address, or address.
   Different keywords can match different fields, so `Alicia 8123` matches a client named Alicia whose phone number contains `8123`.
   Each extra keyword narrows the results, so add the rest of a client's name to find one client.
 * Keyword order does not matter.
 * Short keywords match many clients. For example, `a` appears in every sample client's email address, so it shows all of them.
-  Check the count in the result line, and add another keyword or type more of the name, phone number, or email address to narrow the list.
+  Common address words such as `Blk` and `Street` also match many clients.
+  Check the count in the result line, and add another keyword or type more of the name, phone number, email address, or address to narrow the list.
 * Entering `find` without keywords shows an error and leaves the displayed list unchanged.
 * Notes are not searched. A note is free-text working detail in which any word may appear, so matching it would return clients for the wrong reason.
 * Use `list` to show all clients again.
@@ -366,6 +367,10 @@ Examples using the sample clients:
 * `find ali` finds Alicia Tan by part of her name.
 * `find 8456` finds Raj Kumar by part of his phone number, `84567890`.
 * `find raj.k` finds Raj Kumar by part of his email address, `raj.kumar@example.com`.
+* `find Bishan` finds Alicia Tan, whose address is `Blk 123 Bishan Street 12, #08-45`.
+* `find Tampines Benjamin` finds Benjamin Lim, because `Tampines` matches his address and `Benjamin` matches his name.
+* `find Street` finds Alicia Tan, Benjamin Lim, Nur Aisyah and Raj Kumar, because all four addresses contain `Street`.
+  The result shows `Showing 4 of 5 clients.`.
 * `find ali tan` finds Alicia Tan, because both keywords match her name.
 * `find tan 8123` finds Alicia Tan, because `tan` matches her name and `8123` matches her phone number, `81234567`.
 * `find Alicia 82345678` shows no clients (`Showing 0 of 5 clients.`), because `82345678` is Benjamin Lim's phone number and not Alicia Tan's.
@@ -551,7 +556,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`<br> e.g., `edit 2 b/500000-700000 l/Bedok`
 **Filter** | `filter [r/ROLE] [t/TAG]…​`<br> e.g., `filter r/buyer t/urgent`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`
+**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`, `find Bishan`
 **Note** | `note INDEX TEXT`<br> e.g., `note 1 Call next week`, `note 1 clear`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
 **View** | `view INDEX`<br> e.g., `view 1`
