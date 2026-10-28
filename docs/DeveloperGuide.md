@@ -1121,7 +1121,7 @@ testers are expected to do more *exploratory* testing.
 1. Rejecting invalid requirement filters
 
    1. Test case: `filter b/600000-500000`<br>
-      Expected: The displayed list does not change. The result box shows `The minimum price must not exceed the
+      Expected: The displayed list does not change. The result box shows `The minimum budget must not exceed the
       maximum.`.
 
    1. Test case: `filter b/500000 b/600000`<br>
