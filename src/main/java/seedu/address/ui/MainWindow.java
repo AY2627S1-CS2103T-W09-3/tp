@@ -190,7 +190,8 @@ public class MainWindow extends UiPart<Stage> {
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
-        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.getFilteredPersonList());
+        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.getFilteredPersonList(),
+                logic.getPersonList(), logic.personListFilteredProperty());
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
         commandBox = new CommandBox(this::executeCommand);
@@ -269,7 +270,8 @@ public class MainWindow extends UiPart<Stage> {
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
             CommandResult commandResult = logic.execute(commandText);
-            if (!commandResult.isAwaitingConfirmation() && !commandResult.isShowHelp()) {
+            if (!commandResult.isAwaitingConfirmation() && !commandResult.isShowHelp()
+                    && !commandResult.shouldPreserveSelection()) {
                 commandResult.getViewIndex().ifPresentOrElse(personListPanel::selectPerson,
                         personListPanel::clearSelection);
             }

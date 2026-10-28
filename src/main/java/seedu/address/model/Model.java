@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.history.AddressBookSnapshot;
@@ -130,6 +131,9 @@ public interface Model {
 
     /** Returns an unmodifiable view of the filtered person list */
     ObservableList<Person> getFilteredPersonList();
+
+    /** Returns whether a find or filter predicate is active, even if it matches every client. */
+    ObservableValue<Boolean> personListFilteredProperty();
 
     /**
      * Updates the filter of the filtered person list to filter by the given {@code predicate}.

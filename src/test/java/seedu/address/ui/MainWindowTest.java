@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -64,6 +66,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.model.ModelManager;
+import seedu.address.model.history.CommandHistory;
 import seedu.address.model.person.Budget;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
@@ -242,6 +245,40 @@ public class MainWindowTest {
                 assertEquals("Error: " + MESSAGE_NOTHING_TO_REDO, feedback.getText());
                 assertTrue(undoItem.isDisable());
                 assertTrue(redoItem.isDisable());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void unavailableHistoryShortcuts_doNotMarkUnsubmittedTextAsFailed() throws Exception {
+        runOnFxThread(() -> {
+            Path dataFile = temporaryFolder.resolve("addressbook.json");
+            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
+            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            try {
+                window.fillInnerParts();
+                window.show();
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                commandBox.setText("delete 2");
+                commandBox.requestFocus();
+
+                fireShortcut(commandBox, KeyCode.Z, false, false, true);
+                assertEquals("Error: " + CommandHistory.MESSAGE_NOTHING_TO_UNDO, feedback.getText());
+                assertEquals("delete 2", commandBox.getText());
+                assertFalse(commandBox.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+                assertTrue(feedback.getStyleClass().contains("error"));
+
+                fireShortcut(commandBox, KeyCode.Z, true, false, true);
+                assertEquals("Error: " + CommandHistory.MESSAGE_NOTHING_TO_REDO, feedback.getText());
+                assertEquals("delete 2", commandBox.getText());
+                assertFalse(commandBox.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+
+                enterCommand(window, commandBox, "undo");
+                assertTrue(commandBox.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             } finally {
                 window.getRoot().close();
             }
@@ -708,18 +745,25 @@ public class MainWindowTest {
 
                 enterCommand(window, commandBox, "find aMY");
                 assertEquals("Showing 1 of 2 clients.", feedback.getText());
-                assertEquals("1 client", footer.getText());
+                assertEquals("1 of 2 clients (filtered; use list)", footer.getText());
+
+                enterCommand(window, commandBox, "view 1");
+                assertEquals("Showing " + AMY.getName() + ".", feedback.getText());
+                assertEquals("1 of 2 clients (filtered; use list)", footer.getText());
 
                 enterCommand(window, commandBox, "find Nobody");
                 assertEquals("Showing 0 of 2 clients.", feedback.getText());
-                assertEquals("0 clients", footer.getText());
+                assertEquals("0 of 2 clients (filtered; use list)", footer.getText());
 
                 enterCommand(window, commandBox, "filter t/husband");
                 assertEquals("Showing 1 of 2 clients.", feedback.getText());
-                assertEquals("1 client", footer.getText());
+                assertEquals("1 of 2 clients (filtered; use list)", footer.getText());
 
                 enterCommand(window, commandBox, "filter t/friend");
                 assertEquals("Showing 2 of 2 clients.", feedback.getText());
+                assertEquals("2 of 2 clients (filtered; use list)", footer.getText());
+
+                enterCommand(window, commandBox, "list");
                 assertEquals("2 clients", footer.getText());
             } finally {
                 window.getRoot().close();
@@ -752,10 +796,10 @@ public class MainWindowTest {
                 assertEquals("2 clients", count.getText());
 
                 enterCommand(window, commandBox, "find Alicia");
-                assertEquals("1 client", count.getText());
+                assertEquals("1 of 2 clients (filtered; use list)", count.getText());
 
                 enterCommand(window, commandBox, "find Nobody");
-                assertEquals("0 clients", count.getText());
+                assertEquals("0 of 2 clients (filtered; use list)", count.getText());
 
                 enterCommand(window, commandBox, "list");
                 assertEquals("2 clients", count.getText());
@@ -919,7 +963,7 @@ public class MainWindowTest {
                 TextField commandBox = (TextField) root.lookup("#commandTextField");
                 enterCommand(window, commandBox, "view 3");
                 assertSelectedClient(window, CARL);
-                enterCommand(window, commandBox, "find Bob Carl");
+                enterCommand(window, commandBox, "find h");
                 assertEquals(List.of(BOB, CARL), model.getFilteredPersonList());
                 assertEmptySelection(window);
                 enterCommand(window, commandBox, "view 2");
@@ -1033,6 +1077,40 @@ public class MainWindowTest {
                 // Close both the main window and the help window opened by the command.
                 enterCommand(window, commandBox, "exit");
                 window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void selection_history_preservesSelectedClientWithAndWithoutEntries() throws Exception {
+        runOnFxThread(() -> {
+            for (boolean hasHistory : List.of(false, true)) {
+                ModelManager model = new ModelManager();
+                model.addPerson(AMY);
+                if (hasHistory) {
+                    var before = model.captureSnapshot();
+                    model.addPerson(BOB);
+                    model.recordChange(before, model.captureSnapshot(), "add", "Added client Bob Choo");
+                }
+                Person selectedPerson = hasHistory ? BOB : AMY;
+                MainWindow window = openWindow(model);
+                try {
+                    TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                    TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                    enterCommand(window, commandBox, hasHistory ? "view 2" : "view 1");
+                    assertSelectedClient(window, selectedPerson);
+
+                    enterCommand(window, commandBox, "history");
+                    assertFalse(feedback.getStyleClass().contains("error"));
+                    assertEquals(hasHistory, feedback.getText().startsWith("Undo history:"));
+                    assertSelectedClient(window, selectedPerson);
+
+                    MenuBar menuBar = (MenuBar) window.getRoot().getScene().lookup("#menuBar");
+                    menuBar.getMenus().get(1).getItems().get(2).fire();
+                    assertSelectedClient(window, selectedPerson);
+                } finally {
+                    window.getRoot().close();
+                }
             }
         });
     }
@@ -1199,6 +1277,7 @@ public class MainWindowTest {
     private static class RecordingLogic implements Logic {
         private final List<String> executedCommands = new ArrayList<>();
         private final ObservableList<Person> persons = FXCollections.observableArrayList();
+        private final SimpleBooleanProperty filtered = new SimpleBooleanProperty(false);
         private GuiSettings guiSettings = new GuiSettings();
 
         @Override
@@ -1220,6 +1299,16 @@ public class MainWindowTest {
         @Override
         public ObservableList<Person> getFilteredPersonList() {
             return persons;
+        }
+
+        @Override
+        public ObservableList<Person> getPersonList() {
+            return persons;
+        }
+
+        @Override
+        public ObservableValue<Boolean> personListFilteredProperty() {
+            return filtered;
         }
 
         @Override

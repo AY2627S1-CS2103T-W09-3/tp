@@ -12,7 +12,7 @@ public class ClearCommandParser implements Parser<ClearCommand> {
 
     /**
      * Parses the given arguments and returns a ClearCommand that is confirmed only if the argument
-     * is {@code confirm}.
+     * is {@code confirm}, ignoring case and surrounding whitespace.
      *
      * @throws ParseException if the argument is neither empty nor {@code confirm}.
      */
@@ -24,7 +24,7 @@ public class ClearCommandParser implements Parser<ClearCommand> {
             return new ClearCommand(false);
         }
 
-        if (trimmedArgs.equals(ClearCommand.CONFIRM_WORD)) {
+        if (trimmedArgs.equalsIgnoreCase(ClearCommand.CONFIRM_WORD)) {
             return new ClearCommand(true);
         }
 

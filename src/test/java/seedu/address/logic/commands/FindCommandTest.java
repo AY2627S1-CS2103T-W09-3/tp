@@ -10,6 +10,7 @@ import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.ELLE;
 import static seedu.address.testutil.TypicalPersons.FIONA;
+import static seedu.address.testutil.TypicalPersons.GEORGE;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.List;
@@ -76,13 +77,22 @@ public class FindCommandTest {
     }
 
     @Test
-    public void execute_multipleKeywords_multiplePersonsFound() {
-        String expectedMessage = "Showing 3 of 7 clients.";
+    public void execute_multipleKeywords_showsOnlyClientsMatchingEveryKeyword() {
+        // Meier is in Benson, Daniel and Hoon's names, and only Daniel's name also contains Dan
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("Meier Dan");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+        assertCommandSuccess(command, model, "Showing 1 of 7 clients.", expectedModel);
+        assertEquals(List.of(DANIEL), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_keywordsMatchedByDifferentClients_noPersonFound() {
         PersonMatchesSearchTermsPredicate predicate = preparePredicate("Kurz Elle Kunz");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
-        assertCommandSuccess(command, model, expectedMessage, expectedModel);
-        assertEquals(List.of(CARL, ELLE, FIONA), model.getFilteredPersonList());
+        assertCommandSuccess(command, model, "Showing 0 of 7 clients.", expectedModel);
+        assertEquals(List.of(), model.getFilteredPersonList());
     }
 
     @Test
@@ -116,6 +126,28 @@ public class FindCommandTest {
 
         assertCommandSuccess(command, model, "Showing 7 of 7 clients.", expectedModel);
         assertEquals(7, model.getFilteredPersonList().size());
+    }
+
+    @Test
+    public void execute_addressKeyword_findsClientsContainingIt() {
+        // "street" appears in the addresses of Carl, Daniel and George only
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("street");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "Showing 3 of 7 clients.", expectedModel);
+        assertEquals(List.of(CARL, DANIEL, GEORGE), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_addressAndNameKeywords_findsClientsMatchingBoth() {
+        // Meier is in the names of Benson and Daniel, and only Daniel's address contains street
+        PersonMatchesSearchTermsPredicate predicate = preparePredicate("Meier street");
+        FindCommand command = new FindCommand(predicate);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, "Showing 1 of 7 clients.", expectedModel);
+        assertEquals(List.of(DANIEL), model.getFilteredPersonList());
     }
 
     @Test
