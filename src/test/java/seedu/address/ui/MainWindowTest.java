@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+import static seedu.address.model.history.CommandHistory.MESSAGE_NOTHING_TO_REDO;
+import static seedu.address.model.history.CommandHistory.MESSAGE_NOTHING_TO_UNDO;
 import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.CARL;
@@ -175,6 +177,74 @@ public class MainWindowTest {
                 enterCommand(window, commandBox, "list");
                 assertEquals("list", logic.executedCommands.get(logic.executedCommands.size() - 1));
                 assertEquals("", commandBox.getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void historyMenuItems_followUndoAndRedoAvailability() throws Exception {
+        runOnFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(AMY);
+            model.addPerson(BOB);
+            MainWindow window = openWindow(model);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                MenuBar menuBar = (MenuBar) window.getRoot().getScene().lookup("#menuBar");
+                MenuItem undoItem = menuBar.getMenus().get(1).getItems().get(0);
+                MenuItem redoItem = menuBar.getMenus().get(1).getItems().get(1);
+                assertTrue(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                enterCommand(window, commandBox, "delete 1");
+                assertFalse(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                undoItem.fire();
+                assertTrue(undoItem.isDisable());
+                assertFalse(redoItem.isDisable());
+
+                redoItem.fire();
+                assertFalse(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                enterCommand(window, commandBox, "undo");
+                enterCommand(window, commandBox, "delete 2");
+                assertFalse(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                enterCommand(window, commandBox, "delete 99");
+                assertFalse(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
+    public void historyShortcuts_whenMenuItemsDisabled_showEmptyHistoryFeedback() throws Exception {
+        runOnFxThread(() -> {
+            MainWindow window = openWindow(new ModelManager());
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                MenuBar menuBar = (MenuBar) window.getRoot().getScene().lookup("#menuBar");
+                MenuItem undoItem = menuBar.getMenus().get(1).getItems().get(0);
+                MenuItem redoItem = menuBar.getMenus().get(1).getItems().get(1);
+                assertTrue(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
+
+                fireShortcut(commandBox, KeyCode.Z, false, true, false);
+                assertEquals("Error: " + MESSAGE_NOTHING_TO_UNDO, feedback.getText());
+                fireShortcut(commandBox, KeyCode.Y, false, true, false);
+                assertEquals("Error: " + MESSAGE_NOTHING_TO_REDO, feedback.getText());
+                fireShortcut(commandBox, KeyCode.Z, true, false, true);
+                assertEquals("Error: " + MESSAGE_NOTHING_TO_REDO, feedback.getText());
+                assertTrue(undoItem.isDisable());
+                assertTrue(redoItem.isDisable());
             } finally {
                 window.getRoot().close();
             }
@@ -1214,6 +1284,16 @@ public class MainWindowTest {
         public CommandResult execute(String commandText) {
             executedCommands.add(commandText);
             return new CommandResult("Executed " + commandText);
+        }
+
+        @Override
+        public boolean canUndo() {
+            return true;
+        }
+
+        @Override
+        public boolean canRedo() {
+            return true;
         }
 
         @Override
