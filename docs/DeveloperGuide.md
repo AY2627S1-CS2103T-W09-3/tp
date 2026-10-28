@@ -133,6 +133,18 @@ How the parsing works:
 * When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
+`ArgumentTokenizer` keeps whole relationship markers (`s/o`, `d/o`, `a/l` and `a/p`,
+ignoring case) within the current `n/` field. It processes candidate prefixes in
+input order, so `s/o` inside a name does not become an asking-price field, and
+`a/l` or `a/p` does not become an address field. Other prefixes retain their usual
+meaning, and these exceptions do not apply outside a name. `Name` validates
+Unicode letters and combining marks, numbers, spaces, apostrophes, hyphens and
+slashes, with a letter or number first. Its constructor normalises Unicode to
+NFC, so composed and decomposed spellings of the same accent compare equally
+for duplicate detection and are saved in the same form.
+Search also normalises fields and keywords to NFC, so either spelling of an
+accent finds the saved client without removing the accent itself.
+
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
@@ -898,6 +910,27 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `role 1 buyer extra`<br>
       Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
+
+### Recording names with common punctuation and accented letters
+
+1. Adding and editing names
+
+   1. Prerequisites: Use a separate test copy of the client book. The phone numbers and email addresses below must be unused.
+
+   1. Test case: `add n/Kumar s/o Ravi p/90010103 e/kumar.ravi@example.com a/3 Test Road`<br>
+      Expected: The client is added with the full name `Kumar s/o Ravi`. No asking-price error is shown.
+
+   1. Test case: `add n/Anne-Marie Tan p/90010104 e/anne.marie@example.com a/4 Test Road`<br>
+      Expected: The hyphenated name is accepted.
+
+   1. Test case: `add n/José Tan p/90010105 e/jose.tan@example.com a/5 Test Road`<br>
+      Expected: The accented name is accepted. Restart the application and confirm that all three names are retained.
+
+   1. Test case: Run `list`, identify Kumar's current index, then run `edit INDEX n/Arun a/l Mani s/950000`.<br>
+      Expected: The full name becomes `Arun a/l Mani`, and the asking price becomes $950,000. `undo` restores the old name and asking price; `redo` reapplies both changes.
+
+   1. Test case: `edit INDEX n/Kumar s/o Ravi*`, using the same displayed client index.<br>
+      Expected: The result box identifies the invalid name, no client data changes, and no history entry is added.
 
 ### Rejecting duplicate clients
 

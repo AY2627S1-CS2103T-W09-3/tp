@@ -85,7 +85,7 @@ These rules apply when adding or editing clients.
 
 | Field | Rules |
 |---|---|
-| Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. |
+| Name | Must start with a letter or number. Supports Unicode letters (including accented letters), combining marks, numbers, spaces, apostrophes (`'` and `’`), hyphens (`-`) and slashes (`/`), e.g. `Anne-Marie Tan`, `José Tan` and `Kumar s/o Ravi`. |
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
 | Address | Cannot be blank. |
@@ -110,12 +110,14 @@ Prefix rules:
 * Repeat `l/` to supply multiple areas, such as `l/Bedok l/Tampines`.
 * Repeat `h/` to supply multiple housing types, such as `h/HDB h/Condo`.
 * For `edit`, an empty `b/`, `s/`, `l/` or `h/` clears that field. In `add`, an empty prefix is an error.
+* Inside `n/NAME`, the whole relationship markers `s/o`, `d/o`, `a/l` and `a/p` are kept as part of the name, ignoring their capitalization. For example, `n/Kumar s/o Ravi s/950000` records the name `Kumar s/o Ravi` and an asking price of $950,000. Other field prefixes still end the name.
 
 ### Duplicate clients
 
 An `add` or `edit` command is rejected if it would match another client's:
 
 * Name, ignoring case.
+  Accented letters are stored in a standard Unicode form, so typing the same accent using a separate combining mark does not create a different name.
 * Phone number exactly.
 * Email address exactly, including letter case.
 

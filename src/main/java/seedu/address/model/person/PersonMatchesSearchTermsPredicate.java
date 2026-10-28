@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Predicate;
@@ -9,8 +10,8 @@ import seedu.address.commons.util.ToStringBuilder;
 /**
  * Tests that a {@code Person}'s {@code Name}, {@code Phone}, {@code Email} or {@code Address} matches all of the
  * search terms given.
- * A term matches if any one of those fields contains it anywhere, ignoring case, so the terms can be matched by
- * different fields. No search terms never match.
+ * A term matches if any one of those fields contains it anywhere, ignoring case and equivalent Unicode spellings,
+ * so the terms can be matched by different fields. No search terms never match.
  */
 public class PersonMatchesSearchTermsPredicate implements Predicate<Person> {
     private final List<String> searchTerms;
@@ -29,7 +30,8 @@ public class PersonMatchesSearchTermsPredicate implements Predicate<Person> {
     }
 
     private static boolean containsIgnoreCase(String field, String term) {
-        return field.toLowerCase(Locale.ROOT).contains(term.toLowerCase(Locale.ROOT));
+        return Normalizer.normalize(field, Normalizer.Form.NFC).toLowerCase(Locale.ROOT)
+                .contains(Normalizer.normalize(term, Normalizer.Form.NFC).toLowerCase(Locale.ROOT));
     }
 
     @Override

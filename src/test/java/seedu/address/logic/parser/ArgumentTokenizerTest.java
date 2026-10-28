@@ -4,6 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ASKING_PRICE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -134,6 +140,60 @@ public class ArgumentTokenizerTest {
         assertArgumentAbsent(argMultimap, pSlash);
         assertArgumentPresent(argMultimap, dashT, "not joined^Qjoined");
         assertArgumentAbsent(argMultimap, hatQ);
+    }
+
+    @Test
+    public void tokenize_sonOfMarker_preservesNameAndAskingPrice() {
+        ArgumentMultimap arguments = ArgumentTokenizer.tokenize(
+                " n/Kumar s/o Ravi s/950000 p/90010103 a/3 Test Road",
+                PREFIX_NAME, PREFIX_ASKING_PRICE, PREFIX_PHONE, PREFIX_ADDRESS);
+
+        assertPreambleEmpty(arguments);
+        assertArgumentPresent(arguments, PREFIX_NAME, "Kumar s/o Ravi");
+        assertArgumentPresent(arguments, PREFIX_ASKING_PRICE, "950000");
+        assertArgumentPresent(arguments, PREFIX_PHONE, "90010103");
+        assertArgumentPresent(arguments, PREFIX_ADDRESS, "3 Test Road");
+    }
+
+    @Test
+    public void tokenize_relationshipMarkers_preservesName() {
+        for (String marker : List.of("s/o", "s/O", "S/O", "d/o", "a/l", "a/L", "a/p", "A/P")) {
+            ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" n/Client " + marker + " Parent p/90010103",
+                    PREFIX_NAME, PREFIX_ASKING_PRICE, PREFIX_PHONE, PREFIX_ADDRESS);
+
+            assertArgumentPresent(arguments, PREFIX_NAME, "Client " + marker + " Parent");
+            assertArgumentPresent(arguments, PREFIX_PHONE, "90010103");
+            assertArgumentAbsent(arguments, PREFIX_ASKING_PRICE);
+            assertArgumentAbsent(arguments, PREFIX_ADDRESS);
+        }
+    }
+
+    @Test
+    public void tokenize_markerAtEnd_preservesName() {
+        ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" n/Kumar s/o", PREFIX_NAME, PREFIX_ASKING_PRICE);
+
+        assertArgumentPresent(arguments, PREFIX_NAME, "Kumar s/o");
+        assertArgumentAbsent(arguments, PREFIX_ASKING_PRICE);
+    }
+
+    @Test
+    public void tokenize_markerOutsideName_remainsFieldPrefix() {
+        ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" n/Kumar p/90010103 s/o a/3 Test Road",
+                PREFIX_NAME, PREFIX_ASKING_PRICE, PREFIX_PHONE, PREFIX_ADDRESS);
+
+        assertArgumentPresent(arguments, PREFIX_NAME, "Kumar");
+        assertArgumentPresent(arguments, PREFIX_ASKING_PRICE, "o");
+        assertArgumentPresent(arguments, PREFIX_ADDRESS, "3 Test Road");
+    }
+
+    @Test
+    public void tokenize_prefixValueBeginsLikeMarker_remainsFieldPrefix() {
+        ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" n/Kumar s/office a/Lorong 1",
+                PREFIX_NAME, PREFIX_ASKING_PRICE, PREFIX_ADDRESS);
+
+        assertArgumentPresent(arguments, PREFIX_NAME, "Kumar");
+        assertArgumentPresent(arguments, PREFIX_ASKING_PRICE, "office");
+        assertArgumentPresent(arguments, PREFIX_ADDRESS, "Lorong 1");
     }
 
     @Test
