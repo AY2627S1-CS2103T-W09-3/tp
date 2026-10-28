@@ -939,10 +939,12 @@ public class MainWindowTest {
     private static void assertInsideViewport(Node node, double width, double height) {
         Bounds bounds = node.localToScene(node.getLayoutBounds());
         String context = node.getId() + " at " + width + "x" + height;
-        assertTrue(bounds.getWidth() > 0 && bounds.getHeight() > 0, context + " is collapsed");
-        assertTrue(bounds.getMinX() >= -1 && bounds.getMinY() >= -1
-                && bounds.getMaxX() <= width + 1 && bounds.getMaxY() <= height + 1,
-                context + " extends beyond the viewport");
+        assertTrue(bounds.getWidth() > 0, context + " has no width");
+        assertTrue(bounds.getHeight() > 0, context + " has no height");
+        assertTrue(bounds.getMinX() >= -1, context + " extends beyond the left edge");
+        assertTrue(bounds.getMinY() >= -1, context + " extends beyond the top edge");
+        assertTrue(bounds.getMaxX() <= width + 1, context + " extends beyond the right edge");
+        assertTrue(bounds.getMaxY() <= height + 1, context + " extends beyond the bottom edge");
     }
 
     private static List<ListCell<?>> visibleCellsBeforeIndex(ListView<?> list, int indexLimit) {
@@ -1089,11 +1091,11 @@ public class MainWindowTest {
     private static void assertWithinRegion(Node child, Node parent) {
         Bounds childBounds = child.localToScene(child.getLayoutBounds());
         Bounds parentBounds = parent.localToScene(parent.getLayoutBounds());
-        assertTrue(childBounds.getMinX() >= parentBounds.getMinX() - 1
-                && childBounds.getMaxX() <= parentBounds.getMaxX() + 1
-                && childBounds.getMinY() >= parentBounds.getMinY() - 1
-                && childBounds.getMaxY() <= parentBounds.getMaxY() + 1,
-                child.getId() + " extends beyond " + parent.getId());
+        String context = child.getId() + " extends beyond " + parent.getId();
+        assertTrue(childBounds.getMinX() >= parentBounds.getMinX() - 1, context + " on the left");
+        assertTrue(childBounds.getMaxX() <= parentBounds.getMaxX() + 1, context + " on the right");
+        assertTrue(childBounds.getMinY() >= parentBounds.getMinY() - 1, context + " on the top");
+        assertTrue(childBounds.getMaxY() <= parentBounds.getMaxY() + 1, context + " on the bottom");
     }
 
     private MainWindow openWindow(ModelManager model) {

@@ -127,10 +127,13 @@ public class MainWindow extends UiPart<Stage> {
         }
         boolean isControlOnly = event.isControlDown() && !event.isMetaDown();
         boolean isMetaOnly = event.isMetaDown() && !event.isControlDown();
-        if (event.getCode() == KeyCode.Z && !event.isShiftDown() && (isControlOnly || isMetaOnly)) {
+        boolean isUndo = event.getCode() == KeyCode.Z
+                && !event.isShiftDown() && (isControlOnly || isMetaOnly);
+        boolean isControlRedo = event.getCode() == KeyCode.Y && isControlOnly && !event.isShiftDown();
+        boolean isMetaRedo = event.getCode() == KeyCode.Z && isMetaOnly && event.isShiftDown();
+        if (isUndo) {
             handleUndo();
-        } else if ((event.getCode() == KeyCode.Y && isControlOnly && !event.isShiftDown())
-                || (event.getCode() == KeyCode.Z && isMetaOnly)) {
+        } else if (isControlRedo || isMetaRedo) {
             handleRedo();
         } else {
             return;

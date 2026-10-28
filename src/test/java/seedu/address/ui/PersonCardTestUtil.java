@@ -36,8 +36,8 @@ final class PersonCardTestUtil {
             Bounds bounds = row.localToScene(row.getLayoutBounds());
             assertTrue(bounds.getMinY() >= previousBottom - 1, row.getId() + " overlaps the previous row");
             assertTrue(bounds.getMaxY() <= cardBounds.getMaxY() + 1, row.getId() + " exceeds the card height");
-            assertTrue(bounds.getMinX() >= cardBounds.getMinX() - 1
-                    && bounds.getMaxX() <= cardBounds.getMaxX() + 1, row.getId() + " exceeds the card width");
+            assertTrue(bounds.getMinX() >= cardBounds.getMinX() - 1, row.getId() + " exceeds the card's left edge");
+            assertTrue(bounds.getMaxX() <= cardBounds.getMaxX() + 1, row.getId() + " exceeds the card's right edge");
             previousBottom = bounds.getMaxY();
         }
     }
@@ -45,7 +45,8 @@ final class PersonCardTestUtil {
     private static void assertLabelsFit(Region card, VBox content) {
         for (Node node : card.lookupAll(".label")) {
             Label label = (Label) node;
-            if (!label.isVisible() || !label.isManaged() || label.getText().isEmpty()) {
+            boolean isHidden = !label.isVisible() || !label.isManaged();
+            if (isHidden || label.getText().isEmpty()) {
                 continue;
             }
             Text text = new Text(label.getText());
@@ -62,8 +63,8 @@ final class PersonCardTestUtil {
             }
             Bounds rowBounds = row.localToScene(row.getLayoutBounds());
             Bounds labelBounds = label.localToScene(label.getLayoutBounds());
-            assertTrue(labelBounds.getMinY() >= rowBounds.getMinY() - 1
-                    && labelBounds.getMaxY() <= rowBounds.getMaxY() + 1, context + " exceeds its row height");
+            assertTrue(labelBounds.getMinY() >= rowBounds.getMinY() - 1, context + " exceeds its row's top edge");
+            assertTrue(labelBounds.getMaxY() <= rowBounds.getMaxY() + 1, context + " exceeds its row's bottom edge");
         }
     }
 }
