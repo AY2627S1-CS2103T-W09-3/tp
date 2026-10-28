@@ -151,6 +151,14 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`JsonUtil` reads JSON from a byte stream, allowing Jackson to detect a UTF-8 or
+UTF-16 byte-order mark in a manually edited client book. If an existing client
+book still cannot be loaded, `MainApp` first copies it beside the original as
+`addressbook.json.unreadable-<unique number>.bak`, then starts with an empty
+model. It passes the backup path to `UiManager`, which warns the user where the
+original bytes were saved. The backup is created before a command can overwrite
+the data file; if the copy fails, startup does not continue with the empty book.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
@@ -956,11 +964,13 @@ testers are expected to do more *exploratory* testing.
       value such as `"role" : "landlord"`.
 
    1. Relaunch the app.<br>
-      Expected: The app does not crash and starts with an empty client list because the file cannot be loaded.
+      Expected: The app does not crash, starts with an empty client list, and warns that the unreadable file was
+      copied to `data/addressbook.json.unreadable-<unique number>.bak`.
 
    1. Run `list`.<br>
       Expected: The result box shows `Listed all clients.` and the corrupted file is replaced with a valid empty
-      client book. Restore the backup after completing the test.
+      client book. The `.bak` copy still contains the corrupted file's original bytes. Restore the valid backup
+      made before this test after completing it.
 
 ### Clearing all clients with confirmation
 
