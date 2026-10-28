@@ -581,7 +581,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
   Use case resumes at step 3.
 
 * 3b. The role is missing or is not buyer, seller, or both.
-  * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles.
+  * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or the permitted roles if it is invalid.
 
   Use case resumes at step 3.
 
@@ -645,7 +645,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
   Use case resumes at step 3.
 
 * 3b. The role is missing or is not buyer, seller, or both.
-  * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles without updating the client's role.
+  * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or the permitted roles if it is invalid, without updating the client's role.
 
   Use case resumes at step 3.
 
