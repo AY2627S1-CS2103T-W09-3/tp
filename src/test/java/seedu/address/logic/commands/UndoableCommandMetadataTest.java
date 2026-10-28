@@ -31,6 +31,7 @@ public class UndoableCommandMetadataTest {
             {"delete 1", "delete", "Deleted client Alice Pauline"},
             {"clear confirm", "clear", "Cleared 2 clients"},
             {"role 1 seller", "role", "Changed role for Alice Pauline to Seller"},
+            {"role 1 none", "role", "Cleared role for Alice Pauline"},
             {"note 1 Call next week", "note", "Updated note for Alice Pauline"}
         };
         for (String[] testCase : cases) {

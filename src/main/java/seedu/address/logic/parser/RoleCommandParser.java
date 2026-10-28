@@ -26,11 +26,15 @@ public class RoleCommandParser implements Parser<RoleCommand> {
         try {
             index = ParserUtil.parseIndex(arguments[0]);
         } catch (ParseException pe) {
-            throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT, pe);
+            throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        }
+
+        if (arguments[1].equalsIgnoreCase("none")) {
+            return new RoleCommand(index, null);
         }
 
         if (!ClientRole.isValidRole(arguments[1])) {
-            throw new ParseException(ClientRole.MESSAGE_CONSTRAINTS);
+            throw new ParseException(RoleCommand.MESSAGE_INVALID_ROLE);
         }
 
         return new RoleCommand(index, ClientRole.fromString(arguments[1]));
