@@ -504,10 +504,13 @@ to load the same client records.
 
 ### Recovering from an invalid data file
 
-If the data file cannot be loaded, the application starts with an empty
-client list and shows a warning. Before any command can replace the file,
-the application saves a copy beside it named
-`addressbook.json.unreadable-<unique number>.bak`.
+If the data file cannot be loaded, the application first saves a copy beside
+it named `addressbook.json.unreadable-<unique number>.bak`. Once that backup
+succeeds, the application starts with an empty client list and shows a warning
+before any command can replace the original file. If the backup cannot be
+created (for example, because the data folder is not writable), startup stops
+instead; the original data file is left unchanged. Make the folder writable or
+free up disk space, then restart the application.
 
 You can continue using the empty client book, but a successful command can
 replace `data/addressbook.json`. The `.bak` copy remains unchanged. Keep it
