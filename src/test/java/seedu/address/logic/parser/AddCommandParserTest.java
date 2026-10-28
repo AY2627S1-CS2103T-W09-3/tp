@@ -292,6 +292,18 @@ public class AddCommandParserTest {
 
         assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithLift,
                 new AddCommand(expectedLiftPerson));
+
+        String addressWithSonOf = "12 Main Street s/o Ravi";
+        Person expectedSonOfPerson = new PersonBuilder(BOB).withAddress(addressWithSonOf).withTags().build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithSonOf,
+                new AddCommand(expectedSonOfPerson));
+
+        String addressWithBecauseOf = "12 Main Street b/c Tall";
+        Person expectedBecauseOfPerson = new PersonBuilder(BOB).withAddress(addressWithBecauseOf).withTags().build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithBecauseOf,
+                new AddCommand(expectedBecauseOfPerson));
     }
 
     @Test

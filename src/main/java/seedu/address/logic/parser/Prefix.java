@@ -6,13 +6,30 @@ package seedu.address.logic.parser;
  */
 public class Prefix {
     private final String prefix;
+    private final boolean numericValue;
 
     public Prefix(String prefix) {
+        this(prefix, false);
+    }
+
+    /**
+     * Creates a prefix whose value can only start with a digit or a comma, such as a price or a budget.
+     * Used to tell a real prefix apart from the same letters appearing inside free text, e.g. {@code s/o}.
+     */
+    public Prefix(String prefix, boolean numericValue) {
         this.prefix = prefix;
+        this.numericValue = numericValue;
     }
 
     public String getPrefix() {
         return prefix;
+    }
+
+    /**
+     * Returns true if this prefix introduces a purely numeric value.
+     */
+    public boolean hasNumericValue() {
+        return numericValue;
     }
 
     @Override

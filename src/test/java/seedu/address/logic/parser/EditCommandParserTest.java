@@ -187,6 +187,12 @@ public class EditCommandParserTest {
         expectedCommand = new EditCommand(targetIndex, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
 
+        // address containing a word that starts like a prefix
+        userInput = targetIndex.getOneBased() + " a/9 Grove Road s/o Ramasamy";
+        descriptor = new EditPersonDescriptorBuilder().withAddress("9 Grove Road s/o Ramasamy").build();
+        expectedCommand = new EditCommand(targetIndex, descriptor);
+        assertParseSuccess(parser, userInput, expectedCommand);
+
         // tags
         userInput = targetIndex.getOneBased() + TAG_DESC_FRIEND;
         descriptor = new EditPersonDescriptorBuilder().withTags(VALID_TAG_FRIEND).build();

@@ -49,12 +49,45 @@ public class ArgumentTokenizer {
 
         int prefixPosition = findPrefixPosition(argsString, prefix.getPrefix(), 0);
         while (prefixPosition != -1) {
-            PrefixPosition extendedPrefix = new PrefixPosition(prefix, prefixPosition);
-            positions.add(extendedPrefix);
+            if (startsField(argsString, prefixPosition, prefix)) {
+                PrefixPosition extendedPrefix = new PrefixPosition(prefix, prefixPosition);
+                positions.add(extendedPrefix);
+            }
             prefixPosition = findPrefixPosition(argsString, prefix.getPrefix(), prefixPosition);
         }
 
         return positions;
+    }
+
+    /**
+     * Returns true if the occurrence of {@code prefix} at {@code prefixPosition} starts a new argument.
+     * A prefix that introduces a numeric value is treated as free text when it is followed by a one or two
+     * letter word, which is how abbreviations such as {@code s/o} or {@code b/c} inside an address look.
+     * Everything else counts as a new argument, so a mistyped value still reports the price or budget error,
+     * and an empty value still clears the field.
+     */
+    private static boolean startsField(String argsString, int prefixPosition, Prefix prefix) {
+        if (!prefix.hasNumericValue()) {
+            return true;
+        }
+
+        int valueIndex = prefixPosition + prefix.getPrefix().length();
+        while (valueIndex < argsString.length() && argsString.charAt(valueIndex) == ' ') {
+            valueIndex++;
+        }
+
+        if (valueIndex == argsString.length()) {
+            return true;
+        }
+
+        int wordEnd = valueIndex;
+        while (wordEnd < argsString.length() && Character.isLetter(argsString.charAt(wordEnd))) {
+            wordEnd++;
+        }
+
+        int letters = wordEnd - valueIndex;
+        boolean wordEnds = wordEnd == argsString.length() || argsString.charAt(wordEnd) == ' ';
+        return !(letters >= 1 && letters <= 2 && wordEnds);
     }
 
     /**

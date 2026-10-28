@@ -464,6 +464,20 @@ no value as invalid input. `edit` treats it as a request to clear the field:
 `parseAreasForEdit` turns a single empty `l/` into an empty set, so the client
 loses every area.
 
+Free text can contain a slash word that starts with a real prefix. In
+`a/12 Main Street s/o Ravi` the address holds `s/`, which is the asking price
+prefix, so reading it as a prefix hands `o Ravi` to `parsePrice` and rejects the
+whole command. `ArgumentTokenizer` therefore counts an occurrence of `b/` or `s/`
+as a new argument only when it is not followed by a one or two letter word, which
+is the shape of abbreviations such as `s/o` and `b/c`; `c/o` and `w/` were never
+prefixes, so they always stayed text. The rule travels with the prefix as
+`Prefix#hasNumericValue` rather than as a special case for the address field, so a
+mistyped price such as `s/not-a-price` still reports the price error instead of
+being absorbed into the previous value, and `s/` with no value still clears the
+field in `edit`. Text prefixes keep the simpler rule, because a letter can be a
+real value there: `n/Al` and `t/s` are valid input, so a word such as `n/a` inside
+an address still reads as a name prefix and is reported as a repeated field.
+
 ### Filter command
 
 `filter` narrows the displayed clients by role and tag. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.

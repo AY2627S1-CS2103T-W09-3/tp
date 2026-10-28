@@ -137,6 +137,42 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
+    public void tokenize_numericPrefixFollowedByText_isPartOfTheValue() {
+        Prefix address = new Prefix("a/");
+        Prefix price = new Prefix("s/", true);
+        Prefix budget = new Prefix("b/", true);
+
+        ArgumentMultimap withRelative = ArgumentTokenizer.tokenize(" a/12 Main Street s/o Ravi", address, price);
+        assertArgumentPresent(withRelative, address, "12 Main Street s/o Ravi");
+        assertArgumentAbsent(withRelative, price);
+
+        ArgumentMultimap withCareOf = ArgumentTokenizer.tokenize(" a/7 Sunset Way b/c Tall", address, budget);
+        assertArgumentPresent(withCareOf, address, "7 Sunset Way b/c Tall");
+        assertArgumentAbsent(withCareOf, budget);
+    }
+
+    @Test
+    public void tokenize_numericPrefixFollowedByNumber_isAnArgument() {
+        Prefix address = new Prefix("a/");
+        Prefix price = new Prefix("s/", true);
+
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" a/12 Main Street s/300000", address, price);
+        assertArgumentPresent(argMultimap, address, "12 Main Street");
+        assertArgumentPresent(argMultimap, price, "300000");
+
+        ArgumentMultimap spacedValue = ArgumentTokenizer.tokenize(" a/12 Main Street s/ 300000", address, price);
+        assertArgumentPresent(spacedValue, price, "300000");
+    }
+
+    @Test
+    public void tokenize_numericPrefixWithoutValue_isAnArgument() {
+        Prefix price = new Prefix("s/", true);
+
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(" a/12 Main Street s/", price);
+        assertArgumentPresent(argMultimap, price, "");
+    }
+
+    @Test
     public void equalsMethod() {
         Prefix aaa = new Prefix("aaa");
 
