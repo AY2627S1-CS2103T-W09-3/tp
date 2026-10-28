@@ -75,7 +75,15 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `DetailPane`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
-`MainWindow` places `PersonListPanel` beside `DetailPane` in a master-detail layout. The list panel shows the displayed clients as `PersonCard`s. Selecting a client shows that client's profile in `DetailPane`; clearing the selection shows its empty state. The `StatusBarFooter` below them shows the data file path and a count that updates with the displayed client list.
+`MainWindow` places `PersonListPanel` beside `DetailPane` in a master-detail
+layout. The list panel shows the displayed clients as `PersonCard`s. Selecting
+a client shows that client's profile in `DetailPane`; clearing the selection
+shows its empty state. The `StatusBarFooter` below them shows the data file
+path and a live client count. With no search or filter active, it shows the
+total number of clients. While one is active, it shows the displayed and total
+counts and reminds the user to run `list` to show all clients. The counts and
+filter state are bound to the model, so the footer updates after data changes
+as well as search and filter commands.
 
 The menu bar provides `File` and `Help` actions, plus an `Edit` menu for `Undo`, `Redo` and `History`. The `Edit` actions submit the corresponding commands through `CommandBox`, so they use the same execution path and show feedback in `ResultDisplay` just like typed commands. Undo also has `Ctrl+Z` on Windows and Linux or `Cmd+Z` on macOS; redo has `Ctrl+Y` or `Cmd+Shift+Z`, respectively. These shortcuts work while the command box has focus.
 
@@ -1252,7 +1260,8 @@ testers are expected to do more *exploratory* testing.
 
    1. Expected: The window shows the client list on the left and the detail panel on the right. Until a client is
       selected, the detail panel shows `Select a client to see details.`. The status bar shows the data file path
-      and the displayed client count.
+      and the displayed client count. During a search or filter, it shows the displayed and total counts and a
+      reminder to use `list` to show all clients.
 
 1. Selecting a client updates the panel
 

@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -638,18 +640,25 @@ public class MainWindowTest {
 
                 enterCommand(window, commandBox, "find aMY");
                 assertEquals("Showing 1 of 2 clients.", feedback.getText());
-                assertEquals("1 client", footer.getText());
+                assertEquals("1 of 2 clients (filtered; use list)", footer.getText());
+
+                enterCommand(window, commandBox, "view 1");
+                assertEquals("Showing " + AMY.getName() + ".", feedback.getText());
+                assertEquals("1 of 2 clients (filtered; use list)", footer.getText());
 
                 enterCommand(window, commandBox, "find Nobody");
                 assertEquals("Showing 0 of 2 clients.", feedback.getText());
-                assertEquals("0 clients", footer.getText());
+                assertEquals("0 of 2 clients (filtered; use list)", footer.getText());
 
                 enterCommand(window, commandBox, "filter t/husband");
                 assertEquals("Showing 1 of 2 clients.", feedback.getText());
-                assertEquals("1 client", footer.getText());
+                assertEquals("1 of 2 clients (filtered; use list)", footer.getText());
 
                 enterCommand(window, commandBox, "filter t/friend");
                 assertEquals("Showing 2 of 2 clients.", feedback.getText());
+                assertEquals("2 of 2 clients (filtered; use list)", footer.getText());
+
+                enterCommand(window, commandBox, "list");
                 assertEquals("2 clients", footer.getText());
             } finally {
                 window.getRoot().close();
@@ -682,10 +691,10 @@ public class MainWindowTest {
                 assertEquals("2 clients", count.getText());
 
                 enterCommand(window, commandBox, "find Alicia");
-                assertEquals("1 client", count.getText());
+                assertEquals("1 of 2 clients (filtered; use list)", count.getText());
 
                 enterCommand(window, commandBox, "find Nobody");
-                assertEquals("0 clients", count.getText());
+                assertEquals("0 of 2 clients (filtered; use list)", count.getText());
 
                 enterCommand(window, commandBox, "list");
                 assertEquals("2 clients", count.getText());
@@ -1163,6 +1172,7 @@ public class MainWindowTest {
     private static class RecordingLogic implements Logic {
         private final List<String> executedCommands = new ArrayList<>();
         private final ObservableList<Person> persons = FXCollections.observableArrayList();
+        private final SimpleBooleanProperty filtered = new SimpleBooleanProperty(false);
         private GuiSettings guiSettings = new GuiSettings();
 
         @Override
@@ -1174,6 +1184,16 @@ public class MainWindowTest {
         @Override
         public ObservableList<Person> getFilteredPersonList() {
             return persons;
+        }
+
+        @Override
+        public ObservableList<Person> getPersonList() {
+            return persons;
+        }
+
+        @Override
+        public ObservableValue<Boolean> personListFilteredProperty() {
+            return filtered;
         }
 
         @Override
