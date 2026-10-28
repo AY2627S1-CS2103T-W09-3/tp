@@ -19,9 +19,9 @@ public class HistoryCommand extends Command {
         List<HistoryEntry> undoHistory = model.getUndoHistory();
         List<HistoryEntry> redoHistory = model.getRedoHistory();
         if (undoHistory.isEmpty() && redoHistory.isEmpty()) {
-            return new CommandResult(MESSAGE_EMPTY_HISTORY);
+            return CommandResult.preservingSelection(MESSAGE_EMPTY_HISTORY);
         }
-        return new CommandResult("Undo history:\n" + formatEntries(undoHistory)
+        return CommandResult.preservingSelection("Undo history:\n" + formatEntries(undoHistory)
                 + "\nRedo history:\n" + formatEntries(redoHistory));
     }
 

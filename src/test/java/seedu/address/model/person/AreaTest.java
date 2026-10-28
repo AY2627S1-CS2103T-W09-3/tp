@@ -43,6 +43,20 @@ public class AreaTest {
     }
 
     @Test
+    public void isValidArea_repeatedInternalWhitespace_returnsTrue() {
+        assertTrue(Area.isValidArea("Ang  Mo  Kio"));
+        assertTrue(Area.isValidArea("  ang   mo   kio  "));
+        assertTrue(Area.isValidArea("Ang\tMo\tKio"));
+    }
+
+    @Test
+    public void constructor_repeatedInternalWhitespace_storesCanonicalTitleCase() {
+        assertEquals("Ang Mo Kio", new Area("Ang  Mo  Kio").toString());
+        assertEquals("Ang Mo Kio", new Area("  ang   mo   kio  ").getValue());
+        assertEquals(new Area("Ang Mo Kio"), new Area("Ang  Mo  Kio"));
+    }
+
+    @Test
     public void equals() {
         Area area = new Area("Bishan");
 

@@ -295,6 +295,16 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_areaWithRepeatedInternalWhitespace_success() {
+        String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
+        Person expectedPerson = new PersonBuilder(BOB).withTags()
+                .withAreas(Set.of(new Area("Ang Mo Kio")))
+                .build();
+
+        assertParseSuccess(parser, validPerson + " l/Ang  mo  kio", new AddCommand(expectedPerson));
+    }
+
+    @Test
     public void parse_repeatedBudgetOrPrice_failure() {
         String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
 

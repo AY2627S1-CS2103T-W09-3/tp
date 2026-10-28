@@ -280,6 +280,18 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parseArea_repeatedInternalWhitespace_returnsArea() throws Exception {
+        assertEquals(new Area("Ang Mo Kio"), ParserUtil.parseArea("ang  mo  kio"));
+        assertEquals(new Area("Ang Mo Kio"), ParserUtil.parseArea("  Ang   Mo   Kio  "));
+    }
+
+    @Test
+    public void parseAreas_repeatedInternalWhitespace_returnsDeduplicatedSet() throws Exception {
+        Set<Area> actualAreas = ParserUtil.parseAreas(List.of("Ang Mo Kio", "ang  mo  kio"));
+        assertEquals(Set.of(new Area("Ang Mo Kio")), actualAreas);
+    }
+
+    @Test
     public void parseHousingType_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> ParserUtil.parseHousingType(null));
     }
