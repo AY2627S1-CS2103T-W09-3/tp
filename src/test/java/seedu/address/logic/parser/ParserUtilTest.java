@@ -316,7 +316,7 @@ public class ParserUtilTest {
 
         assertThrows(ParseException.class, expected, ()
                 -> ParserUtil.rejectUnknownPrefixes(" n/Rachel a/1 Road bb/400000-600000", "usage",
-                        PREFIX_NAME, PREFIX_ADDRESS));
+                        PREFIX_NAME, PREFIX_ADDRESS, PREFIX_BUDGET));
     }
 
     @Test
@@ -338,5 +338,33 @@ public class ParserUtilTest {
         ParserUtil.rejectUnknownPrefixes(" n/Rachel a/Blk 5/6, #08-45 t/2br/3ba", "usage",
                 PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG);
         ParserUtil.rejectUnknownPrefixes(" N/Rachel P/91234567", "usage", PREFIX_NAME, PREFIX_PHONE);
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_slashInAddressText_doesNotThrow() throws Exception {
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel a/12 Main Street c/o Mary Tan", "usage",
+                PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel a/7 Sunset Way w/ lift", "usage",
+                PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel a/9 Grove Road d/o Ramasamy", "usage",
+                PREFIX_NAME, PREFIX_ADDRESS);
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_tokenBeginningLikeAKnownPrefix_throwsParseException() {
+        String doubled = String.format(MESSAGE_UNKNOWN_PREFIX, "nn/") + "\nusage";
+        assertThrows(ParseException.class, doubled, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel a/1 Road nn/Someone Else", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
+
+        String wrongSecondLetter = String.format(MESSAGE_UNKNOWN_PREFIX, "pa/") + "\nusage";
+        assertThrows(ParseException.class, wrongSecondLetter, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel pa/91234567", "usage",
+                        PREFIX_NAME, PREFIX_PHONE));
+
+        String uppercaseDoubled = String.format(MESSAGE_UNKNOWN_PREFIX, "TT/") + "\nusage";
+        assertThrows(ParseException.class, uppercaseDoubled, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel a/1 Road TT/urgent", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG));
     }
 }

@@ -271,6 +271,30 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_doubledLetterPrefix_failure() {
+        String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
+        String expected = String.format(Messages.MESSAGE_UNKNOWN_PREFIX, "pp/") + "\n"
+                + AddCommand.MESSAGE_USAGE;
+
+        assertParseFailure(parser, validPerson + " pp/91234567", expected);
+    }
+
+    @Test
+    public void parse_slashInAddressText_success() {
+        String addressWithSlash = "12 Main Street c/o Mary Tan";
+        Person expectedPerson = new PersonBuilder(BOB).withAddress(addressWithSlash).withTags().build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithSlash,
+                new AddCommand(expectedPerson));
+
+        String addressWithLift = "7 Sunset Way w/ lift";
+        Person expectedLiftPerson = new PersonBuilder(BOB).withAddress(addressWithLift).withTags().build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithLift,
+                new AddCommand(expectedLiftPerson));
+    }
+
+    @Test
     public void parse_repeatedBudgetOrPrice_failure() {
         String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
 

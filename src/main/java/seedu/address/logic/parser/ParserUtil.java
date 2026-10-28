@@ -52,22 +52,30 @@ public class ParserUtil {
      * <p>Only tokens that follow a recognised prefix are reported. A token before the first recognised prefix sits in
      * the preamble, which the command parsers already reject with their own message.
      *
+     * <p>An unrecognised token is reported only when its first letter begins one of {@code knownPrefixes}, so a
+     * mistyped field prefix such as {@code bb/} or {@code pa/} is caught while ordinary text containing a slash, such
+     * as {@code c/o Mary Tan} or {@code w/ lift} in an address, is left alone.
+     *
      * @param usage Command usage shown with the error, usually a command's {@code MESSAGE_USAGE}.
      */
     public static void rejectUnknownPrefixes(String args, String usage, Prefix... knownPrefixes)
             throws ParseException {
         requireNonNull(args);
         Set<String> known = new HashSet<>();
+        Set<Character> knownInitials = new HashSet<>();
         for (Prefix prefix : knownPrefixes) {
-            known.add(prefix.getPrefix().toLowerCase(Locale.ROOT));
+            String knownPrefix = prefix.getPrefix().toLowerCase(Locale.ROOT);
+            known.add(knownPrefix);
+            knownInitials.add(knownPrefix.charAt(0));
         }
         boolean seenKnownPrefix = false;
         Matcher matcher = PREFIX_TOKEN_PATTERN.matcher(args);
         while (matcher.find()) {
             String token = matcher.group();
-            if (known.contains(token.toLowerCase(Locale.ROOT))) {
+            String lowerCaseToken = token.toLowerCase(Locale.ROOT);
+            if (known.contains(lowerCaseToken)) {
                 seenKnownPrefix = true;
-            } else if (seenKnownPrefix) {
+            } else if (seenKnownPrefix && knownInitials.contains(lowerCaseToken.charAt(0))) {
                 throw new ParseException(String.format(MESSAGE_UNKNOWN_PREFIX, token) + "\n" + usage);
             }
         }
