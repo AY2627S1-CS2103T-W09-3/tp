@@ -349,11 +349,11 @@ persistent and undoable:
 
 1. Capture a before snapshot, execute the command, then capture an after snapshot.
    A parse error or `CommandException` stops execution without recording history.
-2. Write the data file only if the JSON that saving would produce differs from the
-   JSON before the command, so read-only and no-op commands never write and keep
-   working when the data location cannot be written. Comparing the serialised form
-   rather than the model means a change the model considers equal, such as a tag
-   whose only difference is letter casing, is still saved.
+2. Write the data file only if any stored field of any client changed, so read-only
+   and no-op commands never write and keep working when the data location cannot be
+   written. Comparing every stored field rather than the model means a change the
+   model considers equal, such as a tag whose only difference is letter casing, is
+   still saved.
 3. After that write step succeeds or is skipped, call `recordChange` only if the
    command is undoable.
    `add`, `edit`, `delete`, `role`, `note` and confirmed `clear` are eligible.
