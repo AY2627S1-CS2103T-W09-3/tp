@@ -21,6 +21,8 @@ public class JsonSerializableAddressBookTest {
     private static final Path DUPLICATE_PERSON_FILE = TEST_DATA_FOLDER.resolve("duplicatePersonAddressBook.json");
     private static final Path DUPLICATE_PHONE_FILE = TEST_DATA_FOLDER.resolve("duplicatePhoneAddressBook.json");
     private static final Path DUPLICATE_EMAIL_FILE = TEST_DATA_FOLDER.resolve("duplicateEmailAddressBook.json");
+    private static final Path DUPLICATE_EMAIL_CASE_FILE =
+            TEST_DATA_FOLDER.resolve("duplicateEmailCaseAddressBook.json");
     private static final Path DUPLICATE_NAME_CASE_FILE =
             TEST_DATA_FOLDER.resolve("duplicateNameCaseAddressBook.json");
 
@@ -67,6 +69,14 @@ public class JsonSerializableAddressBookTest {
     @Test
     public void toModelType_duplicateNameDifferentCase_throwsIllegalValueException() throws Exception {
         JsonSerializableAddressBook dataFromFile = JsonUtil.readJsonFile(DUPLICATE_NAME_CASE_FILE,
+                JsonSerializableAddressBook.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON,
+                dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_duplicateEmailDifferentCase_throwsIllegalValueException() throws Exception {
+        JsonSerializableAddressBook dataFromFile = JsonUtil.readJsonFile(DUPLICATE_EMAIL_CASE_FILE,
                 JsonSerializableAddressBook.class).get();
         assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON,
                 dataFromFile::toModelType);
