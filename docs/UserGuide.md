@@ -3,7 +3,11 @@ layout: page
 title: User Guide
 ---
 
-EstateBookUltraProMax is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, EstateBookUltraProMax can help you manage contacts faster than traditional GUI applications.
+EstateBookUltraProMax is a desktop client book for **property agents who manage
+buyers and sellers**. Type short commands to add, find and update clients while
+the graphical interface keeps their contact details and property requirements
+visible. This helps agents retrieve the right record during a call or between
+viewings without searching through a spreadsheet.
 
 * Table of Contents
 {:toc}
@@ -13,31 +17,31 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 ## Quick start
 
 1. Ensure that Java `25` or later is installed on your computer.<br>
-   **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
+   **Mac users:** Follow the [Java 25 installation guide for Mac](https://se-education.org/guides/tutorials/javaInstallationMac.html) to install the prescribed Java Development Kit (JDK).
 
-1. Download the latest `.jar` file from [here](https://github.com/AY2627S1-CS2103T-W09-3/tp/releases).
+1. Download the JAR for the current version from the [releases page](https://github.com/AY2627S1-CS2103T-W09-3/tp/releases).
 
-1. Copy the file to the folder you want to use as the _home folder_ for EstateBookUltraProMax.
+1. Put the JAR in a writable folder where you want to keep this app's data.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar estatebookultrapromax.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds.<br>
+1. Open a terminal in the folder containing the JAR and run `java -jar estatebookultrapromax.jar`. If the terminal opens in another folder, use `cd /path/to/your/folder` to change to the JAR's folder first. If your downloaded JAR has a different filename, use that filename in the `java -jar` command.<br>
+   An app window similar to the one below should appear in a few seconds.<br>
    If no saved data file exists, the app starts with five sample clients:
    two buyers, two sellers, and one who is both.
    Otherwise, it loads your saved clients.<br>
    ![Main window with five sample clients, the command box, and an unselected detail panel](images/Ui.png)
 
-1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
+1. Type a command in the box at the top and press Enter to run it. For example, type **`help`** to open the Help window.<br>
    Some example commands you can try:
 
-   * `list` : Lists all clients.
+   * `list`: Lists all clients.
 
-   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a client named `John Doe` to EstateBookUltraProMax.
+   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`: Adds a client named `John Doe`.
 
-   * `delete 3` : Deletes the 3rd client shown in the current list.
+   * `delete 3`: Deletes the third client shown in the current list.
 
-   * `clear` : Shows a warning and deletes nothing. Enter `clear confirm` next to delete all clients.
+   * `clear`: Shows a warning and deletes nothing. Enter `clear confirm` next to delete all clients.
 
-   * `exit` : Exits the app.
+   * `exit`: Exits the app.
 
 1. Refer to the [Features](#features) section below for details of each command.
 
@@ -45,10 +49,10 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
 
 **:information_source: Keep each release in its own folder:**<br>
 
-Keep each release's JAR file in its own writable folder and always run it from
-that folder. The app creates its `data/` directory and `preferences.json` file
-next to the JAR, so using a separate folder for each release keeps different
-versions from sharing data or settings.
+Keep each release's JAR in its own writable folder and launch it from that
+folder. The app saves `data/` and `preferences.json` in the folder from which
+you launch it. Separate folders prevent different releases from sharing data
+or settings.
 
 </div>
 
@@ -141,12 +145,14 @@ The Help window shows the User Guide link and a button to copy it:
 
 ### Adding a client: `add`
 
-Adds a client to the EstateBookUltraProMax.
+Adds a client to EstateBookUltraProMax.
 
 Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`
 
-<div markdown="span" class="alert alert-primary">:bulb: **Tip:**
-A client can have any number of tags, including zero.
+<div markdown="block" class="alert alert-primary">
+
+**:bulb: Tip:** A client can have any number of tags, including zero.
+
 </div>
 
 Examples:
@@ -200,15 +206,15 @@ uses the index in the current search results, not the earlier full list.*
 
 **When does the panel change?**
 
-| Action | Panel behaviour                                                                                    |
-|---|----------------------------------------------------------------------------------------------------|
-| `view INDEX` or clicking a client card | Shows that client.                                                                                 |
+| Action | Panel behaviour |
+|---|---|
+| `view INDEX` or clicking a client card | Shows that client. |
 | Successful `edit`, `role` or `note` | Shows the updated client if they still match the active search/filter; otherwise clears the panel. |
-| Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index.                                 |
+| Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index. |
 | Successful `undo` or `redo` | Clears the panel. Select a client again using their current index. |
 | `undo` or `redo` with no available action | Keeps the current selection. |
-| `help`, `history`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
-| Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed.               |
+| `help`, `history`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed. |
+| Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed. |
 
 Clearing the panel prevents it from showing an outdated client when a list
 change moves a different client into the same index. It does not delete data.
@@ -225,7 +231,7 @@ and the panel is cleared. Enter `view INDEX` again to open the profile.
 
 ### Editing a client: `edit`
 
-Edits an existing client in EstateBookUltraProMax.
+Updates an existing client's details in EstateBookUltraProMax.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`
 
@@ -475,9 +481,12 @@ Format: `clear`, then `clear confirm`
 * When no clear is pending, any other word after `clear` shows `Invalid command format. Use: clear.`
 * A pending confirmation is not saved, so closing the app cancels it.
 
-<div markdown="span" class="alert alert-warning">:exclamation: **Warning:**
+<div markdown="block" class="alert alert-warning">
+
+**:exclamation: Warning:**
 `clear confirm` deletes every client. You can undo it only while it remains in the current session's
 history. Keep a separate backup of important data.
+
 </div>
 
 ### Undoing, redoing and viewing changes: `undo`, `redo`, `history`
