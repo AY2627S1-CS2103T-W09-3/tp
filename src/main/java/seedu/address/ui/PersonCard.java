@@ -74,6 +74,14 @@ public class PersonCard extends UiPart<Region> {
     }
 
     private void setRequirementsSummary() {
+        List<String> parts = buildRequirementsParts();
+        requirementsSummary.setText(String.join(" · ", parts));
+        boolean hasRequirements = !parts.isEmpty();
+        requirementsSummary.setVisible(hasRequirements);
+        requirementsSummary.setManaged(hasRequirements);
+    }
+
+    private List<String> buildRequirementsParts() {
         List<String> parts = new ArrayList<>();
         if (person.getBudget() != null) {
             parts.add("Budget " + person.getBudget());
@@ -91,10 +99,7 @@ public class PersonCard extends UiPart<Region> {
             parts.add(housingTypes);
         }
 
-        requirementsSummary.setText(String.join(" · ", parts));
-        boolean hasRequirements = !parts.isEmpty();
-        requirementsSummary.setVisible(hasRequirements);
-        requirementsSummary.setManaged(hasRequirements);
+        return parts;
     }
 
     private void setRoleBadge(ClientRole clientRole) {
@@ -186,15 +191,17 @@ public class PersonCard extends UiPart<Region> {
             boolean hasOverflow = shown < tagLabels.size();
             overflow.setVisible(hasOverflow);
             overflow.setManaged(hasOverflow);
-            if (hasOverflow) {
-                String count = "+" + (tagLabels.size() - shown);
-                if (!count.equals(overflow.getText())) {
-                    overflow.setText(count);
-                }
-                String tooltip = "Additional tags: " + String.join(", ", tagNames.subList(shown, tagNames.size()));
-                if (!tooltip.equals(overflowTooltip.getText())) {
-                    overflowTooltip.setText(tooltip);
-                }
+            if (!hasOverflow) {
+                return;
+            }
+
+            String count = "+" + (tagLabels.size() - shown);
+            if (!count.equals(overflow.getText())) {
+                overflow.setText(count);
+            }
+            String tooltip = "Additional tags: " + String.join(", ", tagNames.subList(shown, tagNames.size()));
+            if (!tooltip.equals(overflowTooltip.getText())) {
+                overflowTooltip.setText(tooltip);
             }
         }
 

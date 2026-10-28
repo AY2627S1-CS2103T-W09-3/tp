@@ -453,24 +453,26 @@ public class PersonCardTest {
     @Test
     public void layout_availableFontFamilies_fitContentWithoutClipping()
             throws ExecutionException, InterruptedException {
-        Person client = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent").build();
-        List<Person> clients = List.of(client, new PersonBuilder(client).withTags().build(),
-                new PersonBuilder(client).withBudget(new Budget(new Price("800000"), new Price("1200000")))
-                        .withAskingPrice(new Price("950000")).build());
+        Person taggedClient = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent").build();
+        Person untaggedClient = new PersonBuilder(taggedClient).withTags().build();
+        Person clientWithRequirements = new PersonBuilder(taggedClient)
+                .withBudget(new Budget(new Price("800000"), new Price("1200000")))
+                .withAskingPrice(new Price("950000")).build();
         runOnFxThread(() -> {
             List<String> families = List.of("System", "Serif", "Monospaced", "Segoe UI", "Arial Unicode MS").stream()
                     .filter(family -> Font.getFamilies().contains(family)).toList();
             assertFalse(families.isEmpty());
             for (String family : families) {
-                assertCardsFitWithFontFamily(clients, family);
+                assertCardsFitWithFontFamily(taggedClient, untaggedClient, clientWithRequirements, family);
             }
         });
     }
 
-    private static void assertCardsFitWithFontFamily(List<Person> clients, String family) {
-        Region taggedCard = createCardWithFontFamily(clients.get(0), family);
-        Region untaggedCard = createCardWithFontFamily(clients.get(1), family);
-        Region requirementsCard = createCardWithFontFamily(clients.get(2), family);
+    private static void assertCardsFitWithFontFamily(Person taggedClient, Person untaggedClient,
+            Person clientWithRequirements, String family) {
+        Region taggedCard = createCardWithFontFamily(taggedClient, family);
+        Region untaggedCard = createCardWithFontFamily(untaggedClient, family);
+        Region requirementsCard = createCardWithFontFamily(clientWithRequirements, family);
 
         assertEquals(taggedCard.getHeight(), untaggedCard.getHeight(), 0.01,
                 "Removing tags must not change the card height for " + family);
