@@ -24,7 +24,7 @@ EstateBookUltraProMax is a **desktop application for managing contacts, optimize
    If no saved data file exists, the app starts with five sample clients:
    two buyers, two sellers, and one who is both.
    Otherwise, it loads your saved clients.<br>
-   ![Ui](images/Ui.png)
+   ![Main window with five sample clients, the command box, and an unselected detail panel](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
@@ -132,9 +132,11 @@ and add the tag `t/couple`. Adding this tag does not allow duplicate records.
 
 Shows a message explaining how to access the help page.
 
-![help message](images/helpMessage.png)
-
 Format: `help`
+
+The Help window shows the User Guide link and a button to copy it:
+
+![Help window with the User Guide link and Copy URL button](images/helpMessage.png)
 
 
 ### Adding a client: `add`
@@ -180,20 +182,21 @@ Format: `view INDEX`
   the panel to the top.
 * With no selection, the panel shows `Select a client to see details.`
 
-Examples using the initial sample clients:
-
-* `list`, then `view 1`, shows Alicia Tan and the message `Showing Alicia Tan.`
-* `find Cheryl`, then `view 1`, shows Cheryl Goh, the first client in those results.
+Using the initial sample clients, enter `list`, then `view 1`. Alicia Tan is
+selected and the result box says `Showing Alicia Tan.`:
 
 ![Alicia Tan selected using list and view 1, with the note indicator on her card and notes and tags in the detail panel](images/ViewClientNote.png)
 
-*The panel after `list` followed by `view 1`. The document icon beside Alicia's name
-marks that she has a note; scroll down within the panel to read the note and tags.*
+*The document icon beside Alicia's name marks that she has a note. Her full
+profile, including the note and tags, appears in the detail panel.*
+
+Next enter `find Cheryl`, then `view 1`. The filtered list has a new index 1,
+which now refers to Cheryl Goh, and the result box says `Showing Cheryl Goh.`:
 
 ![Cheryl Goh selected using find Cheryl and view 1, with requirements in the right panel](images/ViewClient.png)
 
-*The panel after `find Cheryl` followed by `view 1`. Cheryl has no note, so her card
-shows no note indicator.*
+*Cheryl's card has no note indicator. This screenshot also shows that `view 1`
+uses the index in the current search results, not the earlier full list.*
 
 **When does the panel change?**
 
@@ -417,7 +420,7 @@ Format: `filter [r/ROLE] [t/TAG]…​ [l/AREA]…​ [h/TYPE]…​ [b/BUDGET] 
 * `find` also replaces an active filter. Use `list` to clear the filter and show all clients.
 * The filter stays active after `add`, `edit`, `delete`, `role`, `note` and `clear confirm`, so the displayed list can still be shorter than the whole book. Indexes in these commands refer to the displayed list.
 * After `add`, `edit` or `role`, the changed client is checked against the active filter again. A client who no longer matches leaves the displayed list. For example, after `filter r/buyer`, `role 1 seller` removes client 1 from the list. In the same way, after `filter t/urgent`, `edit 1 t/weekend` removes client 1, because the client no longer has the `urgent` tag, and after `filter l/Bishan`, `edit 1 l/Orchard` removes client 1, because the client no longer wants Bishan.
-* Only `add` can make a client appear, and only if the new client matches. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them, and after `filter l/Bishan`, adding a client with `l/Bishan` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again.
+* Among `add`, `edit` and `role`, only `add` can introduce a matching client to the filtered list, because `edit` and `role` can target only clients already displayed. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them, and after `filter l/Bishan`, adding a client with `l/Bishan` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again. `undo` and `redo` can also change which clients match the active filter.
 * `delete` removes the client from the list, and `note` never changes which clients are shown, because a filter does not look at notes.
 * `clear confirm` deletes every client, including the hidden ones, but the filter stays active. A client added afterwards stays hidden unless they match it, so run `list` to show everyone.
 
@@ -446,7 +449,7 @@ Format: `delete INDEX`
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd client in EstateBookUltraProMax.
-* `find Betsy` followed by `delete 1` deletes the 1st client in the results of the `find` command.
+* With the initial sample clients, `find Benjamin` followed by `delete 1` deletes Benjamin Lim, the first client in the search results.
 
 ### Clearing all entries: `clear`
 
