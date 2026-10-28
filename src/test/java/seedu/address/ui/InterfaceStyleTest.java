@@ -52,34 +52,38 @@ public class InterfaceStyleTest {
             ListView<?> list = (ListView<?>) root.lookup("#personListView");
             Set<Color> roleColours = new HashSet<>();
             for (int index = 0; index < clients.size(); index++) {
-                list.getSelectionModel().clearSelection();
-                settle(root);
-                Region card = cardAt(list, index);
-                Label badge = (Label) card.lookup("#role");
-                Color roleColour = background(badge);
-                Color unselectedColour = background(card);
-                double originalHeight = card.getHeight();
-                roleColours.add(roleColour);
-
-                list.getSelectionModel().select(index);
-                settle(root);
-                card = cardAt(list, index);
-                badge = (Label) card.lookup("#role");
-                assertNotEquals(unselectedColour, background(card));
-                assertEquals(originalHeight, card.getHeight(), 0.01);
-                assertEquals(roleColour, background(badge));
-                assertEquals(clients.get(index).getRole().getDisplayValue(), badge.getText());
-                assertTrue(badge.isVisible() && badge.isManaged());
-                assertTrue(badge.getWidth() >= badge.prefWidth(-1) - 1);
-                assertReadable(badge, roleColour);
-                assertReadable((Label) card.lookup("#name"), background(card));
-                assertReadable((Label) card.lookup("#email"), background(card));
-                assertTrue(card.getBorder().getStrokes().getFirst().getTopStroke() instanceof Color);
-                assertNotEquals(Color.TRANSPARENT, card.getBorder().getStrokes().getFirst().getTopStroke());
-                assertCardContentFits(card);
+                roleColours.add(assertSelectedRoleBadge(root, list, clients.get(index), index));
             }
             assertEquals(3, roleColours.size());
         });
+    }
+
+    private static Color assertSelectedRoleBadge(Region root, ListView<?> list, Person client, int index) {
+        list.getSelectionModel().clearSelection();
+        settle(root);
+        Region card = cardAt(list, index);
+        Label badge = (Label) card.lookup("#role");
+        Color roleColour = background(badge);
+        Color unselectedColour = background(card);
+        double originalHeight = card.getHeight();
+
+        list.getSelectionModel().select(index);
+        settle(root);
+        card = cardAt(list, index);
+        badge = (Label) card.lookup("#role");
+        assertNotEquals(unselectedColour, background(card));
+        assertEquals(originalHeight, card.getHeight(), 0.01);
+        assertEquals(roleColour, background(badge));
+        assertEquals(client.getRole().getDisplayValue(), badge.getText());
+        assertTrue(badge.isVisible() && badge.isManaged());
+        assertTrue(badge.getWidth() >= badge.prefWidth(-1) - 1);
+        assertReadable(badge, roleColour);
+        assertReadable((Label) card.lookup("#name"), background(card));
+        assertReadable((Label) card.lookup("#email"), background(card));
+        assertTrue(card.getBorder().getStrokes().getFirst().getTopStroke() instanceof Color);
+        assertNotEquals(Color.TRANSPARENT, card.getBorder().getStrokes().getFirst().getTopStroke());
+        assertCardContentFits(card);
+        return roleColour;
     }
 
     @Test

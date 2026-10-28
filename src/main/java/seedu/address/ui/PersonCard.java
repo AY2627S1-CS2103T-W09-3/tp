@@ -149,6 +149,13 @@ public class PersonCard extends UiPart<Region> {
 
         @Override
         protected void layoutChildren() {
+            int shown = countTagsThatFit();
+            updateVisibleTags(shown);
+            updateOverflow(shown);
+            super.layoutChildren();
+        }
+
+        private int countTagsThatFit() {
             int shown = tagLabels.size();
             double labelWidth = tagLabels.stream().mapToDouble(label -> label.prefWidth(-1)).sum();
             while (shown > 0) {
@@ -162,11 +169,17 @@ public class PersonCard extends UiPart<Region> {
                 shown--;
                 labelWidth -= tagLabels.get(shown).prefWidth(-1);
             }
+            return shown;
+        }
 
+        private void updateVisibleTags(int shown) {
             for (int i = 0; i < tagLabels.size(); i++) {
                 tagLabels.get(i).setVisible(i < shown);
                 tagLabels.get(i).setManaged(i < shown);
             }
+        }
+
+        private void updateOverflow(int shown) {
             boolean hasOverflow = shown < tagLabels.size();
             overflow.setVisible(hasOverflow);
             overflow.setManaged(hasOverflow);
@@ -180,7 +193,6 @@ public class PersonCard extends UiPart<Region> {
                     overflowTooltip.setText(tooltip);
                 }
             }
-            super.layoutChildren();
         }
 
         private double measureOverflowWidth(int count) {

@@ -21,6 +21,14 @@ final class PersonCardTestUtil {
 
     static void assertCardContentFits(Region card) {
         VBox content = (VBox) card.lookup("#cardContent");
+        assertRowsFit(card, content);
+        assertLabelsFit(card, content);
+        double verticalInsets = card.getInsets().getTop() + card.getInsets().getBottom();
+        assertEquals(content.getHeight() + verticalInsets, card.getHeight(), 0.01,
+                "The card must wrap its laid-out content and vertical insets");
+    }
+
+    private static void assertRowsFit(Region card, VBox content) {
         List<Node> rows = content.getChildren().stream().filter(Node::isManaged).toList();
         Bounds cardBounds = card.localToScene(card.getLayoutBounds());
         double previousBottom = cardBounds.getMinY();
@@ -32,7 +40,9 @@ final class PersonCardTestUtil {
                     && bounds.getMaxX() <= cardBounds.getMaxX() + 1, row.getId() + " exceeds the card width");
             previousBottom = bounds.getMaxY();
         }
+    }
 
+    private static void assertLabelsFit(Region card, VBox content) {
         for (Node node : card.lookupAll(".label")) {
             Label label = (Label) node;
             if (!label.isVisible() || !label.isManaged() || label.getText().isEmpty()) {
@@ -55,8 +65,5 @@ final class PersonCardTestUtil {
             assertTrue(labelBounds.getMinY() >= rowBounds.getMinY() - 1
                     && labelBounds.getMaxY() <= rowBounds.getMaxY() + 1, context + " exceeds its row height");
         }
-        double verticalInsets = card.getInsets().getTop() + card.getInsets().getBottom();
-        assertEquals(content.getHeight() + verticalInsets, card.getHeight(), 0.01,
-                "The card must wrap its laid-out content and vertical insets");
     }
 }

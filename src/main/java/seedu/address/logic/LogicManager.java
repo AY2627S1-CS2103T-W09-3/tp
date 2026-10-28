@@ -71,6 +71,20 @@ public class LogicManager implements Logic {
         CommandResult commandResult = command.execute(model);
         AddressBookSnapshot after = model.captureSnapshot();
 
+        saveAddressBookOrRollback(command, before);
+
+        if (command.isUndoable()) {
+            model.recordChange(before, after, command.getCommandWord(), command.getActionDescription());
+        }
+
+        isClearPending = commandResult.isAwaitingConfirmation();
+        return commandResult;
+    }
+
+    /**
+     * Saves the current address book, restoring data and history if saving fails.
+     */
+    private void saveAddressBookOrRollback(Command command, AddressBookSnapshot before) throws CommandException {
         try {
             storage.saveAddressBook(model.getAddressBook());
         } catch (AccessDeniedException e) {
@@ -80,13 +94,6 @@ public class LogicManager implements Logic {
             rollbackFailedSave(command, before);
             throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
         }
-
-        if (command.isUndoable()) {
-            model.recordChange(before, after, command.getCommandWord(), command.getActionDescription());
-        }
-
-        isClearPending = commandResult.isAwaitingConfirmation();
-        return commandResult;
     }
 
     /**
