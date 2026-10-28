@@ -96,6 +96,14 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_missingRole_reportsCommandFormat() {
+        assertParseException("role", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1 buyer extra", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1 agent", RoleCommand.MESSAGE_INVALID_ROLE);
+    }
+
+    @Test
     public void execute_commandExecutionError_throwsCommandException() {
         String deleteCommand = "delete 9";
         assertCommandException(deleteCommand, MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);

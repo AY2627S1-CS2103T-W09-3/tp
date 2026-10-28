@@ -30,8 +30,8 @@ public class RoleCommandParserTest {
     @Test
     public void parse_invalidFormat_failure() {
         String[] invalidInputs = {
-            "", "buyer", "1", "1   ", "0 buyer", "0 none", "-1 none", "1.5 buyer",
-            "abc buyer", "2147483648 none", "1 buyer extra"
+            "", "buyer", "1", "1   ", "0 buyer", "0 none", "-1 buyer", "-1 none",
+            "1.5 buyer", "abc buyer", "2147483648 buyer", "2147483648 none", "1 buyer extra"
         };
 
         for (String input : invalidInputs) {

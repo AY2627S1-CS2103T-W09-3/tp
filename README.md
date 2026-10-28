@@ -16,7 +16,7 @@ Records are stored in one file that can be opened and edited by hand. There is n
 server and no database.
 
 * Mark a client as a buyer, a seller, or both.
-* Find clients by any part of their name, phone number, or email address.
+* Find clients by any part of their name, phone number, email address, or address.
 * List all clients.
 * If you can type fast, EstateBookUltraProMax can get your client management
   tasks done faster than a mouse-driven app.
