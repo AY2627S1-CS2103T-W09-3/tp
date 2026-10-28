@@ -28,6 +28,7 @@ import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.RoleCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -91,6 +92,14 @@ public class LogicManagerTest {
     public void execute_invalidCommandFormat_throwsParseException() {
         String invalidCommand = "uicfhmowqewca";
         assertParseException(invalidCommand, MESSAGE_UNKNOWN_COMMAND);
+    }
+
+    @Test
+    public void execute_missingRole_reportsCommandFormat() {
+        assertParseException("role", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1 buyer extra", RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        assertParseException("role 1 agent", ClientRole.MESSAGE_CONSTRAINTS);
     }
 
     @Test
