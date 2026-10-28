@@ -173,6 +173,39 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void saveAddressBook_runtimeReplacementAndCleanupFail_preservesOriginalFailure() throws Exception {
+        // A runtime save failure must remain primary even when temporary-file cleanup also fails.
+        Path filePath = testFolder.resolve("addressBook.json");
+        AddressBook original = new AddressBook();
+        original.addPerson(ALICE);
+        new JsonAddressBookStorage(filePath).saveAddressBook(original);
+        String previousJson = Files.readString(filePath);
+
+        AddressBook updated = new AddressBook(original);
+        updated.addPerson(BOB);
+        IllegalStateException replacementFailure = new IllegalStateException("Simulated replacement failure");
+        IOException cleanupFailure = new IOException("Simulated cleanup failure");
+        JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(filePath) {
+            @Override
+            void replaceDataFile(Path temporaryFile, Path destination) {
+                throw replacementFailure;
+            }
+
+            @Override
+            void deleteTemporaryFile(Path temporaryFile) throws IOException {
+                throw cleanupFailure;
+            }
+        };
+
+        IllegalStateException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class, () -> failingStorage.saveAddressBook(updated));
+        assertSame(replacementFailure, thrown);
+        assertEquals(1, thrown.getSuppressed().length);
+        assertSame(cleanupFailure, thrown.getSuppressed()[0]);
+        assertEquals(previousJson, Files.readString(filePath));
+    }
+
+    @Test
     public void saveAddressBook_existingReadOnlyFile_throwsAccessDeniedException() throws Exception {
         Path filePath = testFolder.resolve("readOnlyAddressBook.json");
         AddressBook original = new AddressBook();
