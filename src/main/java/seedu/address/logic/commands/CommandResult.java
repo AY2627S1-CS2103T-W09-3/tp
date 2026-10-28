@@ -27,6 +27,9 @@ public class CommandResult {
     /** The user must confirm before the command takes effect. */
     private final boolean awaitingConfirmation;
 
+    /** The command leaves the displayed list and current selection unchanged. */
+    private final boolean preserveSelection;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
@@ -38,19 +41,20 @@ public class CommandResult {
      * Constructs a {@code CommandResult} with an explicit confirmation state.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean awaitingConfirmation) {
-        this(feedbackToUser, showHelp, exit, awaitingConfirmation, null);
+        this(feedbackToUser, showHelp, exit, awaitingConfirmation, null, false);
     }
 
     /**
      * Constructs a {@code CommandResult} with all result fields.
      */
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit,
-            boolean awaitingConfirmation, Index viewIndex) {
+            boolean awaitingConfirmation, Index viewIndex, boolean preserveSelection) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
         this.awaitingConfirmation = awaitingConfirmation;
         this.viewIndex = viewIndex;
+        this.preserveSelection = preserveSelection;
     }
 
     /**
@@ -67,7 +71,12 @@ public class CommandResult {
      * Mutation commands must locate the updated client in that list, rather than reuse its old index.
      */
     public CommandResult(String feedbackToUser, Index viewIndex) {
-        this(feedbackToUser, false, false, false, requireNonNull(viewIndex));
+        this(feedbackToUser, false, false, false, requireNonNull(viewIndex), false);
+    }
+
+    /** Returns a result for a read-only command that should keep the selected client visible. */
+    public static CommandResult preservingSelection(String feedbackToUser) {
+        return new CommandResult(feedbackToUser, false, false, false, null, true);
     }
 
     public String getFeedbackToUser() {
@@ -84,8 +93,9 @@ public class CommandResult {
 
     /**
      * Returns the client index to select in the post-command filtered list.
-     * Results awaiting confirmation or showing help preserve the current selection and detail panel.
-     * For other results, an empty optional instructs the UI to clear its selection and detail panel.
+     * Results awaiting confirmation, showing help, or requesting selection preservation leave the
+     * current selection and detail panel unchanged. For other results, an empty optional instructs
+     * the UI to clear its selection and detail panel.
      * After edit, note or role, the index identifies the updated client if it remains visible;
      * otherwise it is empty, even if a different client now occupies the old index.
      */
@@ -95,6 +105,10 @@ public class CommandResult {
 
     public boolean isAwaitingConfirmation() {
         return awaitingConfirmation;
+    }
+
+    public boolean shouldPreserveSelection() {
+        return preserveSelection;
     }
 
     @Override
@@ -112,14 +126,15 @@ public class CommandResult {
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
                 && Objects.equals(viewIndex, otherCommandResult.viewIndex)
-                && awaitingConfirmation == otherCommandResult.awaitingConfirmation;
+                && awaitingConfirmation == otherCommandResult.awaitingConfirmation
+                && preserveSelection == otherCommandResult.preserveSelection;
     }
 
     @Override
     public int hashCode() {
         // Index defines value equality but does not override hashCode, so hash its numeric value.
         Integer viewIndexValue = viewIndex == null ? null : viewIndex.getZeroBased();
-        return Objects.hash(feedbackToUser, showHelp, exit, viewIndexValue, awaitingConfirmation);
+        return Objects.hash(feedbackToUser, showHelp, exit, viewIndexValue, awaitingConfirmation, preserveSelection);
     }
 
     @Override
@@ -130,6 +145,7 @@ public class CommandResult {
                 .add("exit", exit)
                 .add("viewIndex", viewIndex)
                 .add("awaitingConfirmation", awaitingConfirmation)
+                .add("preserveSelection", preserveSelection)
                 .toString();
     }
 

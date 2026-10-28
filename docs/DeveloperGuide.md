@@ -272,6 +272,12 @@ then saves the address book before returning the result, as it does for other
 successful commands. `view` does not modify the book, but this shared save can
 still fail; the selection request is applied only after `LogicManager` returns.
 
+`HistoryCommand` also leaves the displayed list unchanged. Its `CommandResult`
+requests selection preservation whether history is empty or not, so
+`MainWindow#executeCommand` keeps the current profile visible for typed
+`history` and the Edit menu action. Results from list-changing commands still
+clear the selection when they do not provide a view index.
+
 ![Sequence from view 1 to selecting and rendering the first displayed client](images/ViewSequenceDiagram.png)
 
 The diagram shows a successful `view 1` with at least one displayed client and
