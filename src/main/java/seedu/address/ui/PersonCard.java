@@ -118,6 +118,7 @@ public class PersonCard extends UiPart<Region> {
             case BUYER -> "role-buyer";
             case SELLER -> "role-seller";
             case BOTH -> "role-both";
+            default -> throw new IllegalArgumentException("Unsupported client role: " + clientRole);
         };
     }
 
