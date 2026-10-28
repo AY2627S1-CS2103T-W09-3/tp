@@ -360,15 +360,12 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_roleNoneWithInvalidIndex_reportsDisplayedRangeWithoutChangingClient() throws Exception {
+    public void execute_roleNoneWithInvalidIndex_doesNotChangeClient() throws Exception {
         model.addPerson(new PersonBuilder(AMY).withRole(ClientRole.BUYER).build());
         AddressBookSnapshot before = model.captureSnapshot();
-        String expectedMessage = String.format(RoleCommand.MESSAGE_INVALID_CLIENT_INDEX, 1);
+        String expectedMessage = RoleCommand.MESSAGE_INVALID_CLIENT_INDEX;
 
-        assertThrows(CommandException.class, expectedMessage, () -> logic.execute("role 0 none"));
-        assertThrows(CommandException.class, expectedMessage, () -> logic.execute("role -1 none"));
-        assertThrows(CommandException.class, expectedMessage, () -> logic.execute("role 999 none"));
-        assertThrows(CommandException.class, expectedMessage, () -> logic.execute("role 2147483648 none"));
+        assertCommandException("role 999 none", expectedMessage);
 
         assertEquals(before, model.captureSnapshot());
         assertFalse(model.canUndo());

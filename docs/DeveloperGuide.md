@@ -202,8 +202,8 @@ Invalid inputs do not change the client's role:
 | The command format or index syntax is invalid | `Error: Invalid command format. Use: role INDEX ROLE.` |
 | The role is missing | `Error: Invalid command format. Use: role INDEX ROLE.` |
 | The role is not `buyer`, `seller`, `both`, or `none` | `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.` |
-| The index is zero or outside the currently displayed list | `Error: Invalid client index: Enter a number between 1 and N for the displayed list.` Here, `N` is the number of displayed clients. |
-| No clients are displayed | `Error: Invalid client index: No clients are currently displayed.` |
+| The index is zero or has invalid syntax | `Error: Invalid command format. Use: role INDEX ROLE.` |
+| The positive index is outside the currently displayed list, or no clients are displayed | `Error: The client index provided is invalid.` |
 
 The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
 
@@ -846,8 +846,8 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: Run `list` and note the current role of client 1.
 
    1. Test case: `role 0 buyer`<br>
-      Expected: No role is changed. With five clients displayed, the result box shows
-      `Error: Invalid client index: Enter a number between 1 and 5 for the displayed list.`
+      Expected: No role is changed. The result box shows
+      `Error: Invalid command format. Use: role INDEX ROLE.`
 
    1. Test case: `role 1`<br>
       Expected: No role is changed. The result box shows
@@ -858,8 +858,8 @@ testers are expected to do more *exploratory* testing.
       `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.`
 
    1. Test case: `role 999 buyer`<br>
-      Expected: No role is changed. With five clients displayed, the result box shows
-      `Error: Invalid client index: Enter a number between 1 and 5 for the displayed list.`
+      Expected: No role is changed. The result box shows
+      `Error: The client index provided is invalid.`
 
    1. Test case: `role 1 buyer extra`<br>
       Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`

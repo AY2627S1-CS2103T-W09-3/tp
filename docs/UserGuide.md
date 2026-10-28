@@ -299,7 +299,6 @@ Marks a client as a buyer, a seller, or both, or removes an assigned role.
 Format: `role INDEX ROLE`
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
-  If it is outside the displayed list, the error states the current valid range (from 1 to the number of displayed clients).
 * `ROLE` accepts `buyer`, `seller`, `both`, or `none`, ignoring case. Use `none` to remove an assigned role.
 * The client card displays `Buyer`, `Seller`, or `Buyer, Seller` for assigned roles. It shows no role badge after `none`.
 * Newly added clients have no role assigned.

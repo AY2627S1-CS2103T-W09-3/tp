@@ -12,11 +12,9 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
-import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,7 +25,6 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
-import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.testutil.PersonBuilder;
 
@@ -95,7 +92,8 @@ public class RoleCommandTest {
 
     @Test
     public void execute_clientStillMatchesRoleFilter_returnsVisibleIndex() throws Exception {
-        model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+        model.updateFilteredPersonList(person -> person.getRole() == ClientRole.BUYER
+                || person.getRole() == ClientRole.BOTH);
 
         CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BOTH).execute(model);
 
@@ -106,7 +104,8 @@ public class RoleCommandTest {
 
     @Test
     public void execute_clientLeavesRoleFilter_doesNotSelectClientMovingIntoOldIndex() throws Exception {
-        model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+        model.updateFilteredPersonList(person -> person.getRole() == ClientRole.BUYER
+                || person.getRole() == ClientRole.BOTH);
 
         CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.SELLER).execute(model);
 
@@ -116,7 +115,8 @@ public class RoleCommandTest {
 
     @Test
     public void execute_none_clientLeavesRoleFilter() throws Exception {
-        model.updateFilteredPersonList(new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+        model.updateFilteredPersonList(person -> person.getRole() == ClientRole.BUYER
+                || person.getRole() == ClientRole.BOTH);
 
         CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, null).execute(model);
 
@@ -129,8 +129,7 @@ public class RoleCommandTest {
         Index invalidIndex = Index.fromZeroBased(model.getFilteredPersonList().size());
         RoleCommand command = new RoleCommand(invalidIndex, ClientRole.SELLER);
 
-        assertCommandFailure(command, model, String.format(RoleCommand.MESSAGE_INVALID_CLIENT_INDEX,
-                model.getFilteredPersonList().size()));
+        assertCommandFailure(command, model, RoleCommand.MESSAGE_INVALID_CLIENT_INDEX);
     }
 
     @Test
@@ -138,23 +137,15 @@ public class RoleCommandTest {
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
         RoleCommand command = new RoleCommand(INDEX_SECOND_PERSON, ClientRole.SELLER);
 
-        assertCommandFailure(command, model, String.format(RoleCommand.MESSAGE_INVALID_CLIENT_INDEX, 1));
+        assertCommandFailure(command, model, RoleCommand.MESSAGE_INVALID_CLIENT_INDEX);
     }
 
     @Test
-    public void execute_zeroIndex_failureShowsDisplayedRange() {
-        RoleCommand command = new RoleCommand(BigInteger.ZERO, null);
-
-        assertCommandFailure(command, model, String.format(RoleCommand.MESSAGE_INVALID_CLIENT_INDEX,
-                model.getFilteredPersonList().size()));
-    }
-
-    @Test
-    public void execute_emptyDisplayedList_failureShowsNoClients() {
+    public void execute_emptyDisplayedList_failure() {
         Model emptyModel = new ModelManager();
-        RoleCommand command = new RoleCommand(BigInteger.ZERO, null);
+        RoleCommand command = new RoleCommand(INDEX_FIRST_PERSON, null);
 
-        assertCommandFailure(command, emptyModel, RoleCommand.MESSAGE_NO_DISPLAYED_CLIENTS);
+        assertCommandFailure(command, emptyModel, RoleCommand.MESSAGE_INVALID_CLIENT_INDEX);
     }
 
     @Test

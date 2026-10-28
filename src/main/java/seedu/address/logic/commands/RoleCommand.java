@@ -2,7 +2,6 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.math.BigInteger;
 import java.util.List;
 
 import seedu.address.commons.core.index.Index;
@@ -23,9 +22,7 @@ public class RoleCommand extends Command {
     public static final String MESSAGE_INVALID_ROLE =
             "Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.";
     public static final String MESSAGE_INVALID_CLIENT_INDEX =
-            "Invalid client index: Enter a number between 1 and %d for the displayed list.";
-    public static final String MESSAGE_NO_DISPLAYED_CLIENTS =
-            "Invalid client index: No clients are currently displayed.";
+            "The client index provided is invalid.";
     public static final String MESSAGE_SUCCESS =
             "Role updated: %1$s is now marked as %2$s";
     public static final String MESSAGE_ROLE_CLEARED =
@@ -35,7 +32,7 @@ public class RoleCommand extends Command {
 
     private String actionDescription = "";
 
-    private final BigInteger oneBasedIndex;
+    private final Index index;
     private final ClientRole role;
 
     /**
@@ -43,15 +40,7 @@ public class RoleCommand extends Command {
      * A null role clears an existing assignment.
      */
     public RoleCommand(Index index, ClientRole role) {
-        this(BigInteger.valueOf(requireNonNull(index).getOneBased()), role);
-    }
-
-    /**
-     * Creates a {@code RoleCommand} with a numeric index that may be outside the
-     * displayed list, so it can report the valid range when executed.
-     */
-    public RoleCommand(BigInteger oneBasedIndex, ClientRole role) {
-        this.oneBasedIndex = requireNonNull(oneBasedIndex);
+        this.index = requireNonNull(index);
         this.role = role;
     }
 
@@ -61,15 +50,10 @@ public class RoleCommand extends Command {
         requireNonNull(model);
         List<Person> lastShownList = model.getFilteredPersonList();
 
-        if (lastShownList.isEmpty()) {
-            throw new CommandException(MESSAGE_NO_DISPLAYED_CLIENTS);
-        }
-        if (oneBasedIndex.compareTo(BigInteger.ONE) < 0
-                || oneBasedIndex.compareTo(BigInteger.valueOf(lastShownList.size())) > 0) {
-            throw new CommandException(String.format(MESSAGE_INVALID_CLIENT_INDEX, lastShownList.size()));
+        if (index.getZeroBased() >= lastShownList.size()) {
+            throw new CommandException(MESSAGE_INVALID_CLIENT_INDEX);
         }
 
-        Index index = Index.fromOneBased(oneBasedIndex.intValueExact());
         Person clientToEdit = lastShownList.get(index.getZeroBased());
         if (role == null && clientToEdit.getRole() == null) {
             return new CommandResult(String.format(MESSAGE_ROLE_ALREADY_UNASSIGNED, clientToEdit.getName()), index);
@@ -114,7 +98,7 @@ public class RoleCommand extends Command {
         }
 
         return other instanceof RoleCommand otherRoleCommand
-                && oneBasedIndex.equals(otherRoleCommand.oneBasedIndex)
+                && index.equals(otherRoleCommand.index)
                 && role == otherRoleCommand.role;
     }
 }

@@ -2,8 +2,7 @@ package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
 
-import java.math.BigInteger;
-
+import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.RoleCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.ClientRole;
@@ -23,19 +22,21 @@ public class RoleCommandParser implements Parser<RoleCommand> {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
 
-        if (!arguments[0].matches("-?\\d+")) {
+        Index index;
+        try {
+            index = ParserUtil.parseIndex(arguments[0]);
+        } catch (ParseException pe) {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
-        BigInteger oneBasedIndex = new BigInteger(arguments[0]);
 
         if (arguments[1].equalsIgnoreCase("none")) {
-            return new RoleCommand(oneBasedIndex, null);
+            return new RoleCommand(index, null);
         }
 
         if (!ClientRole.isValidRole(arguments[1])) {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_ROLE);
         }
 
-        return new RoleCommand(oneBasedIndex, ClientRole.fromString(arguments[1]));
+        return new RoleCommand(index, ClientRole.fromString(arguments[1]));
     }
 }
