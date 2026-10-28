@@ -849,7 +849,7 @@ public class MainWindowTest {
                 TextField commandBox = (TextField) root.lookup("#commandTextField");
                 enterCommand(window, commandBox, "view 3");
                 assertSelectedClient(window, CARL);
-                enterCommand(window, commandBox, "find Bob Carl");
+                enterCommand(window, commandBox, "find h");
                 assertEquals(List.of(BOB, CARL), model.getFilteredPersonList());
                 assertEmptySelection(window);
                 enterCommand(window, commandBox, "view 2");
