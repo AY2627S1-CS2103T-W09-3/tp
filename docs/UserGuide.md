@@ -435,7 +435,7 @@ Format: `clear`, then `clear confirm`
 * Pressing Enter on a completely empty command box does nothing and the confirmation stays pending.
   A single space counts as input and cancels.
 * If there are no clients, `clear` shows `The client book is already empty.` and no confirmation is pending.
-* `clear confirm` only works straight after `clear`. Otherwise it shows `No clear is pending. Type clear first.`, however `confirm` is capitalised.
+* `clear confirm` only works straight after `clear`, regardless of how `confirm` is capitalised. Otherwise it shows `No clear is pending. Type clear first.`
 * When no clear is pending, any other word after `clear` shows `Invalid command format. Use: clear.`
 * A pending confirmation is not saved, so closing the app cancels it.
 
