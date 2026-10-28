@@ -93,8 +93,10 @@ public class LogicManager implements Logic {
     private void rollbackFailedSave(Command command, AddressBookSnapshot before) {
         try {
             if (command instanceof UndoCommand undoCommand) {
+                assert undoCommand.getUndoneEntry() != null : "Successful undo must retain its history entry";
                 model.rollbackUndo(undoCommand.getUndoneEntry());
             } else if (command instanceof RedoCommand redoCommand) {
+                assert redoCommand.getRedoneEntry() != null : "Successful redo must retain its history entry";
                 model.rollbackRedo(redoCommand.getRedoneEntry());
             } else {
                 model.restoreSnapshot(before);
@@ -102,6 +104,7 @@ public class LogicManager implements Logic {
         } catch (HistoryOperationException e) {
             throw new IllegalStateException("Could not restore history after a failed save", e);
         }
+        logger.warning("Restored client data and history after a failed save");
     }
 
     /**
