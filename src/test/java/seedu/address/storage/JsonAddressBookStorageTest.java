@@ -2,6 +2,7 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
@@ -136,6 +137,38 @@ public class JsonAddressBookStorageTest {
         try (var files = Files.list(testFolder)) {
             assertEquals(1, files.count());
         }
+    }
+
+    @Test
+    public void saveAddressBook_replacementAndCleanupFail_preservesOriginalFailure() throws Exception {
+        Path filePath = testFolder.resolve("addressBook.json");
+        AddressBook original = new AddressBook();
+        original.addPerson(ALICE);
+        new JsonAddressBookStorage(filePath).saveAddressBook(original);
+        String previousJson = Files.readString(filePath);
+
+        AddressBook updated = new AddressBook(original);
+        updated.addPerson(BOB);
+        IOException replacementFailure = new IOException("Simulated replacement failure");
+        IOException cleanupFailure = new IOException("Simulated cleanup failure");
+        JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(filePath) {
+            @Override
+            void replaceDataFile(Path temporaryFile, Path destination) throws IOException {
+                throw replacementFailure;
+            }
+
+            @Override
+            void deleteTemporaryFile(Path temporaryFile) throws IOException {
+                throw cleanupFailure;
+            }
+        };
+
+        IOException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                IOException.class, () -> failingStorage.saveAddressBook(updated));
+        assertSame(replacementFailure, thrown);
+        assertEquals(1, thrown.getSuppressed().length);
+        assertSame(cleanupFailure, thrown.getSuppressed()[0]);
+        assertEquals(previousJson, Files.readString(filePath));
     }
 
     @Test

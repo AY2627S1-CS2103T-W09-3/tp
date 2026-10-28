@@ -99,9 +99,19 @@ public class JsonAddressBookStorage {
         try {
             Files.writeString(temporaryFile, json, StandardCharsets.UTF_8);
             replaceDataFile(temporaryFile, destination);
-        } finally {
-            Files.deleteIfExists(temporaryFile);
+        } catch (IOException | RuntimeException saveFailure) {
+            try {
+                deleteTemporaryFile(temporaryFile);
+            } catch (IOException | RuntimeException cleanupFailure) {
+                saveFailure.addSuppressed(cleanupFailure);
+            }
+            throw saveFailure;
         }
+    }
+
+    /** Removes a temporary file after an unsuccessful save. */
+    void deleteTemporaryFile(Path temporaryFile) throws IOException {
+        Files.deleteIfExists(temporaryFile);
     }
 
     /** Replaces the saved file only after its complete replacement has been written. */
