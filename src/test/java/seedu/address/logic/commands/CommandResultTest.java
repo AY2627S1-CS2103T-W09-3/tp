@@ -20,6 +20,7 @@ public class CommandResultTest {
         assertFalse(feedbackResult.isShowHelp());
         assertFalse(feedbackResult.isExit());
         assertFalse(feedbackResult.isAwaitingConfirmation());
+        assertFalse(feedbackResult.shouldPreserveSelection());
         assertTrue(feedbackResult.getViewIndex().isEmpty());
 
         CommandResult helpResult = new CommandResult("help", true, false);
@@ -48,6 +49,18 @@ public class CommandResultTest {
         assertFalse(result.isAwaitingConfirmation());
         assertFalse(result.isShowHelp());
         assertFalse(result.isExit());
+        assertFalse(result.shouldPreserveSelection());
+    }
+
+    @Test
+    public void preservingSelection_keepsSelectionWithoutViewIndex() {
+        CommandResult result = CommandResult.preservingSelection("history");
+
+        assertTrue(result.shouldPreserveSelection());
+        assertTrue(result.getViewIndex().isEmpty());
+        assertFalse(result.isShowHelp());
+        assertFalse(result.isAwaitingConfirmation());
+        assertNotEquals(new CommandResult("history"), result);
     }
 
     @Test
@@ -88,6 +101,9 @@ public class CommandResultTest {
 
         // different awaitingConfirmation value -> returns false
         assertFalse(commandResult.equals(new CommandResult("feedback", false, false, true)));
+
+        // different preserveSelection value -> returns false
+        assertFalse(commandResult.equals(CommandResult.preservingSelection("feedback")));
     }
 
     @Test
@@ -120,6 +136,9 @@ public class CommandResultTest {
 
         // different awaitingConfirmation value -> returns different hashcode
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, false, true).hashCode());
+
+        // different preserveSelection value -> returns different hashcode
+        assertNotEquals(commandResult.hashCode(), CommandResult.preservingSelection("feedback").hashCode());
     }
 
     @Test
@@ -137,7 +156,8 @@ public class CommandResultTest {
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
                 + ", exit=" + commandResult.isExit() + ", viewIndex=null"
-                + ", awaitingConfirmation=" + commandResult.isAwaitingConfirmation() + "}";
+                + ", awaitingConfirmation=" + commandResult.isAwaitingConfirmation()
+                + ", preserveSelection=" + commandResult.shouldPreserveSelection() + "}";
         assertEquals(expected, commandResult.toString());
     }
 
@@ -147,7 +167,7 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback", viewIndex);
         String expected = CommandResult.class.getCanonicalName()
                 + "{feedbackToUser=feedback, showHelp=false, exit=false, viewIndex=" + viewIndex
-                + ", awaitingConfirmation=false}";
+                + ", awaitingConfirmation=false, preserveSelection=false}";
         assertEquals(expected, commandResult.toString());
     }
 }

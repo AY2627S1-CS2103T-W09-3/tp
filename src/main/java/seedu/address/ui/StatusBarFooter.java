@@ -5,6 +5,7 @@ import java.nio.file.Paths;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -25,15 +26,21 @@ public class StatusBarFooter extends UiPart<Region> {
     private Label clientCountStatus;
 
     /**
-     * Creates a footer showing the save location and the number of displayed clients.
+     * Creates a footer showing the save location, client counts and active filter status.
      */
-    public StatusBarFooter(Path saveLocation, ObservableList<Person> displayedClients) {
+    public StatusBarFooter(Path saveLocation, ObservableList<Person> displayedClients,
+            ObservableList<Person> allClients, ObservableValue<Boolean> isFiltered) {
         super(FXML);
         saveLocationStatus.setText(Paths.get(".").resolve(saveLocation).toString());
-        IntegerBinding clientCount = Bindings.size(displayedClients);
-        clientCountStatus.textProperty().bind(Bindings.when(clientCount.isEqualTo(1))
-                .then("1 client")
-                .otherwise(clientCount.asString("%d clients")));
+        IntegerBinding displayedCount = Bindings.size(displayedClients);
+        IntegerBinding totalCount = Bindings.size(allClients);
+        clientCountStatus.textProperty().bind(Bindings.createStringBinding(() -> {
+            if (isFiltered.getValue()) {
+                return String.format("%d of %d clients (filtered; use list)",
+                        displayedCount.get(), totalCount.get());
+            }
+            return displayedCount.get() == 1 ? "1 client" : displayedCount.get() + " clients";
+        }, displayedCount, totalCount, isFiltered));
     }
 
 }

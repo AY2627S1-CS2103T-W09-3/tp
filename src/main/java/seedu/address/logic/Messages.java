@@ -2,11 +2,15 @@ package seedu.address.logic;
 
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import seedu.address.logic.parser.Prefix;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
 
 /**
@@ -77,10 +81,44 @@ public class Messages {
                 .append("; Email: ")
                 .append(person.getEmail())
                 .append("; Address: ")
-                .append(person.getAddress())
-                .append("; Tags: ");
+                .append(person.getAddress());
+
+        List<String> requirements = describeRequirements(person);
+        if (!requirements.isEmpty()) {
+            builder.append("; Requirements: ").append(String.join(", ", requirements));
+        }
+
+        builder.append("; Tags: ");
         person.getTags().forEach(builder::append);
         return builder.toString();
+    }
+
+    /**
+     * Returns the requirement fields of {@code person} in display form, omitting absent ones.
+     */
+    private static List<String> describeRequirements(Person person) {
+        List<String> parts = new ArrayList<>();
+        if (person.getBudget() != null) {
+            parts.add("Budget " + person.getBudget());
+        }
+        if (person.getAskingPrice() != null) {
+            parts.add("Asking " + person.getAskingPrice().getDisplayValue());
+        }
+        String areas = person.getAreas().stream()
+                .map(Area::getValue)
+                .sorted()
+                .collect(Collectors.joining(", "));
+        if (!areas.isEmpty()) {
+            parts.add(areas);
+        }
+        String housingTypes = person.getHousingTypes().stream()
+                .map(HousingType::getDisplayValue)
+                .sorted()
+                .collect(Collectors.joining(", "));
+        if (!housingTypes.isEmpty()) {
+            parts.add(housingTypes);
+        }
+        return parts;
     }
 
 }

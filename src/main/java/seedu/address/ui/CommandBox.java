@@ -58,22 +58,24 @@ public class CommandBox extends UiPart<Region> {
     }
 
     /**
-     * Runs a command from the command box or a menu action using the same feedback handling.
+     * Runs a command from a menu action or shortcut without submitting the text in the command box.
      */
     void executeCommand(String commandText) {
         executeCommand(commandText, false);
     }
 
-    private void executeCommand(String commandText, boolean clearInputOnSuccess) {
+    private void executeCommand(String commandText, boolean isSubmittedInput) {
         try {
             CommandResult commandResult = commandExecutor.execute(commandText);
-            if (clearInputOnSuccess) {
+            if (isSubmittedInput) {
                 commandTextField.setText("");
             }
             setPendingConfirmationStyle(commandResult.isAwaitingConfirmation());
         } catch (CommandException | ParseException e) {
             setPendingConfirmationStyle(false);
-            setStyleToIndicateCommandFailure();
+            if (isSubmittedInput) {
+                setStyleToIndicateCommandFailure();
+            }
         }
     }
 
