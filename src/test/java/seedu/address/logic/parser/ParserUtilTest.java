@@ -20,6 +20,7 @@ import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Price;
+import seedu.address.model.person.PriceRange;
 import seedu.address.model.tag.Tag;
 
 public class ParserUtilTest {
@@ -228,6 +229,55 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parsePriceRange_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parsePriceRange(null, "budget"));
+    }
+
+    @Test
+    public void parsePriceRange_invalidPrice_throwsParseException() {
+        for (String input : List.of("", "  ", "abc", "0", "abc-2000", "1000-abc", "1,00-2000", "1000-2000.5")) {
+            assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () ->
+                    ParserUtil.parsePriceRange(input, "budget"));
+        }
+    }
+
+    @Test
+    public void parsePriceRange_malformedRange_throwsParseException() {
+        for (String input : List.of("1000-", "-1000", "-", "1000 -", "1000-2000-3000")) {
+            assertThrows(ParseException.class, PriceRange.MESSAGE_INVALID_FORMAT, () ->
+                    ParserUtil.parsePriceRange(input, "budget"));
+        }
+    }
+
+    @Test
+    public void parsePriceRange_reversedRange_throwsParseException() {
+        assertThrows(ParseException.class, String.format(PriceRange.MESSAGE_REVERSED_RANGE, "budget"), () ->
+                ParserUtil.parsePriceRange("2000-1000", "budget"));
+        assertThrows(ParseException.class, String.format(PriceRange.MESSAGE_REVERSED_RANGE, "asking price"), () ->
+                ParserUtil.parsePriceRange("2000-1000", "asking price"));
+    }
+
+    @Test
+    public void parsePriceRange_validRange_returnsPriceRange() throws Exception {
+        PriceRange expectedPriceRange = new PriceRange(new Price("1000"), new Price("2000"));
+
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1000-2000", "budget"));
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1,000-2,000", "budget"));
+        assertEquals(expectedPriceRange,
+                ParserUtil.parsePriceRange(WHITESPACE + "1000 - 2000" + WHITESPACE, "budget"));
+        assertEquals(new PriceRange(new Price("1500")), ParserUtil.parsePriceRange("1500-1500", "budget"));
+    }
+
+    @Test
+    public void parsePriceRange_singlePrice_returnsRangeHoldingOnlyThatPrice() throws Exception {
+        PriceRange expectedPriceRange = new PriceRange(new Price("1500"));
+
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1500", "budget"));
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange("1,500", "budget"));
+        assertEquals(expectedPriceRange, ParserUtil.parsePriceRange(WHITESPACE + "1500" + WHITESPACE, "budget"));
+    }
+
+    @Test
     public void parsePrice_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> ParserUtil.parsePrice(null));
     }
@@ -271,6 +321,18 @@ public class ParserUtilTest {
     public void parseAreas_collectionWithInvalidArea_throwsParseException() {
         assertThrows(ParseException.class, Area.MESSAGE_CONSTRAINTS, ()
                 -> ParserUtil.parseAreas(List.of(VALID_AREA, INVALID_AREA)));
+    }
+
+    @Test
+    public void parseArea_repeatedInternalWhitespace_returnsArea() throws Exception {
+        assertEquals(new Area("Ang Mo Kio"), ParserUtil.parseArea("ang  mo  kio"));
+        assertEquals(new Area("Ang Mo Kio"), ParserUtil.parseArea("  Ang   Mo   Kio  "));
+    }
+
+    @Test
+    public void parseAreas_repeatedInternalWhitespace_returnsDeduplicatedSet() throws Exception {
+        Set<Area> actualAreas = ParserUtil.parseAreas(List.of("Ang Mo Kio", "ang  mo  kio"));
+        assertEquals(Set.of(new Area("Ang Mo Kio")), actualAreas);
     }
 
     @Test

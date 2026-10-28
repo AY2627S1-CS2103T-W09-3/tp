@@ -202,7 +202,9 @@ shows no note indicator.*
 | `view INDEX` or clicking a client card | Shows that client.                                                                                 |
 | Successful `edit`, `role` or `note` | Shows the updated client if they still match the active search/filter; otherwise clears the panel. |
 | Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index.                                 |
-| `help`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
+| Successful `undo` or `redo` | Clears the panel. Select a client again using their current index. |
+| `undo` or `redo` with no available action | Keeps the current selection. |
+| `help`, `history`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
 | Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed.               |
 
 Clearing the panel prevents it from showing an outdated client when a list
@@ -292,17 +294,18 @@ Inputs that are rejected:
 | `h/Shophouse` | `Error: Housing type must be HDB, Condo, EC, or Landed.` |
 | `b/1-2 b/3-4` | `Error: Multiple values specified for the following single-valued field(s): b/` |
 
-### Assigning a client's role: `role`
+### Assigning or clearing a client's role: `role`
 
-Marks a client as a buyer, a seller, or both.
+Marks a client as a buyer, a seller, or both, or removes an assigned role.
 
 Format: `role INDEX ROLE`
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
-* `ROLE` accepts `buyer`, `seller`, or `both`, ignoring case.
-* The client card displays `Buyer`, `Seller`, or `Buyer, Seller`.
+* `ROLE` accepts `buyer`, `seller`, `both`, or `none`, ignoring case. Use `none` to remove an assigned role.
+* The client card displays `Buyer`, `Seller`, or `Buyer, Seller` for assigned roles. It shows no role badge after `none`.
 * Newly added clients have no role assigned.
-* Assigning a role replaces any existing role.
+* Assigning a role replaces any existing role. Clearing a role leaves the client's other details unchanged.
+* If the client already has no role, `none` reports that nothing changed and does not add an undo-history entry.
 * After a successful role change, the current search or filter stays active. The client leaves the list if the new role no longer matches it. Enter `list` to show all clients.
 
 Examples:
@@ -310,9 +313,16 @@ Examples:
 * `role 1 buyer` marks the first displayed client as a buyer.
 * `role 2 both` marks the second displayed client as both a buyer and a seller.
   The role badge displays `Buyer, Seller`.
+* `role 1 none` removes the first displayed client's assigned role.
 
 For example, if the first displayed client is John Doe, `role 1 buyer` displays:
 `Role updated: John Doe is now marked as Buyer`
+
+For a client named John Doe, `role 1 none` displays:
+`Role cleared: John Doe has no assigned role`
+
+Repeating the command displays:
+`Role unchanged: John Doe already has no assigned role`
 
 ### Adding or clearing a client note: `note`
 
@@ -342,21 +352,26 @@ Examples:
 
 ### Finding clients: `find`
 
-Finds clients whose name, phone number, or email address contains a keyword.
+Finds clients whose name, phone number, email address, or address contains a keyword.
 
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
-* A keyword matches any part of a name, phone number, or email address, ignoring case. The part can be at the start, in the middle, or at the end.
-  For example, `ali` matches `Alicia Tan`, `8456` matches `84567890`, and `raj.k` matches `raj.kumar@example.com`.
-* Multiple keywords use OR matching: a client appears if any keyword matches their name, phone number, or email address.
+* A keyword matches any part of a name, phone number, email address, or address, ignoring case. The part can be at the start, in the middle, or at the end.
+  For example, `ali` matches `Alicia Tan`, `8456` matches `84567890`, `raj.k` matches `raj.kumar@example.com`, and `bishan` matches `Blk 123 Bishan Street 12, #08-45`.
+* Multiple keywords use AND matching: a client appears only if **every** keyword matches their name, phone number, email address, or address.
+  Different keywords can match different fields, so `Alicia 8123` matches a client named Alicia whose phone number contains `8123`.
+  Each extra keyword narrows the results, so add the rest of a client's name to find one client.
 * Keyword order does not matter.
 * Short keywords match many clients. For example, `a` appears in every sample client's email address, so it shows all of them.
-  Check the count in the result line, and type more of the name, phone number, or email address to narrow the list.
+  Common address words such as `Blk` and `Street` also match many clients.
+  Check the count in the result line, and add another keyword or type more of the name, phone number, email address, or address to narrow the list.
 * Entering `find` without keywords shows an error and leaves the displayed list unchanged.
 * Notes are not searched. A note is free-text working detail in which any word may appear, so matching it would return clients for the wrong reason.
 * Use `list` to show all clients again.
 * The result line shows how many clients are displayed out of all clients, e.g. `Showing 2 of 5 clients.`.
   It says `clients` even when the number is 1, e.g. `Showing 1 of 5 clients.`.
+* While a search or filter is active, the status bar keeps showing the displayed and total counts, even after another
+  command replaces the result line. It also reminds you to use `list` to show all clients again.
 * If no clients match, the result shows 0 clients out of the total, for example `Showing 0 of 5 clients.`.
 
 Examples using the sample clients:
@@ -364,24 +379,36 @@ Examples using the sample clients:
 * `find ali` finds Alicia Tan by part of her name.
 * `find 8456` finds Raj Kumar by part of his phone number, `84567890`.
 * `find raj.k` finds Raj Kumar by part of his email address, `raj.kumar@example.com`.
-* `find Alicia 82345678` finds Alicia Tan by name and Benjamin Lim by phone number.
+* `find Bishan` finds Alicia Tan, whose address is `Blk 123 Bishan Street 12, #08-45`.
+* `find Tampines Benjamin` finds Benjamin Lim, because `Tampines` matches his address and `Benjamin` matches his name.
+* `find Street` finds Alicia Tan, Benjamin Lim, Nur Aisyah and Raj Kumar, because all four addresses contain `Street`.
+  The result shows `Showing 4 of 5 clients.`.
+* `find ali tan` finds Alicia Tan, because both keywords match her name.
+* `find tan 8123` finds Alicia Tan, because `tan` matches her name and `8123` matches her phone number, `81234567`.
+* `find Alicia 82345678` shows no clients (`Showing 0 of 5 clients.`), because `82345678` is Benjamin Lim's phone number and not Alicia Tan's.
 * `find 5678` finds Benjamin Lim, Nur Aisyah, Raj Kumar and Cheryl Goh, because all four phone numbers contain `5678`.
   The result shows `Showing 4 of 5 clients.`.
 
-### Filtering clients by role and tag: `filter`
+### Filtering clients by role, tag and requirements: `filter`
 
-Shows only the clients with a given role, a given tag, or both.
+Shows only the clients who match a role, a tag, or any of their recorded requirements: preferred area, preferred housing type, budget and asking price.
 
-Format: `filter [r/ROLE] [t/TAG]…​`
+Format: `filter [r/ROLE] [t/TAG]…​ [l/AREA]…​ [h/TYPE]…​ [b/BUDGET] [s/PRICE]`
 
 * `ROLE` accepts `buyer`, `seller`, or `both`, ignoring case. Only one `r/` may be given.
 * `r/buyer` shows buyers and clients marked `both`. `r/seller` shows sellers and clients marked `both`. `r/both` shows only clients marked `both`.
 * A client with no role never matches a role.
 * A tag matches a client's tag with the same name, ignoring case. The whole tag must match, so `t/urgent` does not match `urgently`.
 * Repeat `t/` to give several tags. A client matches if they have **any** of them (OR).
-* When both a role and tags are given, a client must match the role **and** at least one of the tags (AND).
-* Both parts are optional. `filter` with no role and no tag shows every client.
-* Text before the first prefix, such as `filter buyer`, is an error.
+* `AREA` is one of the [supported areas](#recording-a-clients-requirements-b-s-l-h), ignoring case. Repeat `l/` to give several areas. A client matches if **any** of their preferred areas is one of them (OR).
+* `TYPE` is `HDB`, `Condo`, `EC` or `Landed`, ignoring case. Repeat `h/` to give several housing types. A client matches if **any** of their preferred housing types is one of them (OR).
+* `BUDGET` is a price range written `MIN-MAX`, such as `b/500000-600000`, or a single price, such as `b/850000`. A client matches if their budget has at least one price in common with it, counting both ends. So `b/850000` shows every client whose budget includes $850,000, and `b/900000-1000000` shows every client whose budget overlaps that range. Only one `b/` may be given.
+* `PRICE` is also a range written `MIN-MAX`, or a single price. A client matches if their asking price is within the range, counting both ends, so `s/850000` shows only clients asking exactly $850,000. Only one `s/` may be given.
+* Prices follow the same rules as in `add` and `edit`: whole dollars from 1 to 1,000,000,000, with optional correctly placed commas. A range must be two prices joined by a hyphen, such as `500000-600000`, and one with a minimum above its maximum is rejected.
+* A client with no preferred area, no preferred housing type, no budget or no asking price never matches a filter on that field.
+* When several kinds of criteria are given, a client must match **all** of them (AND), but only one of the values within `t/`, `l/` or `h/` (OR). For example, `filter r/buyer l/Bedok h/HDB` shows buyers who want Bedok **and** an HDB flat.
+* All parts are optional. `filter` with nothing after it shows every client.
+* Text before the first prefix, such as `filter buyer`, is an error. An invalid role, tag, area, housing type or price also shows an error and leaves the displayed list as it was.
 * The result line shows how many clients are displayed out of all clients in the book, e.g. `Showing 8 of 34 clients.`. The word `clients` is used even when the number is 1.
 
 **How the filter behaves afterwards:**
@@ -389,9 +416,9 @@ Format: `filter [r/ROLE] [t/TAG]…​`
 * `filter` replaces any filter or `find` search that is already active. It does not combine with it.
 * `find` also replaces an active filter. Use `list` to clear the filter and show all clients.
 * The filter stays active after `add`, `edit`, `delete`, `role`, `note` and `clear confirm`, so the displayed list can still be shorter than the whole book. Indexes in these commands refer to the displayed list.
-* After `add`, `edit` or `role`, the changed client is checked against the active filter again. A client who no longer matches leaves the displayed list. For example, after `filter r/buyer`, `role 1 seller` removes client 1 from the list. In the same way, after `filter t/urgent`, `edit 1 t/weekend` removes client 1, because the client no longer has the `urgent` tag.
-* Only `add` can make a client appear, and only if the new client matches. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again.
-* `delete` removes the client from the list, and `note` never changes which clients are shown, because it changes neither a role nor a tag.
+* After `add`, `edit` or `role`, the changed client is checked against the active filter again. A client who no longer matches leaves the displayed list. For example, after `filter r/buyer`, `role 1 seller` removes client 1 from the list. In the same way, after `filter t/urgent`, `edit 1 t/weekend` removes client 1, because the client no longer has the `urgent` tag, and after `filter l/Bishan`, `edit 1 l/Orchard` removes client 1, because the client no longer wants Bishan.
+* Only `add` can make a client appear, and only if the new client matches. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them, and after `filter l/Bishan`, adding a client with `l/Bishan` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again.
+* `delete` removes the client from the list, and `note` never changes which clients are shown, because a filter does not look at notes.
 * `clear confirm` deletes every client, including the hidden ones, but the filter stays active. A client added afterwards stays hidden unless they match it, so run `list` to show everyone.
 
 Examples:
@@ -400,6 +427,12 @@ Examples:
 * `filter t/urgent t/firsttime` shows clients tagged `urgent` or `firsttime`.
 * `filter r/buyer t/urgent` shows buyers (including `both`) who are tagged `urgent`. On the sample clients this shows no clients (`Showing 0 of 5 clients.`), because the only `urgent` client, Nur Aisyah, is a seller.
 * `filter r/both` shows only clients who are both a buyer and a seller.
+* `filter l/Bishan l/Tampines` shows clients who want Bishan or Tampines. On the sample clients these are Alicia Tan and Cheryl Goh.
+* `filter h/HDB` shows clients who want an HDB flat. On the sample clients these are Alicia Tan and Cheryl Goh.
+* `filter l/Tampines h/EC` shows clients who want both Tampines and an executive condominium. On the sample clients this is only Cheryl Goh.
+* `filter b/850000` shows clients whose budget includes $850,000. On the sample clients these are Alicia Tan ($800,000 to $1,200,000) and Cheryl Goh ($700,000 to $900,000).
+* `filter b/1000000-1500000` shows clients whose budget overlaps $1,000,000 to $1,500,000. On the sample clients this is only Alicia Tan.
+* `filter r/seller s/900000-1000000` shows sellers asking between $900,000 and $1,000,000. On the sample clients this is only Nur Aisyah, who is asking $950,000.
 
 ### Deleting a client: `delete`
 
@@ -428,12 +461,14 @@ Format: `clear`, then `clear confirm`
 3. Enter any other non-empty input to cancel. The result box shows `Clear cancelled.` and nothing is deleted.
 
 * `N` is the total number of clients, including clients hidden by a search filter.
+* `confirm` ignores case, so `clear CONFIRM` and `clear Confirm` also delete all clients. The command word `clear` must still be lowercase, as with every command.
+* Anything else after `clear`, such as `clear confrim`, is not a confirmation. It cancels a pending clear and shows `Clear cancelled.`.
 * The input that cancels is not run as a command. For example, entering `exit` while a confirmation is
   pending cancels it but does not exit, so enter `exit` again.
 * Pressing Enter on a completely empty command box does nothing and the confirmation stays pending.
   A single space counts as input and cancels.
 * If there are no clients, `clear` shows `The client book is already empty.` and no confirmation is pending.
-* `clear confirm` only works straight after `clear`. Otherwise it shows `No clear is pending. Type clear first.`
+* `clear confirm` only works straight after `clear`, regardless of how `confirm` is capitalised. Otherwise it shows `No clear is pending. Type clear first.`
 * When no clear is pending, any other word after `clear` shows `Invalid command format. Use: clear.`
 * A pending confirmation is not saved, so closing the app cancels it.
 
@@ -458,15 +493,18 @@ Formats: `undo`, `redo`, `history` (no parameters)
   the undone `add` can no longer be redone.
 * If there is nothing to undo or redo, the command reports that no action is available. If both lists are
   empty, `history` reports that there is no history.
+* `history` does not change the client list or close an open client profile, even when both history lists are empty.
 * History is kept only for the current app session. Closing and reopening the app keeps the saved client
   data but starts with empty undo and redo lists.
 * You can also use **Edit > Undo**, **Edit > Redo** and **Edit > History**. Undo shortcuts are `Ctrl+Z`
   and `Cmd+Z`; redo shortcuts are `Ctrl+Y` and `Cmd+Shift+Z`. They work while the command box has focus.
+  The Undo and Redo menu items are disabled when there is no corresponding action available.
 * If `clear` is awaiting confirmation, an Edit menu action or undo/redo shortcut cancels that
   confirmation instead of performing the action. The result box shows `Clear cancelled.`; use the
   action again after cancellation.
 * With focus in the command box, undo/redo shortcuts run the app's commands rather than the text
-  field's undo/redo. Any unfinished command text stays in the box.
+  field's undo/redo. Any unfinished command text stays in the box. If there is nothing to undo or
+  redo, the result box reports the error without marking that unfinished text as invalid.
 
 For example, enter `delete 2`, then `undo` to restore that client. Enter `redo` to delete the client again.
 
@@ -504,15 +542,23 @@ to load the same client records.
 
 ### Recovering from an invalid data file
 
-If the data file cannot be loaded, the application starts with an empty
-client list.
+If the data file cannot be loaded, the application first saves a copy beside
+it named `addressbook.json.unreadable-<unique number>.bak`. Once that backup
+succeeds, the application starts with an empty client list and shows a warning
+before any command can replace the original file. If the backup cannot be
+created (for example, because the data folder is not writable), startup stops
+instead; the original data file is left unchanged. Make the folder writable or
+free up disk space, then restart the application.
 
-Do not enter commands, including `list`, `help` or `exit`: a successful
-command can overwrite the existing file with the empty list.
-Close the application using the window's close button instead.
+You can continue using the empty client book, but a successful command can
+replace `data/addressbook.json`. The `.bak` copy remains unchanged. Keep it
+until you have recovered your clients.
 
-Keep a copy of the unreadable file, then restore a valid backup using
-the steps above.
+To recover, close the application, copy the `.bak` file to a safe location,
+then repair its JSON or restore a known valid backup using the steps above.
+Copying an unreadable file back without repairing it will not restore the
+clients. JSON files saved with a UTF-8 or UTF-16 byte-order mark can be loaded
+without repair.
 
 Before manually editing the JSON file, close the application and make
 a backup. Invalid formatting, invalid field values or duplicate clients
@@ -546,8 +592,8 @@ Action | Format, Examples
 **Clear** | `clear`, then `clear confirm`<br> `clear` shows a warning and `clear confirm` deletes all clients
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`<br> e.g., `edit 2 b/500000-700000 l/Bedok`
-**Filter** | `filter [r/ROLE] [t/TAG]…​`<br> e.g., `filter r/buyer t/urgent`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`
+**Filter** | `filter [r/ROLE] [t/TAG]…​ [l/AREA]…​ [h/TYPE]…​ [b/BUDGET] [s/PRICE]`<br> e.g., `filter r/buyer t/urgent`, `filter l/Tampines h/EC`, `filter b/850000`
+**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find ali`, `find 8456`, `find raj.k`, `find Bishan`
 **Note** | `note INDEX TEXT`<br> e.g., `note 1 Call next week`, `note 1 clear`
 **Role** | `role INDEX ROLE`<br> e.g., `role 1 buyer`
 **View** | `view INDEX`<br> e.g., `view 1`

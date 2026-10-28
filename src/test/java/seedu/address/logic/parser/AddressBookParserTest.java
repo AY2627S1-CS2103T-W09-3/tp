@@ -67,6 +67,7 @@ public class AddressBookParserTest {
         assertEquals(new ClearCommand(false), parser.parseCommand(ClearCommand.COMMAND_WORD));
         assertEquals(new ClearCommand(true),
                 parser.parseCommand(ClearCommand.COMMAND_WORD + " " + ClearCommand.CONFIRM_WORD));
+        assertEquals(new ClearCommand(true), parser.parseCommand(ClearCommand.COMMAND_WORD + " CONFIRM"));
         assertThrows(ParseException.class, ClearCommand.MESSAGE_INVALID_FORMAT, ()
                 -> parser.parseCommand(ClearCommand.COMMAND_WORD + " 3"));
     }
@@ -105,8 +106,8 @@ public class AddressBookParserTest {
     public void parseCommand_filter() throws Exception {
         FilterCommand command = (FilterCommand) parser.parseCommand(
                 FilterCommand.COMMAND_WORD + " r/buyer t/urgent");
-        PersonMatchesFilterPredicate predicate =
-                new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of(new Tag("urgent")));
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder()
+                .withRole(ClientRole.BUYER).withTags(Set.of(new Tag("urgent"))).build();
         assertEquals(new FilterCommand(predicate), command);
     }
 

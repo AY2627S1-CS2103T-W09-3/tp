@@ -7,8 +7,10 @@ import java.util.function.Predicate;
 import seedu.address.commons.util.ToStringBuilder;
 
 /**
- * Tests that a {@code Person}'s {@code Name}, {@code Phone} or {@code Email} matches any of the search terms given.
- * A field matches if it contains a term anywhere, ignoring case.
+ * Tests that a {@code Person}'s {@code Name}, {@code Phone}, {@code Email} or {@code Address} matches all of the
+ * search terms given.
+ * A term matches if any one of those fields contains it anywhere, ignoring case, so the terms can be matched by
+ * different fields. No search terms never match.
  */
 public class PersonMatchesSearchTermsPredicate implements Predicate<Person> {
     private final List<String> searchTerms;
@@ -19,10 +21,11 @@ public class PersonMatchesSearchTermsPredicate implements Predicate<Person> {
 
     @Override
     public boolean test(Person person) {
-        return searchTerms.stream().anyMatch(term ->
+        return !searchTerms.isEmpty() && searchTerms.stream().allMatch(term ->
                 containsIgnoreCase(person.getName().fullName, term)
                         || containsIgnoreCase(person.getPhone().value, term)
-                        || containsIgnoreCase(person.getEmail().value, term));
+                        || containsIgnoreCase(person.getEmail().value, term)
+                        || containsIgnoreCase(person.getAddress().value, term));
     }
 
     private static boolean containsIgnoreCase(String field, String term) {

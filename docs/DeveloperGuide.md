@@ -75,9 +75,23 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `DetailPane`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
-`MainWindow` places `PersonListPanel` beside `DetailPane` in a master-detail layout. The list panel shows the displayed clients as `PersonCard`s. Selecting a client shows that client's profile in `DetailPane`; clearing the selection shows its empty state. The `StatusBarFooter` below them shows the data file path and a count that updates with the displayed client list.
+`MainWindow` places `PersonListPanel` beside `DetailPane` in a master-detail
+layout. The list panel shows the displayed clients as `PersonCard`s. Selecting
+a client shows that client's profile in `DetailPane`; clearing the selection
+shows its empty state. The `StatusBarFooter` below them shows the data file
+path and a live client count. With no search or filter active, it shows the
+total number of clients. While one is active, it shows the displayed and total
+counts and reminds the user to run `list` to show all clients. The counts and
+filter state are bound to the model, so the footer updates after data changes
+as well as search and filter commands.
 
-The menu bar provides `File` and `Help` actions, plus an `Edit` menu for `Undo`, `Redo` and `History`. The `Edit` actions submit the corresponding commands through `CommandBox`, so they use the same execution path and show feedback in `ResultDisplay` just like typed commands. Undo also has `Ctrl+Z` on Windows and Linux or `Cmd+Z` on macOS; redo has `Ctrl+Y` or `Cmd+Shift+Z`, respectively. These shortcuts work while the command box has focus.
+The menu bar provides `File` and `Help` actions, plus an `Edit` menu for `Undo`, `Redo` and `History`. The `Edit` actions submit the corresponding commands through `CommandBox`, so they use the same execution path and show feedback in `ResultDisplay` just like typed commands. Undo also has `Ctrl+Z` on Windows and Linux or `Cmd+Z` on macOS; redo has `Ctrl+Y` or `Cmd+Shift+Z`, respectively. These shortcuts work while the command box has focus. Menu actions and shortcuts do not submit unfinished command-box text, so a failed action leaves that text unchanged and does not give it the error style. The error style is applied only when a command submitted with Enter fails.
+
+`Logic#canUndo()` and `Logic#canRedo()` expose the model's history availability to
+`MainWindow`. The window disables unavailable Undo and Redo menu items on
+startup and refreshes them after every command attempt, including a failed
+save that rolls back a history transition. The History menu item remains
+available even when both stacks are empty.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -151,6 +165,14 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`JsonUtil` reads JSON from a byte stream, allowing Jackson to detect a UTF-8 or
+UTF-16 byte-order mark in a manually edited client book. If an existing client
+book still cannot be loaded, `MainApp` first copies it beside the original as
+`addressbook.json.unreadable-<unique number>.bak`, then starts with an empty
+model. It passes the backup path to `UiManager`, which warns the user where the
+original bytes were saved. The backup is created before a command can overwrite
+the data file; if the copy fails, startup does not continue with the empty book.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
@@ -163,21 +185,26 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Client role command
 
-The `role` command assigns a transaction role to an existing client. It uses the
+The `role` command assigns or clears a transaction role for an existing client. It uses the
 client's one-based index in the currently displayed client list.
 
 **Format:** `role INDEX ROLE`
 
 * `INDEX` must be a positive integer that refers to a client in the currently
   displayed list.
-* `ROLE` must be `buyer`, `seller`, or `both`. Role values are
+* `ROLE` must be `buyer`, `seller`, `both`, or `none`. Role values are
   case-insensitive.
-* After a successful update, the client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+* After an assignment, the client's badge shows `Buyer`, `Seller`, or `Buyer, Seller` respectively.
+  After `none`, the client has no role badge.
   The displayed list is not reset, so a search or filter that is active stays active.
 
 The success message follows this format:
 
 `Role updated: CLIENT_NAME is now marked as DISPLAY_ROLE`
+
+Clearing a role with `none` instead shows `Role cleared: CLIENT_NAME has no assigned role`.
+If the client is already unassigned, it shows `Role unchanged: CLIENT_NAME already has no assigned role`.
+That case does not change the client or add an undo-history entry.
 
 The examples below are independent and assume that `Alicia Tan` is client 1 in
 the currently displayed list.
@@ -187,14 +214,18 @@ the currently displayed list.
 | `role 1 buyer` | Alicia Tan's role becomes `Buyer`. The result box shows `Role updated: Alicia Tan is now marked as Buyer`. |
 | `role 1 seller` | Alicia Tan's role becomes `Seller`. The result box shows `Role updated: Alicia Tan is now marked as Seller`. |
 | `role 1 both` | Alicia Tan's role becomes `Buyer, Seller`. The result box shows `Role updated: Alicia Tan is now marked as Buyer, Seller`. |
+| `role 1 none` | Alicia Tan has no assigned role or role badge. The result box shows `Role cleared: Alicia Tan has no assigned role`. |
+| `role 1 none` again | Alicia Tan remains unassigned. The result box shows `Role unchanged: Alicia Tan already has no assigned role`. |
 
 Invalid inputs do not change the client's role:
 
 | Situation | Expected result |
 |-----------|-----------------|
 | The command format or index syntax is invalid | `Error: Invalid command format. Use: role INDEX ROLE.` |
-| The role is missing or is not `buyer`, `seller`, or `both` | `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.` |
-| The positive index is outside the currently displayed list | `Error: The client index provided is invalid.` |
+| The role is missing | `Error: Invalid command format. Use: role INDEX ROLE.` |
+| The role is not `buyer`, `seller`, `both`, or `none` | `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.` |
+| The index is zero or has invalid syntax | `Error: Invalid command format. Use: role INDEX ROLE.` |
+| The positive index is outside the currently displayed list, or no clients are displayed | `Error: The client index provided is invalid.` |
 
 The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
 
@@ -203,6 +234,8 @@ The following sequence diagram shows how the `role 1 buyer` command is processed
 ### Client role storage
 
 A client's role is a dedicated `ClientRole` field on `Person`, not a tag. `ClientRole` is an enum with exactly three declared values, and each value carries two strings: the token the user types and the data file stores, and the text the interface shows.
+
+The command token `none` is not an enum value or a stored role. It clears the optional field, so the `role` key is omitted when the client book is saved. Undo and redo treat this as an ordinary role change.
 
 | Stored token | Shown to the user |
 |--------------|-------------------|
@@ -232,7 +265,11 @@ A note is free-text working detail kept on a client: where a negotiation stands,
 
 **Display.** `DetailPane` displays the selected client's note in its existing note row, with wrapping and preserved line breaks. The row is hidden when no note exists, and the profile scrolls vertically when needed. `NoteCommand` returns the updated client's index when that client remains in the filtered list, so the UI selects the replacement `Person` and refreshes the profile. See [Detailed client view](#detailed-client-view) for the selection rules.
 
-**Why `find` does not search notes.** `find` matches name, phone number and email. Notes contain free-text working details, so searching them could return unrelated clients. Users can read a note in the detail panel and replace it with `note`.
+**Why `find` does not search notes.** `find` matches name, phone number, email and address. Notes contain free-text working details, so searching them could return unrelated clients. Users can read a note in the detail panel and replace it with `note`.
+
+**Why `find` requires every keyword.** `PersonMatchesSearchTermsPredicate` tests that every keyword is contained in the client's name, phone number, email address or address, and a keyword may be matched by a different field from another keyword. An agent adds a keyword to make a search more specific, so `find Alex Yu` must not show everyone named Alex or Yu. Matching any keyword was considered, as in AB3, but it made the list grow as the agent typed more, and a quoted phrase would not help the agent who types the words without quotes. The cost is that one search can no longer find two different clients by their names, so the agent runs two searches.
+
+**Why `find` searches the address.** An agent often remembers where a client lives or wants to buy but not their name, and the address is already stored in the client record. `PersonMatchesSearchTermsPredicate#test` therefore treats the address as a fourth field, with the same case-insensitive substring rule as the other three, so the agent has no extra prefix to learn and `find Bishan` works the same way as `find Alicia`. The preferred areas (`l/`) and the tags are not searched, because `filter l/` and `filter t/` already cover them with exact values, and a keyword that is a block number or a word such as `Street` can now match many clients, as a short name keyword already could. With no keywords, the predicate never matches, but `FindCommandParser` rejects that input first.
 
 ### Detailed client view
 
@@ -256,6 +293,12 @@ in `getViewIndex()`, without calling any UI class. The current `LogicManager`
 then saves the address book before returning the result, as it does for other
 successful commands. `view` does not modify the book, but this shared save can
 still fail; the selection request is applied only after `LogicManager` returns.
+
+`HistoryCommand` also leaves the displayed list unchanged. Its `CommandResult`
+requests selection preservation whether history is empty or not, so
+`MainWindow#executeCommand` keeps the current profile visible for typed
+`history` and the Edit menu action. Results from list-changing commands still
+clear the selection when they do not provide a view index.
 
 ![Sequence from view 1 to selecting and rendering the first displayed client](images/ViewSequenceDiagram.png)
 
@@ -306,7 +349,7 @@ warnings. `DetailPaneTest` checks optional rows, wrapping and scrolling.
 
 `clear` deletes every client, so it needs two steps. `clear` warns and starts a pending state, and `clear confirm` completes it. Any other input cancels it.
 
-**Parsing.** `ClearCommandParser` accepts no argument or exactly `confirm`, and creates `ClearCommand(isConfirmed)` with the flag set only for `confirm`. Any other argument raises a `ParseException` with `Invalid command format. Use: clear.`.
+**Parsing.** `ClearCommandParser` accepts no argument or `confirm` in any letter case, after trimming, and creates `ClearCommand(isConfirmed)` with the flag set only for `confirm`. Any other argument raises a `ParseException` with `Invalid command format. Use: clear.`.
 
 **Executing.** `ClearCommand#execute(Model)` counts the clients in the whole address book, not the filtered list, because clear also deletes hidden clients. It then does one of three things:
 
@@ -328,6 +371,8 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 **Showing the pending state.** `CommandBox` and `MainWindow` read `CommandResult#isAwaitingConfirmation()` from each result. While it is true, the command box gets the `pending` style class and a prompt asking the user to confirm, and `ResultDisplay` shows the warning with the same style class. The next result removes both, so the indicator is always the same as the state held by `LogicManager`.
 
 **Why the state lives in `LogicManager`.** A `Command` is created again for every input, so it cannot remember the previous one. `Model` holds saved client data, and a pending confirmation is not data. Keeping the flag in `LogicManager` makes it testable without the UI, and the UI only has to display it.
+
+**Why `confirm` ignores case.** `clear CONFIRM` used to cancel the pending clear with only `Clear cancelled.`, which gave the user no hint that the capital letters were the problem. Roles, areas and housing types already ignore case, and confirming is a deliberate typed action, so accepting `CONFIRM` cannot delete anything by accident. `ClearCommandParser` therefore compares with `equalsIgnoreCase`. The command word `clear` is still matched exactly, like every other command word, and any other argument, such as `confrim`, is still not a confirmation and cancels a pending clear. An explanatory message for a near-miss was considered, but it needs `LogicManager` to guess what the user meant, and it changes the cancel message that many tests and guide tables rely on.
 
 **Alternatives considered.**
 * **A stateless `clear confirm`:** the warning would be a hint only, because a user could skip it by typing `clear confirm` straight away. It also gives the UI nothing to show.
@@ -421,16 +466,21 @@ loses every area.
 
 ### Filter command
 
-`filter` narrows the displayed clients by role and tag. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.
+`filter` narrows the displayed clients by role, tag, preferred area, preferred housing type, budget and asking price. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.
 
-**Parsing.** `FilterCommandParser` tokenizes the arguments with `PREFIX_ROLE` and `PREFIX_TAG`. It rejects any text before the first prefix, rejects a second `r/`, and parses the role with `ClientRole.fromString` after trimming it. The tags go through `ParserUtil#parseTags`. Both parts are optional, and the parser creates `FilterCommand` with a `PersonMatchesFilterPredicate` holding an `Optional<ClientRole>` and a `Set<Tag>`.
+**Parsing.** `FilterCommandParser` tokenizes the arguments with `PREFIX_ROLE`, `PREFIX_TAG`, `PREFIX_AREA`, `PREFIX_HOUSING_TYPE`, `PREFIX_BUDGET` and `PREFIX_ASKING_PRICE`. It rejects any text before the first prefix and rejects a second `r/`, `b/` or `s/`. The role is parsed with `ClientRole.fromString` after trimming it, the tags with `ParserUtil#parseTags`, the areas with `ParserUtil#parseAreas` and the housing types with `ParserUtil#parseHousingTypes`. The budget and the asking price go through `ParserUtil#parsePriceRange`, which reads either one price or `MIN-MAX` using `ParserUtil#parsePrice`, so prices follow the same rules as in `add`, and rejects a range that is not two prices joined by a hyphen, such as `500000-`, with `PriceRange.MESSAGE_INVALID_FORMAT`, and a minimum above the maximum with `PriceRange.MESSAGE_REVERSED_RANGE`, which names the field (`budget` or `asking price`) like the other messages do. Every part is optional. The parser collects the parts that were given with `PersonMatchesFilterPredicate.Builder` and creates `FilterCommand` with the predicate that `build()` returns.
 
-**The predicate.** `PersonMatchesFilterPredicate#test` is true only when both parts match:
+**The predicate.** `PersonMatchesFilterPredicate#test` is true only when every part matches. The constructor is private, because six mostly empty arguments are easy to mix up, so callers use the builder and leave unused parts out:
 
 * **Role.** A missing role always matches. `buyer` matches `BUYER` and `BOTH`, `seller` matches `SELLER` and `BOTH`, and `both` matches only `BOTH`. A client with no role never matches a given role.
 * **Tags.** No tags always match. Otherwise, one matching tag is enough, and tag names are compared ignoring case.
+* **Areas and housing types.** These work like tags. No values always match, one matching value is enough, and a client with none never matches a given value.
+* **Budget.** A client matches when the budget range overlaps the filter's range, with both ends included, so `PriceRange#overlaps` checks `filterMin <= budgetMax && budgetMin <= filterMax`. A single price is a range with the same minimum and maximum, so it matches every budget that includes it. A client without a budget never matches.
+* **Asking price.** A client matches when the asking price is inside the filter's range, with both ends included, as checked by `PriceRange#contains`. A single price therefore matches only that exact price. A client without an asking price never matches.
 
-So the role and the tags combine with AND, and the tags among themselves with OR.
+So different parts combine with AND, and the values within the tags, the areas and the housing types with OR.
+
+`PriceRange` is a new immutable class in `seedu.address.model.person` that holds a minimum and a maximum `Price`, and it rejects a minimum above the maximum. It is separate from `Budget`, which describes what a client has recorded, because it is a query: it has a constructor for a single price, which is stored as a range with equal ends, and it knows how to compare itself with a `Budget` (`overlaps`) and with a `Price` (`contains`). The constructor of `PriceRange` throws `IllegalArgumentException` for a reversed range, and `ParserUtil#parsePriceRange` turns that into a `ParseException` with `PriceRange.MESSAGE_REVERSED_RANGE`.
 
 **Executing.** `FilterCommand#execute(Model)` calls `Model#updateFilteredPersonList(predicate)`. This overwrites the predicate on the single `FilteredList`, so a filter does not stack with an earlier filter or `find`, and `find` and `list` replace a filter in the same way. It then counts the displayed clients and the clients in the whole address book, and shows `Showing X of Y clients.`. Y is the whole book, not the filtered list.
 
@@ -443,6 +493,7 @@ The following activity diagram shows how the active filter is set, and what happ
 **Why the filter is not cleared by mutations.** An agent who filters 60 clients down to 8 and then updates one of them should stay in that view. Resetting to the full list after every command would lose it.
 
 **Alternatives considered.**
+* **Treating a single budget as an exact match:** a client who wants to spend $800,000 to $1,200,000 would then not show up for `b/850000`, which is the question an agent actually asks. Asking prices are different, because a property has one price, so an exact match is the natural reading there.
 * **A second predicate that is combined with `find`:** this makes the visible list depend on the order of earlier commands, and the user has no way to see which parts are active. One predicate that is replaced is easier to explain.
 * **Clearing the filter after every mutation:** simple to implement, but it loses the view, as described above.
 
@@ -493,6 +544,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | property agent | delete a wrongly created contact | remove records that should not exist |
 | `* * *` | property agent | find a client using any part of the client's name | locate the client's details without going through the entire list |
 | `* * *` | property agent | find a client using any part of their phone number or email address | identify an incoming caller or message quickly |
+| `* * *` | property agent | find a client using any part of their address | locate a client when I remember where they live but not their name |
 | `* * *` | property agent | record whether a client is a buyer, seller, or both | understand my relationship with the client at a glance |
 | `* * *` | property agent | record a client's address | retain the client's important contact information |
 | `* * *` | property agent | record a buyer's budget range | avoid proposing properties outside the buyer's means |
@@ -505,6 +557,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *` | new property agent | view concise help within the application | learn the available commands without leaving my workflow |
 | `* *` | user ready to begin | clear all sample or experimental data | start with a clean client list |
 | `* *` | property agent | filter contacts by buyer or seller role | focus on the relevant side of my client pipeline |
+| `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
+| `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
+| `* *` | property agent | filter clients by preferred housing type | find clients who want the kind of property I am listing |
+| `* *` | property agent | filter sellers by asking price | find sellers whose property is in the price range I am working on |
 | `* *` | property agent | detect possible duplicate contacts | avoid splitting one client's information across multiple records |
 | `*` | property agent | create a backup of my client records | reduce the risk of losing important information |
 | `*` | property agent | restore my client records from a valid backup | recover my information after data loss or device replacement |
@@ -526,8 +582,6 @@ backlog below the shipped features is visible.
 | `* *` | property agent | record a client's current follow-up status | know what action I need to take next |
 | `* *` | property agent | record the next follow-up date | contact the client at an appropriate time |
 | `* *` | property agent | view clients whose follow-ups are due or overdue | prioritise clients who require my attention |
-| `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
-| `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
 | `* *` | property agent | sort contacts by name, latest update, or next follow-up | review my clients in an order suitable for my current task |
 | `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
 | `* *` | long-time property agent | archive an inactive client | reduce clutter without permanently losing past information |
@@ -579,8 +633,8 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
-* 3b. The role is missing or is not buyer, seller, or both.
-  * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles.
+* 3b. The role is missing or is not buyer, seller, both, or none.
+  * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or an error indicating the permitted roles if it is invalid.
 
   Use case resumes at step 3.
 
@@ -588,7 +642,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 **MSS**
 
-1. Agent requests to find a client using one or more keywords that match part of the client's name, phone number or email address.
+1. Agent requests to find a client using one or more keywords, each of which matches part of the client's name, phone number, email address or address.
 2. EstateBookUltraProMax displays a list of matching clients.
 3. Agent identifies a client from the displayed results and requests changes to the client's contact details.
 4. EstateBookUltraProMax updates the specified details and displays the updated client.
@@ -627,7 +681,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 1. Agent requests to list all clients.
 2. EstateBookUltraProMax displays the clients and their assigned roles.
-3. Agent identifies a client from the displayed list and requests to change the client's role to buyer, seller, or both.
+3. Agent identifies a client from the displayed list and requests to change the client's role to buyer, seller, both, or none.
 4. EstateBookUltraProMax updates the client's role and displays the updated client.
 
    Use case ends.
@@ -643,8 +697,8 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
-* 3b. The role is missing or is not buyer, seller, or both.
-  * 3b1. EstateBookUltraProMax displays an error indicating the permitted roles without updating the client's role.
+* 3b. The role is missing or is not buyer, seller, both, or none.
+  * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or an error indicating the permitted roles if it is invalid, without updating the client's role.
 
   Use case resumes at step 3.
 
@@ -820,6 +874,14 @@ testers are expected to do more *exploratory* testing.
       Expected: Alicia's badge changes to `Buyer, Seller`. The result box shows
       `Role updated: Alicia Tan is now marked as Buyer, Seller`.
 
+   1. Test case: `role 1 none`<br>
+      Expected: Alicia has no role badge. The result box shows
+      `Role cleared: Alicia Tan has no assigned role`. Exit and restart the app to confirm the role stays cleared.
+
+   1. Test case: `role 1 none` again<br>
+      Expected: Alicia remains unassigned. The result box shows
+      `Role unchanged: Alicia Tan already has no assigned role`. No new undo-history entry is added.
+
 ### Rejecting invalid role commands
 
 1. Rejecting invalid formats, roles, and indexes
@@ -827,18 +889,20 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: Run `list` and note the current role of client 1.
 
    1. Test case: `role 0 buyer`<br>
-      Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
+      Expected: No role is changed. The result box shows
+      `Error: Invalid command format. Use: role INDEX ROLE.`
 
    1. Test case: `role 1`<br>
       Expected: No role is changed. The result box shows
-      `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+      `Error: Invalid command format. Use: role INDEX ROLE.`
 
    1. Test case: `role 1 landlord`<br>
       Expected: No role is changed. The result box shows
-      `Error: Invalid Role: Role must be 'buyer', 'seller', or 'both'.`
+      `Error: Invalid Role: Role must be 'buyer', 'seller', 'both', or 'none'.`
 
    1. Test case: `role 999 buyer`<br>
-      Expected: No role is changed. The result box shows `Error: The client index provided is invalid.`
+      Expected: No role is changed. The result box shows
+      `Error: The client index provided is invalid.`
 
    1. Test case: `role 1 buyer extra`<br>
       Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
@@ -924,11 +988,13 @@ testers are expected to do more *exploratory* testing.
       value such as `"role" : "landlord"`.
 
    1. Relaunch the app.<br>
-      Expected: The app does not crash and starts with an empty client list because the file cannot be loaded.
+      Expected: The app does not crash, starts with an empty client list, and warns that the unreadable file was
+      copied to `data/addressbook.json.unreadable-<unique number>.bak`.
 
    1. Run `list`.<br>
       Expected: The result box shows `Listed all clients.` and the corrupted file is replaced with a valid empty
-      client book. Restore the backup after completing the test.
+      client book. The `.bak` copy still contains the corrupted file's original bytes. Restore the valid backup
+      made before this test after completing it.
 
 ### Clearing all clients with confirmation
 
@@ -942,6 +1008,18 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `clear confirm`<br>
       Expected: All clients are deleted. The result box shows `Client book has been cleared!`.
+
+1. Confirming in capital letters
+
+   1. Prerequisites: Start with the five sample clients, and run `list` to show them all.
+
+   1. Test case: `clear`, then `clear CONFIRM`<br>
+      Expected: All clients are deleted. The result box shows `Client book has been cleared!`, not
+      `Clear cancelled.`.
+
+   1. Test case: Run `undo`, then `clear`, then `clear confrim`<br>
+      Expected: The five clients are back after `undo`. The misspelled confirmation is not accepted, no client is
+      deleted, and the result box shows `Clear cancelled.`.
 
 1. Cancelling a pending clear
 
@@ -970,7 +1048,7 @@ testers are expected to do more *exploratory* testing.
    1. Exit the app, delete `data/addressbook.json` from this test folder, then relaunch the JAR.<br>
       Expected: The app recreates `data/addressbook.json` and displays the five sample clients.
 
-### Searching clients by name, phone or email
+### Searching clients by name, phone, email or address
 
 1. Partial matching, ignoring case
 
@@ -987,11 +1065,39 @@ testers are expected to do more *exploratory* testing.
       Expected: Only `Raj Kumar` is displayed, matched by part of his email address `raj.kumar@example.com`. The
       result box shows `Showing 1 of 5 clients.`.
 
-1. Multiple keywords use OR matching
+   1. Test case: `find bishan`<br>
+      Expected: Only `Alicia Tan` is displayed, matched by part of her address `Blk 123 Bishan Street 12, #08-45`.
+      The result box shows `Showing 1 of 5 clients.`.
+
+   1. Test case: `find Street`<br>
+      Expected: `Alicia Tan`, `Benjamin Lim`, `Nur Aisyah` and `Raj Kumar` are displayed, because all four addresses
+      contain `Street`. The result box shows `Showing 4 of 5 clients.`.
+
+1. Multiple keywords use AND matching
+
+   1. Test case: `find ali tan`<br>
+      Expected: Only `Alicia Tan` is displayed, because both keywords match her name. The result box shows
+      `Showing 1 of 5 clients.`.
+
+   1. Test case: `find tan 8123`<br>
+      Expected: Only `Alicia Tan` is displayed, because `tan` matches her name and `8123` matches her phone number
+      `81234567`. The result box shows `Showing 1 of 5 clients.`.
 
    1. Test case: `find Alicia 82345678`<br>
-      Expected: `Alicia Tan` and `Benjamin Lim` are displayed, matched by name and phone number respectively. The
-      result box shows `Showing 2 of 5 clients.`.
+      Expected: No clients are displayed, because `82345678` is the phone number of `Benjamin Lim` and not of
+      `Alicia Tan`. The result box shows `Showing 0 of 5 clients.`.
+
+   1. Test case: `find Tampines Benjamin`<br>
+      Expected: Only `Benjamin Lim` is displayed, because `Tampines` matches his address and `Benjamin` matches his
+      name. The result box shows `Showing 1 of 5 clients.`.
+
+   1. Test case: `find Punggol Alicia`<br>
+      Expected: No clients are displayed, because `Punggol` is in the address of `Cheryl Goh` and not of
+      `Alicia Tan`. The result box shows `Showing 0 of 5 clients.`.
+
+   1. Test case: `find a`, then `find a li`<br>
+      Expected: `find a` shows all five clients, because every sample email address contains `a`. The second
+      command shows only `Alicia Tan` and `Benjamin Lim`, so the extra keyword narrows the list.
 
 1. No matching clients
 
@@ -1043,7 +1149,7 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `note 1   ` (an index followed by only spaces)<br>
       Expected: No note is changed. The result box shows `Error: Notes should be 1 to 500 characters.`.
 
-### Filtering clients by role and tag
+### Filtering clients by role, tag and requirements
 
 1. Filtering by role
 
@@ -1074,6 +1180,50 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `filter r/buyer t/urgent`<br>
       Expected: No clients are displayed, because no buyer (including both) is tagged `urgent`. The result box shows
       `Showing 0 of 5 clients.`.
+
+1. Filtering by area and housing type
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `filter l/Bishan l/Tampines`<br>
+      Expected: Clients who want either area are displayed: `Alicia Tan` and `Cheryl Goh`. The result box shows
+      `Showing 2 of 5 clients.`.
+
+   1. Test case: `filter h/HDB`<br>
+      Expected: `Alicia Tan` and `Cheryl Goh` are displayed. The result box shows `Showing 2 of 5 clients.`.
+
+   1. Test case: `filter l/Tampines h/EC`<br>
+      Expected: Only `Cheryl Goh` is displayed, because a client must match both the area and the housing type. The
+      result box shows `Showing 1 of 5 clients.`.
+
+1. Filtering by budget
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `filter b/850000`<br>
+      Expected: Clients whose budget includes $850,000 are displayed: `Alicia Tan` ($800,000 to $1,200,000) and
+      `Cheryl Goh` ($700,000 to $900,000). The result box shows `Showing 2 of 5 clients.`.
+
+   1. Test case: `filter b/1000000-1500000`<br>
+      Expected: Only `Alicia Tan` is displayed, because only that budget overlaps the range. The result box shows
+      `Showing 1 of 5 clients.`.
+
+1. Filtering by asking price
+
+   1. Prerequisites: Run `list` to show all five sample clients.
+
+   1. Test case: `filter r/seller s/900000-1000000`<br>
+      Expected: Only `Nur Aisyah` is displayed, because that seller asks $950,000. The result box shows
+      `Showing 1 of 5 clients.`.
+
+1. Rejecting invalid requirement filters
+
+   1. Test case: `filter b/600000-500000`<br>
+      Expected: The displayed list does not change. The result box shows `The minimum budget must not exceed the
+      maximum.`.
+
+   1. Test case: `filter b/500000 b/600000`<br>
+      Expected: The displayed list does not change. The result box shows `Multiple values specified for the following single-valued field(s): b/`.
 
 1. Restoring the full list
 
@@ -1168,7 +1318,8 @@ testers are expected to do more *exploratory* testing.
 
    1. Expected: The window shows the client list on the left and the detail panel on the right. Until a client is
       selected, the detail panel shows `Select a client to see details.`. The status bar shows the data file path
-      and the displayed client count.
+      and the displayed client count. During a search or filter, it shows the displayed and total counts and a
+      reminder to use `list` to show all clients.
 
 1. Selecting a client updates the panel
 

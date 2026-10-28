@@ -30,21 +30,21 @@ public class Area {
      */
     public Area(String area) {
         requireNonNull(area);
-        String trimmedArea = area.trim();
-        checkArgument(isValidArea(trimmedArea), MESSAGE_CONSTRAINTS);
-        value = canonicalArea(trimmedArea);
+        String normalisedArea = normaliseWhitespace(area);
+        checkArgument(isValidArea(normalisedArea), MESSAGE_CONSTRAINTS);
+        value = canonicalArea(normalisedArea);
     }
 
     /**
-     * Returns true if a given string names one of the supported areas, ignoring case.
+     * Returns true if a given string names one of the supported areas, ignoring case and repeated whitespace.
      */
     public static boolean isValidArea(String test) {
         if (test == null) {
             return false;
         }
-        String trimmedTest = test.trim();
+        String normalisedTest = normaliseWhitespace(test);
         for (String area : VALID_AREAS) {
-            if (area.equalsIgnoreCase(trimmedTest)) {
+            if (area.equalsIgnoreCase(normalisedTest)) {
                 return true;
             }
         }
@@ -58,6 +58,11 @@ public class Area {
         return value;
     }
 
+    /**
+     * Returns the canonical title-case spelling of {@code area}.
+     *
+     * @param area An area name already normalised by {@link #normaliseWhitespace(String)}.
+     */
     private static String canonicalArea(String area) {
         for (String validArea : VALID_AREAS) {
             if (validArea.equalsIgnoreCase(area)) {
@@ -65,6 +70,13 @@ public class Area {
             }
         }
         throw new IllegalArgumentException(MESSAGE_CONSTRAINTS);
+    }
+
+    /**
+     * Returns {@code text} trimmed, with every run of whitespace collapsed to a single space.
+     */
+    private static String normaliseWhitespace(String text) {
+        return text.trim().replaceAll("\\s+", " ");
     }
 
     @Override

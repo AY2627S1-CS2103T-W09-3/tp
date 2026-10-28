@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonMatchesSearchTermsPredicateTest {
+    private static final String GEYLANG = "Blk 30 Geylang Street 29, #06-40";
+
 
     @Test
     public void equals() {
@@ -46,10 +48,6 @@ public class PersonMatchesSearchTermsPredicateTest {
         // Multiple keywords
         predicate = new PersonMatchesSearchTermsPredicate(List.of("Alice", "Bob"));
         assertTrue(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
-
-        // Only one matching keyword
-        predicate = new PersonMatchesSearchTermsPredicate(List.of("Bob", "Carol"));
-        assertTrue(predicate.test(new PersonBuilder().withName("Alice Carol").build()));
 
         // Mixed-case keywords
         predicate = new PersonMatchesSearchTermsPredicate(List.of("aLIce", "bOB"));
@@ -130,13 +128,38 @@ public class PersonMatchesSearchTermsPredicateTest {
     }
 
     @Test
-    public void test_multipleTermsWithOnePartialMatch_returnsTrue() {
-        PersonMatchesSearchTermsPredicate predicate = new PersonMatchesSearchTermsPredicate(List.of("zzz", "912"));
-        assertTrue(predicate.test(personWithPhone("91234567")));
+    public void test_everyTermMatchesSomeField_returnsTrue() {
+        Person person = new PersonBuilder().withName("Alice Bob").withPhone("91234567")
+                .withEmail("alice@gmail.com").build();
+
+        // Two terms in the same name, in any order
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Alice", "Bob")).test(person));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("bob", "alice")).test(person));
+
+        // Terms matched by different fields
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Alice", "912")).test(person));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("bob", "912", "gmail")).test(person));
+
+        // Two terms that are both matched by the same field
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("ali", "ice")).test(person));
+    }
+
+    @Test
+    public void test_someTermMatchesNoField_returnsFalse() {
+        Person person = new PersonBuilder().withName("Alice Bob").withPhone("91234567")
+                .withEmail("alice@gmail.com").build();
+
+        // One term matches and one does not
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("Alice", "Carol")).test(person));
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("zzz", "912")).test(person));
+
+        // A second term that only another client matches, as in find Alex Yu
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("Alex", "Yu")).test(personWithName("Alex Yeoh")));
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("Alex", "Yu")).test(personWithName("Bernice Yu")));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Alex", "Ye")).test(personWithName("Alex Yeoh")));
 
         // No term matches any field
-        predicate = new PersonMatchesSearchTermsPredicate(List.of("zzz", "qqq"));
-        assertFalse(predicate.test(personWithPhone("91234567")));
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("zzz", "qqq")).test(person));
     }
 
     @Test
@@ -149,9 +172,44 @@ public class PersonMatchesSearchTermsPredicateTest {
         predicate = new PersonMatchesSearchTermsPredicate(List.of("Carol"));
         assertFalse(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
 
-        // Keywords match address only
-        predicate = new PersonMatchesSearchTermsPredicate(List.of("Main", "Street"));
-        assertFalse(predicate.test(new PersonBuilder().withName("Alice").withAddress("Main Street").build()));
+        // Keywords match the note only
+        predicate = new PersonMatchesSearchTermsPredicate(List.of("corner", "unit"));
+        assertFalse(predicate.test(new PersonBuilder().withName("Alice").withNote("Prefers a corner unit").build()));
+    }
+
+    @Test
+    public void test_addressMatchesKeyword_returnsTrue() {
+        // Whole word, and every word of the address
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Geylang")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Blk", "Street", "Geylang"))
+                .test(personWithAddress(GEYLANG)));
+
+        // Start, middle and end of the address, and part of a word
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Blk")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("eyla")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("06-40")).test(personWithAddress(GEYLANG)));
+
+        // Mixed case, and the punctuation and unit number
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("gEyLaNg")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("#06")).test(personWithAddress(GEYLANG)));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("29,")).test(personWithAddress(GEYLANG)));
+    }
+
+    @Test
+    public void test_addressAndAnotherFieldMatchKeywords_returnsTrue() {
+        Person person = new PersonBuilder().withName("Alice Bob").withPhone("91234567")
+                .withEmail("alice@gmail.com").withAddress(GEYLANG).build();
+
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("Alice", "Geylang")).test(person));
+        assertTrue(new PersonMatchesSearchTermsPredicate(List.of("912", "Geylang", "gmail")).test(person));
+    }
+
+    @Test
+    public void test_addressMatchesButAnotherKeywordDoesNot_returnsFalse() {
+        Person person = new PersonBuilder().withName("Alice Bob").withAddress(GEYLANG).build();
+
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("Geylang", "Carol")).test(person));
+        assertFalse(new PersonMatchesSearchTermsPredicate(List.of("Bishan")).test(person));
     }
 
     @Test
@@ -162,6 +220,11 @@ public class PersonMatchesSearchTermsPredicateTest {
         String expected = PersonMatchesSearchTermsPredicate.class.getCanonicalName()
                 + "{searchTerms=" + searchTerms + "}";
         assertEquals(expected, predicate.toString());
+    }
+
+    private static Person personWithAddress(String address) {
+        return new PersonBuilder().withName("Bob").withPhone("81111111").withEmail("p@example.com")
+                .withAddress(address).build();
     }
 
     private static Person personWithName(String name) {
