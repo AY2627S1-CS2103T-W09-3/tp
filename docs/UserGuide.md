@@ -488,7 +488,8 @@ Formats: `undo`, `redo`, `history` (no parameters)
   confirmation instead of performing the action. The result box shows `Clear cancelled.`; use the
   action again after cancellation.
 * With focus in the command box, undo/redo shortcuts run the app's commands rather than the text
-  field's undo/redo. Any unfinished command text stays in the box.
+  field's undo/redo. Any unfinished command text stays in the box. If there is nothing to undo or
+  redo, the result box reports the error without marking that unfinished text as invalid.
 
 For example, enter `delete 2`, then `undo` to restore that client. Enter `redo` to delete the client again.
 
