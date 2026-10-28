@@ -90,6 +90,7 @@ public class FilterCommandParserTest {
         assertParseSuccess(parser, " l/Bedok", filterOfAreas(Optional.empty(), "Bedok"));
         assertParseSuccess(parser, " l/Bedok l/Tampines", filterOfAreas(Optional.empty(), "Bedok", "Tampines"));
         assertParseSuccess(parser, " l/toa payoh", filterOfAreas(Optional.empty(), "Toa Payoh"));
+        assertParseSuccess(parser, " l/Toa  Payoh", filterOfAreas(Optional.empty(), "Toa Payoh"));
         assertParseSuccess(parser, " l/  BEDOK  ", filterOfAreas(Optional.empty(), "Bedok"));
     }
 
@@ -210,7 +211,7 @@ public class FilterCommandParserTest {
 
     @Test
     public void parse_invalidArea_throwsParseException() {
-        for (String input : List.of(" l/", " l/Narnia", " l/Bedok l/", " l/Toa  Payoh", " r/buyer l/Bishan East")) {
+        for (String input : List.of(" l/", " l/Narnia", " l/Bedok l/", " r/buyer l/Bishan East")) {
             assertParseFailure(parser, input, Area.MESSAGE_CONSTRAINTS);
         }
     }
