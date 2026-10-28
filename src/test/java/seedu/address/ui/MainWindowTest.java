@@ -198,12 +198,8 @@ public class MainWindowTest {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
             model.addPerson(BOB);
-            Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            MainWindow window = openWindow(model);
             try {
-                window.fillInnerParts();
                 Region root = (Region) window.getRoot().getScene().getRoot();
                 root.applyCss();
 
@@ -482,12 +478,8 @@ public class MainWindowTest {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
             model.addPerson(BOB);
-            Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            MainWindow window = openWindow(model);
             try {
-                window.fillInnerParts();
                 TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
                 TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
                 ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
@@ -529,12 +521,8 @@ public class MainWindowTest {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
             model.addPerson(BOB);
-            Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            MainWindow window = openWindow(model);
             try {
-                window.fillInnerParts();
                 TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
                 TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
                 Label footer = (Label) window.getRoot().getScene().lookup("#clientCountStatus");
@@ -564,11 +552,8 @@ public class MainWindowTest {
     public void execute_clientListChanges_updatesFooterCount() throws Exception {
         runOnFxThread(() -> {
             Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            MainWindow window = openWindow(new ModelManager());
             try {
-                window.fillInnerParts();
                 TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
                 Label count = (Label) window.getRoot().getScene().lookup("#clientCountStatus");
                 Label saveLocation = (Label) window.getRoot().getScene().lookup("#saveLocationStatus");
@@ -929,12 +914,8 @@ public class MainWindowTest {
 
     private void assertFailureAndRecovery(String command, String expectedError) throws Exception {
         runOnFxThread(() -> {
-            Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            MainWindow window = openWindow(new ModelManager());
             try {
-                window.fillInnerParts();
                 TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
                 TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
 

@@ -76,7 +76,7 @@ public class PersonCardTest {
     public void constructor_clientDetails_displaysIdentityContactAndTagsWithoutAddress()
             throws ExecutionException, InterruptedException {
         Person person = new PersonBuilder().withRole(ClientRole.BUYER).withTags("urgent", "firsttime").build();
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonCard(person, 2).getRoot();
             VBox content = (VBox) root.lookup("#cardContent");
             HBox identity = (HBox) root.lookup("#identityRow");
@@ -100,10 +100,7 @@ public class PersonCardTest {
                     .filter(tag -> !"tagOverflow".equals(tag.getId()))
                     .map(tag -> ((Label) tag).getText()).toList());
             assertNull(root.lookup("#address"));
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     @Test
@@ -112,10 +109,9 @@ public class PersonCardTest {
         Person person = new PersonBuilder().withName("Alexandra Elizabeth Montgomery Chua")
                 .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH)
                 .withNote("Call next week").build();
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonListPanel(FXCollections.observableArrayList(person)).getRoot();
-            Scene scene = new Scene(root, 318, 200);
-            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            createStyledScene(root, 318, 200);
             root.resize(318, 200);
             root.applyCss();
             root.layout();
@@ -142,16 +138,13 @@ public class PersonCardTest {
             }
             assertEquals(person.getName().fullName, name.getText());
             assertEquals(person.getEmail().value, email.getText());
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     @Test
     public void constructor_notePresent_showsAccessibleIconWithoutText()
             throws ExecutionException, InterruptedException {
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonCard(new PersonBuilder().withNote("Call next week").build(), 1).getRoot();
             Label marker = (Label) root.lookup("#noteIndicator");
             assertTrue(marker.isVisible());
@@ -162,24 +155,18 @@ public class PersonCardTest {
             assertEquals("Has note", marker.getTooltip().getText());
             assertEquals("Has note", marker.getAccessibleText());
             assertEquals(AccessibleRole.TEXT, marker.getAccessibleRole());
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     @Test
     public void constructor_noteAbsent_hidesMarkerWithoutReservingSpace()
             throws ExecutionException, InterruptedException {
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonCard(new PersonBuilder().build(), 1).getRoot();
             Label marker = (Label) root.lookup("#noteIndicator");
             assertFalse(marker.isVisible());
             assertFalse(marker.isManaged());
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     @Test
@@ -193,10 +180,9 @@ public class PersonCardTest {
                         .withEmail("alexandra.elizabeth.montgomery@example.com").withRole(ClientRole.BOTH)
                         .withTags("urgent").build(),
                 new PersonBuilder().withName("Ravi Kumar").withTags().build());
-        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonListPanel(FXCollections.observableArrayList(clients)).getRoot();
-            Scene scene = new Scene(root, 318, 320);
-            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            createStyledScene(root, 318, 320);
             root.resize(318, 320);
             root.applyCss();
             root.layout();
@@ -226,10 +212,7 @@ public class PersonCardTest {
                     assertTrue(bounds.getMaxY() <= cardBounds.getMaxY());
                 }
             }
-            return null;
         });
-        Platform.runLater(checkCards);
-        checkCards.get();
     }
 
     @Test
@@ -240,11 +223,10 @@ public class PersonCardTest {
                 new PersonBuilder().withName("Benjamin Lim").withRole(ClientRole.BUYER).withTags("urgent").build(),
                 new PersonBuilder().withName("Priya Nair").withRole(ClientRole.SELLER).withTags().build(),
                 new PersonBuilder().withName("Ravi Kumar").withRole(ClientRole.BOTH).withTags("upgrader").build());
-        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             // A conservative list-only viewport within the smallest planned window layout.
             Region root = new PersonListPanel(FXCollections.observableArrayList(clients)).getRoot();
-            Scene scene = new Scene(root, 318, 220);
-            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            createStyledScene(root, 318, 220);
             root.resize(318, 220);
             root.applyCss();
             root.layout();
@@ -259,10 +241,7 @@ public class PersonCardTest {
                 assertTrue(bounds.getMaxY() <= 220);
                 assertCardContentFits((Region) cell.getGraphic());
             }
-            return null;
         });
-        Platform.runLater(checkCards);
-        checkCards.get();
     }
 
     @Test
@@ -270,10 +249,9 @@ public class PersonCardTest {
             throws ExecutionException, InterruptedException {
         List<String> tagNames = List.of("buyer", "firsttime", "investment", "nearMrt", "urgent");
         Person person = new PersonBuilder().withTags(tagNames.toArray(String[]::new)).build();
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonCard(person, 1).getRoot();
-            Scene scene = new Scene(root, 180, 70);
-            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            createStyledScene(root, 180, 70);
             layoutContentSizedCard(root, 180);
             double originalHeight = root.getHeight();
 
@@ -307,10 +285,7 @@ public class PersonCardTest {
                     .map(node -> ((Label) node).getText()).toList());
             assertEquals(originalHeight, root.getHeight(), 0.01);
             assertCardContentFits(root);
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     @Test
@@ -318,10 +293,9 @@ public class PersonCardTest {
             throws ExecutionException, InterruptedException {
         String tagName = "averylongtagthatcannotfitwithinthenarrowcard";
         Person person = new PersonBuilder().withTags(tagName).build();
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonCard(person, 1).getRoot();
-            Scene scene = new Scene(root, 180, 70);
-            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            createStyledScene(root, 180, 70);
             layoutContentSizedCard(root, 180);
 
             Label overflow = (Label) root.lookup("#tagOverflow");
@@ -331,10 +305,7 @@ public class PersonCardTest {
             assertCardContentFits(root);
             assertTrue(((StackPane) root.lookup("#tags")).getHeight() >= overflow.prefHeight(-1) - 1,
                     "The tag row must fit the overflow label's font rather than be capped at 16 pixels");
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     @Test
@@ -397,10 +368,9 @@ public class PersonCardTest {
                 .withAskingPrice(new Price("1500000"))
                 .withAreas(Set.of(new Area("Bishan"), new Area("Tampines"), new Area("Toa Payoh")))
                 .withHousingTypes(Set.of(HousingType.HDB, HousingType.CONDO)).build();
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonCard(person, 1).getRoot();
-            Scene scene = new Scene(root, 318, 90);
-            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            createStyledScene(root, 318, 90);
             layoutContentSizedCard(root, 318);
 
             Label summary = (Label) root.lookup("#requirementsSummary");
@@ -420,10 +390,7 @@ public class PersonCardTest {
                 assertTrue(bounds.getMinX() >= cardBounds.getMinX());
                 assertTrue(bounds.getMaxX() <= cardBounds.getMaxX());
             }
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     @Test
@@ -432,11 +399,10 @@ public class PersonCardTest {
         Person person = new PersonBuilder().withRole(ClientRole.BOTH).withTags("urgent")
                 .withBudget(new Budget(new Price("800000"), new Price("1200000")))
                 .withAskingPrice(new Price("950000")).build();
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region card = new PersonCard(person, 1).getRoot();
             StackPane window = new StackPane(card);
-            Scene scene = new Scene(window, 318, 120);
-            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            createStyledScene(window, 318, 120);
             window.applyCss();
             layoutContentSizedCard(card, 318);
             List<Label> labels = card.lookupAll(".label").stream().map(node -> (Label) node).toList();
@@ -454,10 +420,7 @@ public class PersonCardTest {
                         "Card text must inherit " + family);
                 assertCardContentFits(card);
             }
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     @Test
@@ -467,11 +430,10 @@ public class PersonCardTest {
         Person clientWithRequirements = new PersonBuilder(client)
                 .withBudget(new Budget(new Price("800000"), new Price("1200000")))
                 .withAskingPrice(new Price("950000")).build();
-        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             for (Person person : List.of(client, clientWithRequirements)) {
                 Region root = new PersonCard(person, 1).getRoot();
-                Scene scene = new Scene(root, 700, 300);
-                scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+                createStyledScene(root, 700, 300);
                 layoutContentSizedCard(root, 700);
                 double originalHeight = root.getHeight();
 
@@ -485,10 +447,7 @@ public class PersonCardTest {
                 layoutContentSizedCard(root, 700);
                 assertEquals(originalHeight, root.getHeight(), 0.01);
             }
-            return null;
         });
-        Platform.runLater(checkCards);
-        checkCards.get();
     }
 
     @Test
@@ -498,7 +457,7 @@ public class PersonCardTest {
         List<Person> clients = List.of(client, new PersonBuilder(client).withTags().build(),
                 new PersonBuilder(client).withBudget(new Budget(new Price("800000"), new Price("1200000")))
                         .withAskingPrice(new Price("950000")).build());
-        FutureTask<Void> checkCards = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             List<String> families = List.of("System", "Serif", "Monospaced", "Segoe UI", "Arial Unicode MS").stream()
                     .filter(family -> Font.getFamilies().contains(family)).toList();
             assertFalse(families.isEmpty());
@@ -506,8 +465,7 @@ public class PersonCardTest {
                 double compactHeight = 0;
                 for (int i = 0; i < clients.size(); i++) {
                     Region root = new PersonCard(clients.get(i), 1).getRoot();
-                    Scene scene = new Scene(root, 318, 120);
-                    scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+                    createStyledScene(root, 318, 120);
                     root.lookupAll(".label").forEach(label -> label.setStyle("-fx-font-family: '" + family + "';"));
                     layoutContentSizedCard(root, 318);
 
@@ -523,10 +481,7 @@ public class PersonCardTest {
                     }
                 }
             }
-            return null;
         });
-        Platform.runLater(checkCards);
-        checkCards.get();
     }
 
     @Test
@@ -538,10 +493,9 @@ public class PersonCardTest {
 
     private static void assertRequirementsSummary(Person person, String expected)
             throws ExecutionException, InterruptedException {
-        FutureTask<Void> checkCard = new FutureTask<>(() -> {
+        runOnFxThread(() -> {
             Region root = new PersonCard(person, 1).getRoot();
-            Scene scene = new Scene(root, 318, 90);
-            scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
+            createStyledScene(root, 318, 90);
             layoutContentSizedCard(root, 318);
             Label summary = (Label) root.lookup("#requirementsSummary");
             assertEquals(expected, summary.getText());
@@ -550,10 +504,7 @@ public class PersonCardTest {
             assertEquals(expected.isEmpty() ? 3 : 4, ((VBox) root.lookup("#cardContent")).getChildren().stream()
                     .filter(javafx.scene.Node::isManaged).count());
             assertCardContentFits(root);
-            return null;
         });
-        Platform.runLater(checkCard);
-        checkCard.get();
     }
 
     private static void layoutContentSizedCard(Region root, double width) {
@@ -573,5 +524,16 @@ public class PersonCardTest {
         });
         Platform.runLater(createCard);
         return createCard.get();
+    }
+
+    private static void runOnFxThread(Runnable action) throws ExecutionException, InterruptedException {
+        FutureTask<Void> task = new FutureTask<>(action, null);
+        Platform.runLater(task);
+        task.get();
+    }
+
+    private static void createStyledScene(Region root, double width, double height) {
+        Scene scene = new Scene(root, width, height);
+        scene.getStylesheets().add(PersonCard.class.getResource("/view/DarkTheme.css").toExternalForm());
     }
 }
