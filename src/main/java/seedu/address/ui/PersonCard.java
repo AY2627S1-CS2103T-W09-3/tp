@@ -120,6 +120,9 @@ public class PersonCard extends UiPart<Region> {
      * Keeps tags on a single row and exposes any overflow through a count and tooltip.
      */
     private static class TagRow extends HBox {
+        private static final double TAG_SPACING = 7;
+        private static final double OVERFLOW_TOOLTIP_MAX_WIDTH = 300;
+
         private final List<String> tagNames;
         private final List<Label> tagLabels;
         private final Label overflow = new Label();
@@ -127,7 +130,7 @@ public class PersonCard extends UiPart<Region> {
         private final Text overflowMeasure = new Text();
 
         TagRow(List<String> tagNames) {
-            super(7);
+            super(TAG_SPACING);
             this.tagNames = tagNames;
             setId("tagRow");
             setMinWidth(0);
@@ -141,7 +144,7 @@ public class PersonCard extends UiPart<Region> {
             overflow.setId("tagOverflow");
             overflow.setMinWidth(0);
             overflowTooltip.setWrapText(true);
-            overflowTooltip.setMaxWidth(300);
+            overflowTooltip.setMaxWidth(OVERFLOW_TOOLTIP_MAX_WIDTH);
             overflow.setTooltip(overflowTooltip);
             getChildren().addAll(tagLabels);
             getChildren().add(overflow);

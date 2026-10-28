@@ -462,26 +462,29 @@ public class PersonCardTest {
                     .filter(family -> Font.getFamilies().contains(family)).toList();
             assertFalse(families.isEmpty());
             for (String family : families) {
-                double compactHeight = 0;
-                for (int i = 0; i < clients.size(); i++) {
-                    Region root = new PersonCard(clients.get(i), 1).getRoot();
-                    createStyledScene(root, 318, 120);
-                    root.lookupAll(".label").forEach(label -> label.setStyle("-fx-font-family: '" + family + "';"));
-                    layoutContentSizedCard(root, 318);
-
-                    // Replacement fonts may grow the card; default-font compactness is tested separately.
-                    assertCardContentFits(root);
-                    if (i == 0) {
-                        compactHeight = root.getHeight();
-                    } else if (i == 1) {
-                        assertEquals(compactHeight, root.getHeight(), 0.01,
-                                "Removing tags must not change the card height for " + family);
-                    } else {
-                        assertTrue(root.getHeight() > compactHeight, "The summary must have its own row");
-                    }
-                }
+                assertCardsFitWithFontFamily(clients, family);
             }
         });
+    }
+
+    private static void assertCardsFitWithFontFamily(List<Person> clients, String family) {
+        Region taggedCard = createCardWithFontFamily(clients.get(0), family);
+        Region untaggedCard = createCardWithFontFamily(clients.get(1), family);
+        Region requirementsCard = createCardWithFontFamily(clients.get(2), family);
+
+        assertEquals(taggedCard.getHeight(), untaggedCard.getHeight(), 0.01,
+                "Removing tags must not change the card height for " + family);
+        assertTrue(requirementsCard.getHeight() > taggedCard.getHeight(), "The summary must have its own row");
+    }
+
+    private static Region createCardWithFontFamily(Person person, String family) {
+        Region card = new PersonCard(person, 1).getRoot();
+        createStyledScene(card, 318, 120);
+        card.lookupAll(".label").forEach(label -> label.setStyle("-fx-font-family: '" + family + "';"));
+        layoutContentSizedCard(card, 318);
+        // Replacement fonts may grow the card; default-font compactness is tested separately.
+        assertCardContentFits(card);
+        return card;
     }
 
     @Test
