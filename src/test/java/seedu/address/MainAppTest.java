@@ -155,6 +155,26 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_unreadableDataBackupFails_logsReasonAndPreservesFile() throws Exception {
+        String invalidJson = "{invalid json";
+        Files.writeString(addressBookPath, invalidJson);
+        app = new MainApp(userPrefsPath, addressBookPath) {
+            @Override
+            Path backUpUnreadableDataFile(Path dataFilePath) throws IOException {
+                throw new IOException("Simulated backup failure");
+            }
+        };
+
+        IOException exception = assertThrows(IOException.class, app::init);
+
+        assertTrue(exception.getMessage().contains("Could not back up unreadable client data file"));
+        assertTrue(exception.getMessage().contains(addressBookPath.toString()));
+        assertTrue(exception.getMessage().contains("Startup has stopped without changing the original file"));
+        assertTrue(logHandler.messages.stream().anyMatch(message -> message.equals(exception.getMessage())));
+        assertEquals(invalidJson, Files.readString(addressBookPath));
+    }
+
+    @Test
     public void init_secondStartup_preservesSavedClientChanges() throws Exception {
         app.init();
         app.logic.execute("delete 1");

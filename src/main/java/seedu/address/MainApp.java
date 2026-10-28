@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
@@ -95,7 +96,16 @@ public class MainApp extends Application {
         try {
             addressBookOptional = storage.readAddressBook();
         } catch (DataLoadingException e) {
-            unreadableDataBackupPath = backUpUnreadableDataFile(storage.getAddressBookFilePath());
+            try {
+                unreadableDataBackupPath = backUpUnreadableDataFile(storage.getAddressBookFilePath());
+            } catch (IOException backupFailure) {
+                String message = "Could not back up unreadable client data file at "
+                        + storage.getAddressBookFilePath().toAbsolutePath()
+                        + ". Startup has stopped without changing the original file."
+                        + " Check file permissions and available disk space before trying again.";
+                logger.log(Level.SEVERE, message, backupFailure);
+                throw new IOException(message, backupFailure);
+            }
             logger.warning("Data file at " + storage.getAddressBookFilePath() + " could not be loaded."
                     + " A backup was saved at " + unreadableDataBackupPath
                     + ". Will be starting with an empty client book.");
