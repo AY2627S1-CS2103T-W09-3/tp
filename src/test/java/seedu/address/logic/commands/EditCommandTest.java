@@ -69,6 +69,18 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_budgetSpecified_feedbackMentionsRequirements() throws Exception {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withBudget(new Budget(new Price("500000"), new Price("700000")))
+                .build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        CommandResult result = editCommand.execute(model);
+
+        assertTrue(result.getFeedbackToUser().contains("Requirements: Budget $500,000 to $700,000"));
+    }
+
+    @Test
     public void execute_someFieldsSpecifiedUnfilteredList_success() {
         Index indexLastPerson = Index.fromOneBased(model.getFilteredPersonList().size());
         Person lastPerson = model.getFilteredPersonList().get(indexLastPerson.getZeroBased());
