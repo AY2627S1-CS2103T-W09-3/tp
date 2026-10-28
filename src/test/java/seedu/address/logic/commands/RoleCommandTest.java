@@ -86,6 +86,7 @@ public class RoleCommandTest {
 
     @Test
     public void execute_invalidIndexUnfilteredList_failure() {
+        // Boundary value: the first index immediately after the last displayed client.
         Index invalidIndex = Index.fromZeroBased(model.getFilteredPersonList().size());
         RoleCommand command = new RoleCommand(invalidIndex, ClientRole.SELLER);
 

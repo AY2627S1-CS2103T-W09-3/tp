@@ -113,11 +113,11 @@ public class MainWindow extends UiPart<Stage> {
     private void setAccelerators() {
         setAccelerator(helpMenuItem, KeyCombination.valueOf("F1"));
         undoMenuItem.setAccelerator(KeyCombination.valueOf("Shortcut+Z"));
-        redoMenuItem.setAccelerator(redoAcceleratorFor(System.getProperty("os.name")));
+        redoMenuItem.setAccelerator(getRedoAcceleratorFor(System.getProperty("os.name")));
         getRoot().getScene().addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryShortcut);
     }
 
-    static KeyCombination redoAcceleratorFor(String osName) {
+    static KeyCombination getRedoAcceleratorFor(String osName) {
         return KeyCombination.valueOf(osName.startsWith("Mac") ? "Meta+Shift+Z" : "Ctrl+Y");
     }
 
@@ -125,12 +125,12 @@ public class MainWindow extends UiPart<Stage> {
         if (event.isAltDown()) {
             return;
         }
-        boolean ctrlOnly = event.isControlDown() && !event.isMetaDown();
-        boolean metaOnly = event.isMetaDown() && !event.isControlDown();
-        if (event.getCode() == KeyCode.Z && !event.isShiftDown() && (ctrlOnly || metaOnly)) {
+        boolean isControlOnly = event.isControlDown() && !event.isMetaDown();
+        boolean isMetaOnly = event.isMetaDown() && !event.isControlDown();
+        if (event.getCode() == KeyCode.Z && !event.isShiftDown() && (isControlOnly || isMetaOnly)) {
             handleUndo();
-        } else if ((event.getCode() == KeyCode.Y && ctrlOnly && !event.isShiftDown())
-                || (event.getCode() == KeyCode.Z && metaOnly)) {
+        } else if ((event.getCode() == KeyCode.Y && isControlOnly && !event.isShiftDown())
+                || (event.getCode() == KeyCode.Z && isMetaOnly)) {
             handleRedo();
         } else {
             return;

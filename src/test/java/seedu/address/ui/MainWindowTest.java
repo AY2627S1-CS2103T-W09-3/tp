@@ -179,10 +179,10 @@ public class MainWindowTest {
     }
 
     @Test
-    public void redoAcceleratorFor_usesPlatformShortcut() {
-        assertEquals(KeyCombination.valueOf("Meta+Shift+Z"), MainWindow.redoAcceleratorFor("Mac OS X"));
-        assertEquals(KeyCombination.valueOf("Ctrl+Y"), MainWindow.redoAcceleratorFor("Linux"));
-        assertEquals(KeyCombination.valueOf("Ctrl+Y"), MainWindow.redoAcceleratorFor("Windows 11"));
+    public void getRedoAcceleratorFor_usesPlatformShortcut() {
+        assertEquals(KeyCombination.valueOf("Meta+Shift+Z"), MainWindow.getRedoAcceleratorFor("Mac OS X"));
+        assertEquals(KeyCombination.valueOf("Ctrl+Y"), MainWindow.getRedoAcceleratorFor("Linux"));
+        assertEquals(KeyCombination.valueOf("Ctrl+Y"), MainWindow.getRedoAcceleratorFor("Windows 11"));
     }
 
     @Test

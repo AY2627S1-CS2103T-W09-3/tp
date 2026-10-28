@@ -141,6 +141,7 @@ public class JsonAddressBookStorageTest {
 
     @Test
     public void saveAddressBook_replacementAndCleanupFail_preservesOriginalFailure() throws Exception {
+        // Error-path combination: replacement and cleanup both fail; the original save failure must remain primary.
         Path filePath = testFolder.resolve("addressBook.json");
         AddressBook original = new AddressBook();
         original.addPerson(ALICE);

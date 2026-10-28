@@ -109,12 +109,16 @@ public class JsonAddressBookStorage {
         }
     }
 
-    /** Removes a temporary file after an unsuccessful save. */
+    /**
+     * Removes a temporary file after an unsuccessful save.
+     */
     void deleteTemporaryFile(Path temporaryFile) throws IOException {
         Files.deleteIfExists(temporaryFile);
     }
 
-    /** Replaces the saved file only after its complete replacement has been written. */
+    /**
+     * Replaces the saved file only after its complete replacement has been written.
+     */
     void replaceDataFile(Path temporaryFile, Path destination) throws IOException {
         Files.move(temporaryFile, destination, StandardCopyOption.ATOMIC_MOVE,
                 StandardCopyOption.REPLACE_EXISTING);

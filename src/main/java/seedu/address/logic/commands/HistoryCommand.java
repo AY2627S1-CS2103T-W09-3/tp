@@ -7,7 +7,9 @@ import java.util.List;
 import seedu.address.model.Model;
 import seedu.address.model.history.HistoryEntry;
 
-/** Displays the available undo and redo actions, with the next action first. */
+/**
+ * Displays the available undo and redo actions, with the next action first.
+ */
 public class HistoryCommand extends Command {
     public static final String COMMAND_WORD = "history";
     public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: history.";

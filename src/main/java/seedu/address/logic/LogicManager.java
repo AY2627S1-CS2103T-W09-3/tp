@@ -89,7 +89,9 @@ public class LogicManager implements Logic {
         return commandResult;
     }
 
-    /** Reverts the data and stack transition made before a failed save. */
+    /**
+     * Reverts the data and stack transition made before a failed save.
+     */
     private void rollbackFailedSave(Command command, AddressBookSnapshot before) {
         try {
             if (command instanceof UndoCommand undoCommand) {
