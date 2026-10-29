@@ -416,8 +416,9 @@ not the same question as whether the model is equal. Three cases separate the tw
 * A client with no note and a client whose note text is `null` both render as `note=null` in `Person#toString`,
   but they are written as `"note": null` and `"note": "null"`. Comparing `toString` output skipped
   `note 1 null`, and the note disappeared when the app restarted.
-* A tag edited from `urgent` to `Urgent` keeps the new casing in `Tag#tagName`, while tag equality ignores case,
-  so any comparison that relies on equality can accept a change the file has to record.
+* A tag edited from `urgent` to `Urgent` keeps the new casing in `Tag`'s `tagName` field, which `JsonAdaptedTag`
+  writes, while `Tag#equals` compares the lowercased names, so any comparison that relies on equality can accept a
+  change the file has to record.
 * A field added to `Person` later is compared automatically, because the comparison is the file format itself
   rather than a list of fields that has to be kept in step with the model.
 
