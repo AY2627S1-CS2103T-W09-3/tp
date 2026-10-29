@@ -48,17 +48,23 @@ Only lowercase clear after surrounding whitespace is trimmed
 clears the note.
 end note
 
-NoteCommandParser -> Note : isValidNote("Call at 6 PM\non Monday")
+NoteCommandParser -> ParserUtil : parseNote("Call at 6 PM\\non Monday")
+activate ParserUtil
+
+ParserUtil -> Note : isValidNote("Call at 6 PM\non Monday")
 activate Note
 
-Note --> NoteCommandParser : true
+Note --> ParserUtil : true
 deactivate Note
 
-NoteCommandParser -> NoteInstance ** : new Note("Call at 6 PM\non Monday")
+ParserUtil -> NoteInstance ** : new Note("Call at 6 PM\non Monday")
 activate NoteInstance
 
-NoteInstance --> NoteCommandParser : n
+NoteInstance --> ParserUtil : n
 deactivate NoteInstance
+
+ParserUtil --> NoteCommandParser : n
+deactivate ParserUtil
 
 create NoteCommand
 NoteCommandParser -> NoteCommand
