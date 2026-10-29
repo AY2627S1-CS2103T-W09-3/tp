@@ -510,6 +510,63 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 * **A stateless `clear confirm`:** the warning would be a hint only, because a user could skip it by typing `clear confirm` straight away. It also gives the UI nothing to show.
 * **A confirmation popup:** this needs a window in the UI layer and cannot be tested through `Logic` alone.
 
+### Commands that take no arguments
+
+`list`, `help`, `exit`, `undo`, `redo` and `history` take no arguments, because none of them names a client
+or a field, so the command word already says everything the parser needs.
+`AddressBookParser#parseNoArguments(String, Command, String)` rejects any non-blank input after the command
+word with the format message owned by that command, so `list now` fails with
+`Invalid command format. Use: list.` and `help 123` fails with `Invalid command format. Use: help.`.
+The message names that command's own form rather than a generic error, because the extra text is usually an
+argument borrowed from another command, such as `undo 1` typed after `edit 1`. The check lives in one helper,
+which a new command of this kind calls with one line, while each command keeps its own message, which stays
+right when the command is renamed or gains an argument. The call is still explicit: a command added to the switch
+without it would accept extra words.
+
+Three commands sit on either side of the rule. `clear` takes one optional argument, `confirm`, in any letter
+case, and rejects everything else in `ClearCommandParser`, for the reasons in
+[Clear confirmation](#clear-confirmation). `find` takes ordinary search words rather than prefixes, and
+`FindCommandParser` rejects an empty list of terms. `filter` reads prefixes, and `FilterCommandParser` rejects text
+before the first one. Every other command takes arguments, so nothing else calls `parseNoArguments`.
+
+### Writing the data file
+
+`LogicManager` decides whether a command changed anything by comparing the persisted JSON of every client before
+and after the command. `LogicManager#persistedState(Model)` maps every client through
+`JsonAddressBookStorage#toPersistedJson`, which serialises `new JsonAdaptedPerson(person)` with
+`JsonUtil#toJsonTree`, so the comparison uses the same mapper, annotations and field visibility as the code that
+writes the file. The file is written only when the two lists differ, and the write itself still goes through
+`Storage#saveAddressBook`. `JsonUtil#toJsonString` would serve the same purpose but declares a checked
+`JsonProcessingException`, which leaves a catch branch that no test can reach; `toJsonTree` uses the same mapper
+without it.
+
+**Why compare the stored text rather than the model.** The question is whether the file would change, which is
+not the same question as whether the model is equal. Three cases separate the two:
+
+* A client with no note and a client whose note text is `null` both render as `note=null` in `Person#toString`,
+  but the first writes no `note` key at all, because the field carries `@JsonInclude(NON_NULL)`, while the second
+  stores the four characters `null` under that key. A comparison built on `toString` treated the two as the same,
+  and the note disappeared when the app restarted.
+* A tag edited from `urgent` to `Urgent` keeps the new casing in `Tag`'s `tagName` field, which `JsonAdaptedTag`
+  writes, while `Tag#equals` compares the lowercased names, so any comparison that relies on equality can accept a
+  change the file has to record.
+* A field added to `Person` still needs one edit in `JsonAdaptedPerson` before it reaches the file. Once the
+  adapter carries it, the comparison sees it without a second list to keep in step, because the comparison is the
+  file format itself. A field the adapter omits is invisible to both the file and the comparison, so it is never
+  saved.
+
+**What the skip gives the user.** Read-only and no-op commands never touch the file, so `list`, `find`, `view`,
+`help`, the initial `clear` warning and rejected input all work when the data folder is not writable, and the
+permission message appears only when a command really writes. A failed write rolls the model back to its state
+before the command, shows the access-denied or general storage message, and records no history entry.
+
+**Cost.** A command that completes serialises the client book twice, once before it executes and once after, which
+is the same order of work as one file write. A command that writes serialises a third time inside
+`JsonAddressBookStorage#saveAddressBook`, which calls `JsonUtil#toJsonString` on the whole book, writes a temporary
+file and replaces the data file, so it does about three times the serialisation work that a save used to do. A
+command that only reads pays two serialisations and no write. Input rejected at parsing stops before the first
+comparison. The cost grows with the number of clients, one serialisation per client per comparison.
+
 ### Undo, redo and history
 
 `AddressBookSnapshot` copies the whole client list, including clients hidden
@@ -527,11 +584,9 @@ persistent and undoable:
 
 1. Capture a before snapshot, execute the command, then capture an after snapshot.
    A parse error or `CommandException` stops execution without recording history.
-2. Write the data file only if the JSON text of the client book changed, so read-only
-   and no-op commands never write and keep working when the data location cannot be
-   written. `JsonAddressBookStorage#toPersistedJson` builds that text with the same
-   serialiser that writes the file, so a change the model considers equal, such as a
-   tag whose only difference is letter casing, is still saved.
+2. Write the data file only if the stored text changed, so read-only and no-op
+   commands never write and keep working when the data location cannot be written.
+   "Writing the data file" explains how that comparison is made.
 3. After that write step succeeds or is skipped, call `recordChange` only if the
    command is undoable.
    `add`, `edit`, `delete`, `role`, `note` and confirmed `clear` are eligible.
@@ -613,37 +668,82 @@ no value as invalid input. `edit` treats it as a request to clear the field:
 `parseAreasForEdit` turns a single empty `l/` into an empty set, so the client
 loses every area.
 
-Free text can contain a slash word that starts with a real prefix. In
-`a/12 Main Street s/o Ravi` the address holds `s/`, which is the asking price
-prefix, so reading it as a prefix hands `o Ravi` to `parsePrice` and rejects the
-whole command. `ArgumentTokenizer` therefore counts an occurrence of `b/` or `s/`
-as a new argument unless it is one of a closed list of abbreviations, `s/o` and
-`b/c`; `c/o` and `w/` were never prefixes, so they always stayed text. The list is
-closed rather than a rule about word length because `s/ab` and `s/o` have the same
-shape, so no length test separates a mistyped price from an abbreviation; `s/ab`
-and `b/xx` are therefore still reported as prices. The rule travels with the prefix
-as `Prefix#hasNumericValue` rather than as a special case for the address field,
-and `s/` with no value still clears the field in `edit`. Text prefixes keep the
-simpler rule, because a letter can be a real value there: `n/Al` and `t/s` are
-valid input, so a word such as `n/a` inside an address still reads as a name
-prefix and is reported as a repeated field.
+`Area` normalises its value before it validates it. `Area#normaliseWhitespace` trims the
+text and collapses each run of spaces to one, `isValidArea` then matches the 32 canonical
+names ignoring case, and `canonicalArea` stores the standard spelling.
+`l/Toa  Payoh` is therefore accepted and stored as `Toa Payoh`, and
+`ParserUtil#parseAreas` applies the same rule to every `l/` value, so `add`, `edit` and
+`filter` behave identically. Before this, a second space failed the allowlist, so the app
+rejected a value it could already display.
 
-The guard runs before the tokenizer. `ParserUtil#rejectUnknownPrefixes` scans the
-arguments for any word that begins with one to three letters and a slash, and reports
-the first such word that follows a recognised prefix and is not one itself, because
-`ArgumentTokenizer` would otherwise fold it into the previous value:
-`a/1 Road B/400000-600000` stores the budget text inside the address. Matching is
-case-sensitive, like the tokenizer, so a known prefix typed in the wrong case is
-reported instead of being accepted here and then ignored there. A word is reported
-only when its first letter begins a prefix anywhere in `CliSyntax`, which catches a
-mistyped prefix such as `bb/` and a prefix belonging to another command, such as
-`r/` in `add`, while `c/o` and `w/` in an address stay text. The guard skips the
-same two abbreviations the tokenizer treats as text, `s/o` and `b/c`, in any letter
-case, so `S/o Ravi` inside an address is still stored. The cost is that
-address text beginning like a prefix, such as `Tel/Fax` or `nr/`, is reported as
-unknown, and the User Guide states that limit. A word before the first recognised
-prefix is not reported, because the command parsers reject a non-empty preamble with
-their own message.
+Free text can contain a slash word that starts with a real prefix, and a mistyped prefix
+can look like free text. Both cases are handled before and during tokenising, and are
+described under [Rejecting mistyped prefixes](#rejecting-mistyped-prefixes).
+
+### Rejecting mistyped prefixes
+
+Requirement prefixes are optional, so the tokenizer has to decide whether a slash word starts a new field or belongs
+to the value before it. `a/12 Main Street s/o Ravi` shows both readings: taken as a prefix, `s/` becomes the asking
+price and `o Ravi` fails `parsePrice`, which would reject the whole command. `ArgumentTokenizer` therefore treats an
+occurrence of `b/` or `s/` as a new argument unless the word is one of the free-text abbreviations, `s/o` and `b/c`;
+`c/o` and `w/` were never prefixes, so they always stayed text. A `n/` name has its own marker list in that check,
+`s/o`, `d/o`, `a/l` and `a/p`, described under [Logic component](#logic-component). The list is closed rather than a
+rule about word length because `s/ab` and `s/o` have the same shape, so no length test separates a mistyped price from
+an abbreviation; `s/ab` and `b/xx` are still read as prices. Text prefixes keep the simpler rule, because a letter can
+be a real value there: `n/Al` and `t/s` are valid input, so a word such as `n/a` inside an address still reads as a
+name prefix and is reported as a repeated field. The rule travels with the prefix as `Prefix#hasNumericValue` rather
+than as a special case for the address field, and `s/` with no value still clears the field in `edit`.
+
+The other failure is the opposite one: a label that is not a prefix at all. `ArgumentTokenizer` folds such a word
+into the value before it, so before this check existed `add ... a/1 Road B/400000-600000` stored the budget text
+inside the address and saved without any error. `ParserUtil#rejectUnknownPrefixes` therefore runs before the
+tokenizer and reports the first word that begins with one to three letters and a slash, follows a recognised
+prefix, and is not itself a recognised prefix:
+
+* Matching is case-sensitive, like the tokenizer, so a known prefix typed in the wrong case, such as `B/`, is
+  reported here instead of being accepted by the guard and then ignored by the tokenizer.
+* A word is reported only when its first letter begins a prefix anywhere in `CliSyntax`, which catches a mistyped
+  prefix such as `bb/` and a prefix that belongs to another command, such as `r/` typed in `add`, while `c/o` and
+  `w/` in an address stay text.
+* The guard skips the same free-text abbreviations as the tokenizer, `s/o` and `b/c`, in any letter case, through
+  `ArgumentTokenizer#isFreeTextAbbreviation`, and inside an `n/` field it also skips the relationship markers,
+  through `ArgumentTokenizer#isNameRelationshipMarker`, so the two classes cannot drift apart.
+* A word before the first recognised prefix is not reported. `AddCommandParser` requires that position to be empty
+  and `EditCommandParser` reads it as the index, so a stray word is rejected before the guard is reached.
+
+The error carries `MESSAGE_UNKNOWN_PREFIX` plus the usage of the command that rejected it, so the result box shows
+`Error: Unknown prefix: bb/` followed by the `add` format. `ResultDisplay` adds `Error: ` to every failed command,
+which is why the manual tests below quote it.
+
+**Known limits.** A word is judged by shape, so address text that begins like a prefix is reported: `Tel/Fax 6`
+fails with `Unknown prefix: Tel/`, and `nr/` behaves the same way. `s/o,` with a trailing comma is still read as a
+price and fails as one, because an abbreviation has to be a whole word. Both are stated in the User Guide. The
+other direction is silent: the pattern matches one to three letters before the slash, so a longer label, such as
+`Note/123` in an address, is never examined and stays address text. The
+alternative, having the tokenizer report the words it rejected, would keep the vocabulary, the case rule and the
+position rule in one place; that is the better long term shape, but it is a larger change than this iteration
+allowed, and the guard is the smaller step that closes the silent data loss.
+
+### Confirming what was saved
+
+`add` and `edit` report the client as it was stored rather than as it was typed. `Messages#format(Person)` builds
+the contact part and, when `Messages#describeRequirements(Person)` returns any parts, appends `; Requirements: `
+followed by those parts joined with `, `: `Budget`, `Asking`, the preferred areas sorted, then the housing types
+sorted. A client with none of the
+four leaves the clause out entirely. A full message therefore reads `New client added: John Tan; Phone: 91234567;
+Email: johntan@example.com; Address: 12 Bedok Road; Requirements: Budget $400,000 to $600,000, Asking $520,000,
+Bedok, Tampines, HDB; Tags: `.
+
+Why the stored values rather than the input: the four requirement fields are optional, and the reply is the only
+place that reports what the book now holds for that client. Because the clause is built from the `Person` that was
+stored, it also shows the canonical spelling, so `l/bishan` reads `Bishan`, and a field that was cleared
+disappears: `edit 3 s/` reports no `Asking` part at all. Validation still runs before storage, so the reply never
+reports a value the book refused: a range under `s/`, such as `s/400000-600000`, is rejected as a price rather
+than stored.
+
+Two details follow from the code. With no tags the message still ends with `; Tags: ` and no names, because the
+suffix is appended before the tags are. The parts are in a fixed order set by `describeRequirements`, so the same
+client always produces the same message.
 
 ### Filter command
 
@@ -1232,6 +1332,75 @@ contents or permissions. Use disposable data for deletion and recovery checks.
    1. Test case: `role 1 buyer extra`<br>
       Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
 
+### Reporting mistyped prefixes
+
+1. Rejecting a label that is not a prefix
+
+   1. Prerequisites: Run `list` to confirm the current clients, and check that no client is called `Test One`.
+
+   1. Test case: `add n/Test One p/90000001 e/t1@example.com a/1 Road bb/400000`<br>
+      Expected: No client is added. The result box shows `Error: Unknown prefix: bb/` followed by the `add` usage.
+
+   1. Test case: `add n/Test Two p/90000002 e/t2@example.com a/1 Road B/400000-600000`<br>
+      Expected: `Error: Unknown prefix: B/`. Prefixes are lowercase, so a capitalised budget is reported rather than
+      saved.
+
+   1. Test case: `add n/Test Three p/90000003 e/t3@example.com a/1 Road r/buyer`<br>
+      Expected: `Error: Unknown prefix: r/`. The role prefix belongs to `filter`, not to `add`.
+
+1. Keeping address text that looks like a prefix
+
+   1. Test case: `add n/Test Four p/90000004 e/t4@example.com a/12 Main Street s/o Ravi`<br>
+      Expected: The client is added with the address `12 Main Street s/o Ravi`. `s/o` is an abbreviation, so it
+      stays in the address even though `s/` is the asking price prefix.
+
+   1. Test case: `add n/Test Five p/90000005 e/t5@example.com a/1 Road Tel/Fax 6`<br>
+      Expected: `Error: Unknown prefix: Tel/`. This is the documented limit: address text shaped like a prefix is
+      reported.
+
+1. Rejecting a mistyped prefix in `edit`
+
+   1. Test case: `edit 1 a/1 Test Road B/400000`<br>
+      Expected: `Error: Unknown prefix: B/` followed by the `edit` usage, and the first client's address is unchanged.
+
+### Rejecting extra words after a command
+
+1. Rejecting text after a command that takes none
+
+   1. Test case: `list now`<br>
+      Expected: `Error: Invalid command format. Use: list.`
+
+   1. Test case: `help 123`<br>
+      Expected: `Error: Invalid command format. Use: help.`
+
+   1. Test case: `exit now`<br>
+      Expected: `Error: Invalid command format. Use: exit.`, and the app stays open.
+
+   1. Test case: `undo 1`<br>
+      Expected: `Error: Invalid command format. Use: undo.`
+
+   1. Test case: `history all`<br>
+      Expected: `Error: Invalid command format. Use: history.`
+
+1. Running the same commands without extra words
+
+   1. Prerequisites: Start from a fresh test folder, so that the history is empty.
+
+   1. Test case: `list`<br>
+      Expected: `Listed all clients.`
+
+   1. Test case: `help`<br>
+      Expected: The help window opens.
+
+   1. Test case: `undo` and `redo`<br>
+      Expected: `Error: There is no action to undo` and `Error: There is no action to redo`, because nothing has
+      been changed yet.
+
+   1. Test case: `history`<br>
+      Expected: The result box shows `There is no history to display.`
+
+   1. `exit` is left out of this group because it closes the app.
+
 ### Recording names with common punctuation and accented letters
 
 1. Adding and editing names
@@ -1366,6 +1535,33 @@ contents or permissions. Use disposable data for deletion and recovery checks.
    1. Relaunch the app from a terminal.<br>
       Expected: Startup stops with a message explaining that the unreadable file could not be backed up.
       The original bytes remain unchanged. Restore the folder's write permission and the valid backup.
+
+### Read-only commands with an unwritable data folder
+
+1. Commands that do not write
+
+   1. Prerequisites: Add a client, for example `add n/Test Zero p/90000000 e/t0@example.com a/1 Road`, so that
+      `data/addressbook.json` exists; `list` does not create it. Back up the file, then make the `data` folder
+      read-only, for example with `chmod 500 data` on macOS or Linux, or by clearing the write permission on the
+      folder in Windows.
+
+   1. Test case: `list`, `find Alicia`, `view 1` and `help`<br>
+      Expected: Each command succeeds and the client data is unchanged. `find` narrows the displayed list, which
+      is not a change to the data. None of them writes to the file, so the folder permission does not matter.
+
+   1. Test case: `add n/Test Six p/90000006 e/t6@example.com a/3 Road`<br>
+      Expected: The client is not added, and the result box reports `Error: Could not save data to file ... due to
+      insufficient permissions to write to the file or the folder.`
+
+   1. Test case: `clear`<br>
+      Expected: The warning counts the clients and asks for `clear confirm`. The warning did not change any client
+      data, so it needs no write.
+
+   1. Test case: `list`<br>
+      Expected: The result box shows `Clear cancelled.` and the list is unchanged. A pending confirmation consumes
+      the next command, so this step also clears it before any further test.
+
+   1. Restore the folder permission, for example `chmod 700 data`, so later tests can save.
 
 ### Clearing all clients with confirmation
 
@@ -1687,6 +1883,45 @@ contents or permissions. Use disposable data for deletion and recovery checks.
    1. Test case: `edit 1 b/1-2 b/3-4`<br>
       Expected: No change. The result box shows
       `Error: Multiple values specified for the following single-valued field(s): b/`.
+
+### Confirming saved requirements
+
+1. Showing the saved requirements after `add`
+
+   1. Prerequisites: Run `list` to confirm the current clients.
+
+   1. Test case: `add n/John Tan p/91234567 e/johntan@example.com a/12 Bedok Road b/400000-600000 s/520000 l/Bedok l/Tampines h/HDB`<br>
+      Expected: The result box shows `New client added: John Tan; Phone: 91234567; Email: johntan@example.com;
+      Address: 12 Bedok Road; Requirements: Budget $400,000 to $600,000, Asking $520,000, Bedok, Tampines, HDB;
+      Tags: `.
+
+   1. Test case: `add n/Plain Client p/91234568 e/plain@example.com a/13 Bedok Road`<br>
+      Expected: The message has no `Requirements:` part, because the client recorded none of the four fields.
+
+1. Showing the saved requirements after `edit`
+
+   1. Test case: `edit 1 b/500000-700000`<br>
+      Expected: `Edited client: Alicia Tan` and the requirements read `Budget $500,000 to $700,000, Bishan, Toa
+      Payoh, Condo, HDB`, so the message shows the stored values and their canonical spellings.
+
+   1. Test case: `edit 3 s/`<br>
+      Expected: `Edited client: Nur Aisyah` with no `Asking` part, because the asking price was cleared.
+
+### Areas with repeated spaces
+
+1. Accepting repeated spaces in a preferred area
+
+   1. Test case: `add n/Space Test p/90000009 e/sp@example.com a/1 Road l/Toa  Payoh`<br>
+      Expected: The client is added and the result box shows `Requirements: Toa Payoh`, with one space.
+
+   1. Test case: `filter l/Toa  Payoh`<br>
+      Expected: `Alicia Tan` and `Space Test` are displayed, because both store `Toa Payoh` as an area.
+
+1. Storing the standard spelling
+
+   1. Test case: `add n/Case Test p/90000010 e/cs@example.com a/2 Road l/bishan`<br>
+      Expected: The result box shows `Requirements: Bishan`, because case is ignored and the standard spelling is
+      stored.
 
 ### Checking the list and detail panel layout
 
