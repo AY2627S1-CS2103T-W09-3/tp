@@ -3,7 +3,6 @@ package seedu.address.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
@@ -11,8 +10,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
@@ -41,11 +38,7 @@ public class JsonAddressBookStorage {
      */
     public static String toPersistedJson(Person person) {
         requireNonNull(person);
-        try {
-            return JsonUtil.toJsonString(new JsonAdaptedPerson(person));
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException("Unable to serialize a client record", e);
-        }
+        return JsonUtil.toJsonTree(new JsonAdaptedPerson(person)).toString();
     }
 
     public Path getAddressBookFilePath() {
