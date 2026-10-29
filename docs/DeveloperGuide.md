@@ -387,8 +387,8 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 `list`, `help`, `exit`, `undo`, `redo` and `history` take no arguments, because none of them names a client or a
 field, so the command word already says everything the parser needs.
 `AddressBookParser#parseNoArguments(String, Command, String)` rejects any input after the command word with the
-format message owned by that command, so `list now` reports `Invalid command format. Use: list.` and `help 123`
-reports `Invalid command format. Use: help.`. The message names that command's own form rather than a generic
+format message owned by that command, so `list now` fails with `Invalid command format. Use: list.` and `help 123`
+fails with `Invalid command format. Use: help.`. The message names that command's own form rather than a generic
 error, because the extra text is usually an argument borrowed from another command, such as `undo 1` typed after
 `edit 1`. The check lives in one helper so a new command of this
 kind cannot forget it, while each command keeps its own message, so the text stays right when a command is
@@ -564,10 +564,11 @@ prefix, and is not itself a recognised prefix:
   and `EditCommandParser` reads it as the index, so a stray word is rejected before the guard is reached.
 
 The error carries `MESSAGE_UNKNOWN_PREFIX` plus the usage of the command that rejected it, so the result box shows
-`Unknown prefix: bb/` followed by the `add` format.
+`Error: Unknown prefix: bb/` followed by the `add` format. `ResultDisplay` adds `Error: ` to every failed command,
+which is why the manual tests below quote it.
 
 **Known limits.** A word is judged by shape, so address text that begins like a prefix is reported: `Tel/Fax 6`
-gives `Unknown prefix: Tel/`, and `nr/` behaves the same way. `s/o,` with a trailing comma is still read as a price
+fails with `Unknown prefix: Tel/`, and `nr/` behaves the same way. `s/o,` with a trailing comma is still read as a price
 and fails as one, because an abbreviation has to be a whole word. Both limits are stated in the User Guide. The
 alternative, having the tokenizer report the words it rejected, would keep the vocabulary, the case rule and the
 position rule in one place; that is the better long term shape, but it is a larger change than this iteration
@@ -1043,14 +1044,14 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: Run `list` to confirm the current clients, and check that no client is called `Test One`.
 
    1. Test case: `add n/Test One p/90000001 e/t1@example.com a/1 Road bb/400000`<br>
-      Expected: No client is added. The result box shows `Unknown prefix: bb/` followed by the `add` usage.
+      Expected: No client is added. The result box shows `Error: Unknown prefix: bb/` followed by the `add` usage.
 
    1. Test case: `add n/Test Two p/90000002 e/t2@example.com a/1 Road B/400000-600000`<br>
-      Expected: `Unknown prefix: B/`. Prefixes are lowercase, so a capitalised budget is reported rather than
+      Expected: `Error: Unknown prefix: B/`. Prefixes are lowercase, so a capitalised budget is reported rather than
       saved.
 
    1. Test case: `add n/Test Three p/90000003 e/t3@example.com a/1 Road r/buyer`<br>
-      Expected: `Unknown prefix: r/`. The role prefix belongs to `filter`, not to `add`.
+      Expected: `Error: Unknown prefix: r/`. The role prefix belongs to `filter`, not to `add`.
 
 1. Keeping address text that looks like a prefix
 
@@ -1059,32 +1060,32 @@ testers are expected to do more *exploratory* testing.
       stays in the address even though `s/` is the asking price prefix.
 
    1. Test case: `add n/Test Five p/90000005 e/t5@example.com a/1 Road Tel/Fax 6`<br>
-      Expected: `Unknown prefix: Tel/`. This is the documented limit: address text shaped like a prefix is
+      Expected: `Error: Unknown prefix: Tel/`. This is the documented limit: address text shaped like a prefix is
       reported.
 
 1. Rejecting a mistyped prefix in `edit`
 
    1. Test case: `edit 1 a/1 Test Road B/400000`<br>
-      Expected: `Unknown prefix: B/` followed by the `edit` usage, and the first client's address is unchanged.
+      Expected: `Error: Unknown prefix: B/` followed by the `edit` usage, and the first client's address is unchanged.
 
 ### Rejecting extra words after a command
 
 1. Rejecting text after a command that takes none
 
    1. Test case: `list now`<br>
-      Expected: `Invalid command format. Use: list.`
+      Expected: `Error: Invalid command format. Use: list.`
 
    1. Test case: `help 123`<br>
-      Expected: `Invalid command format. Use: help.`
+      Expected: `Error: Invalid command format. Use: help.`
 
    1. Test case: `exit now`<br>
-      Expected: `Invalid command format. Use: exit.`, and the app stays open.
+      Expected: `Error: Invalid command format. Use: exit.`, and the app stays open.
 
    1. Test case: `undo 1`<br>
-      Expected: `Invalid command format. Use: undo.`
+      Expected: `Error: Invalid command format. Use: undo.`
 
    1. Test case: `history all`<br>
-      Expected: `Invalid command format. Use: history.`
+      Expected: `Error: Invalid command format. Use: history.`
 
 1. Running the same commands without arguments
 
@@ -1209,7 +1210,7 @@ testers are expected to do more *exploratory* testing.
       folder permission does not matter.
 
    1. Test case: `add n/Test Six p/90000006 e/t6@example.com a/3 Road`<br>
-      Expected: The client is not added, and the result box reports `Could not save data to file ... due to
+      Expected: The client is not added, and the result box reports `Error: Could not save data to file ... due to
       insufficient permissions to write to the file or the folder.`
 
    1. Test case: `clear`<br>
@@ -1218,7 +1219,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `list`<br>
       Expected: The result box shows `Clear cancelled.` and the list is unchanged. A pending confirmation consumes
-      the next command, so this step also cancels it before the tests below.
+      the next command, so this step also clears it before any further test.
 
    1. Restore the folder permission, for example `chmod 700 data`, so later tests can save.
 
