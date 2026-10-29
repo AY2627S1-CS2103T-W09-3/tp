@@ -74,27 +74,32 @@ public class PersonCard extends UiPart<Region> {
     }
 
     private void setRequirementsSummary() {
-        List<String> parts = new ArrayList<>();
-        if (person.getBudget() != null) {
-            parts.add("Budget " + person.getBudget());
-        }
-        if (person.getAskingPrice() != null) {
-            parts.add("Asking " + person.getAskingPrice().getDisplayValue());
-        }
-        String areas = String.join(", ", person.getAreas().stream().map(Area::getValue).sorted().toList());
-        if (!areas.isEmpty()) {
-            parts.add(areas);
-        }
-        String housingTypes = String.join(", ", person.getHousingTypes().stream()
-                .map(HousingType::getDisplayValue).sorted().toList());
-        if (!housingTypes.isEmpty()) {
-            parts.add(housingTypes);
-        }
-
-        requirementsSummary.setText(String.join(" · ", parts));
-        boolean hasRequirements = !parts.isEmpty();
+        List<String> requirementsParts = buildRequirementsParts();
+        requirementsSummary.setText(String.join(" · ", requirementsParts));
+        boolean hasRequirements = !requirementsParts.isEmpty();
         requirementsSummary.setVisible(hasRequirements);
         requirementsSummary.setManaged(hasRequirements);
+    }
+
+    private List<String> buildRequirementsParts() {
+        List<String> requirementsParts = new ArrayList<>();
+        if (person.getBudget() != null) {
+            requirementsParts.add("Budget " + person.getBudget());
+        }
+        if (person.getAskingPrice() != null) {
+            requirementsParts.add("Asking " + person.getAskingPrice().getDisplayValue());
+        }
+        String formattedAreas = String.join(", ", person.getAreas().stream().map(Area::getValue).sorted().toList());
+        if (!formattedAreas.isEmpty()) {
+            requirementsParts.add(formattedAreas);
+        }
+        String formattedHousingTypes = String.join(", ", person.getHousingTypes().stream()
+                .map(HousingType::getDisplayValue).sorted().toList());
+        if (!formattedHousingTypes.isEmpty()) {
+            requirementsParts.add(formattedHousingTypes);
+        }
+
+        return requirementsParts;
     }
 
     private void setRoleBadge(ClientRole clientRole) {
@@ -120,6 +125,9 @@ public class PersonCard extends UiPart<Region> {
      * Keeps tags on a single row and exposes any overflow through a count and tooltip.
      */
     private static class TagRow extends HBox {
+        private static final double TAG_SPACING = 7;
+        private static final double OVERFLOW_TOOLTIP_MAX_WIDTH = 300;
+
         private final List<String> tagNames;
         private final List<Label> tagLabels;
         private final Label overflow = new Label();
@@ -127,7 +135,7 @@ public class PersonCard extends UiPart<Region> {
         private final Text overflowMeasure = new Text();
 
         TagRow(List<String> tagNames) {
-            super(7);
+            super(TAG_SPACING);
             this.tagNames = tagNames;
             setId("tagRow");
             setMinWidth(0);
@@ -141,7 +149,7 @@ public class PersonCard extends UiPart<Region> {
             overflow.setId("tagOverflow");
             overflow.setMinWidth(0);
             overflowTooltip.setWrapText(true);
-            overflowTooltip.setMaxWidth(300);
+            overflowTooltip.setMaxWidth(OVERFLOW_TOOLTIP_MAX_WIDTH);
             overflow.setTooltip(overflowTooltip);
             getChildren().addAll(tagLabels);
             getChildren().add(overflow);
@@ -149,38 +157,53 @@ public class PersonCard extends UiPart<Region> {
 
         @Override
         protected void layoutChildren() {
-            int shown = tagLabels.size();
-            double labelWidth = tagLabels.stream().mapToDouble(label -> label.prefWidth(-1)).sum();
-            while (shown > 0) {
-                double requiredWidth = labelWidth + getSpacing() * (shown - 1);
-                if (shown < tagLabels.size()) {
-                    requiredWidth += getSpacing() + measureOverflowWidth(tagLabels.size() - shown);
+            int shownTagCount = countTagsThatFit();
+            updateVisibleTags(shownTagCount);
+            updateOverflow(shownTagCount);
+            super.layoutChildren();
+        }
+
+        private int countTagsThatFit() {
+            int shownTagCount = tagLabels.size();
+            double totalLabelWidth = tagLabels.stream().mapToDouble(label -> label.prefWidth(-1)).sum();
+            while (shownTagCount > 0) {
+                double requiredWidth = totalLabelWidth + getSpacing() * (shownTagCount - 1);
+                if (shownTagCount < tagLabels.size()) {
+                    requiredWidth += getSpacing() + measureOverflowWidth(tagLabels.size() - shownTagCount);
                 }
                 if (requiredWidth <= getWidth()) {
                     break;
                 }
-                shown--;
-                labelWidth -= tagLabels.get(shown).prefWidth(-1);
+                shownTagCount--;
+                totalLabelWidth -= tagLabels.get(shownTagCount).prefWidth(-1);
             }
+            return shownTagCount;
+        }
 
+        private void updateVisibleTags(int shownTagCount) {
             for (int i = 0; i < tagLabels.size(); i++) {
-                tagLabels.get(i).setVisible(i < shown);
-                tagLabels.get(i).setManaged(i < shown);
+                tagLabels.get(i).setVisible(i < shownTagCount);
+                tagLabels.get(i).setManaged(i < shownTagCount);
             }
-            boolean hasOverflow = shown < tagLabels.size();
+        }
+
+        private void updateOverflow(int shownTagCount) {
+            boolean hasOverflow = shownTagCount < tagLabels.size();
             overflow.setVisible(hasOverflow);
             overflow.setManaged(hasOverflow);
-            if (hasOverflow) {
-                String count = "+" + (tagLabels.size() - shown);
-                if (!count.equals(overflow.getText())) {
-                    overflow.setText(count);
-                }
-                String tooltip = "Additional tags: " + String.join(", ", tagNames.subList(shown, tagNames.size()));
-                if (!tooltip.equals(overflowTooltip.getText())) {
-                    overflowTooltip.setText(tooltip);
-                }
+            if (!hasOverflow) {
+                return;
             }
-            super.layoutChildren();
+
+            String overflowCountText = "+" + (tagLabels.size() - shownTagCount);
+            if (!overflowCountText.equals(overflow.getText())) {
+                overflow.setText(overflowCountText);
+            }
+            String tooltip = "Additional tags: "
+                    + String.join(", ", tagNames.subList(shownTagCount, tagNames.size()));
+            if (!tooltip.equals(overflowTooltip.getText())) {
+                overflowTooltip.setText(tooltip);
+            }
         }
 
         private double measureOverflowWidth(int count) {

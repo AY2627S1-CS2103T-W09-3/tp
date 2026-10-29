@@ -29,6 +29,7 @@ import seedu.address.model.person.Note;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Price;
+import seedu.address.model.tag.Tag;
 import seedu.address.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
@@ -205,6 +206,19 @@ public class JsonAdaptedPersonTest {
                         null,
                         invalidTags, null, null, null, null);
         assertThrows(IllegalValueException.class, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_caseVariantDuplicateTags_returnsPersonWithSingleTag() throws Exception {
+        List<JsonAdaptedTag> duplicateTags = List.of(
+                new JsonAdaptedTag("urgent"), new JsonAdaptedTag("URGENT"));
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, null,
+                        null, duplicateTags, null, null, null, null);
+        Person modelPerson = person.toModelType();
+
+        assertEquals(Set.of(new Tag("urgent")), modelPerson.getTags());
+        assertEquals(1, modelPerson.getTags().size());
     }
 
     @Test

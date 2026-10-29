@@ -2,6 +2,16 @@ package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_AREA;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ASKING_PRICE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_HOUSING_TYPE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
@@ -88,6 +98,15 @@ public class ParserUtilTest {
         String nameWithWhitespace = WHITESPACE + VALID_NAME + WHITESPACE;
         Name expectedName = new Name(VALID_NAME);
         assertEquals(expectedName, ParserUtil.parseName(nameWithWhitespace));
+    }
+
+    @Test
+    public void parseName_validValueWithExtraInternalSpaces_returnsNameWithSingleSpaces() throws Exception {
+        Name expectedName = new Name("Alpha Tester");
+        assertEquals(expectedName, ParserUtil.parseName("Alpha  Tester"));
+        assertEquals(expectedName, ParserUtil.parseName("Alpha     Tester"));
+        assertEquals(expectedName, ParserUtil.parseName(WHITESPACE + "Alpha   Tester" + WHITESPACE));
+        assertEquals(new Name("Alpha Tester Lim"), ParserUtil.parseName("Alpha  Tester   Lim"));
     }
 
     @Test
@@ -203,6 +222,13 @@ public class ParserUtilTest {
         Set<Tag> expectedTagSet = Set.of(new Tag(VALID_TAG_1), new Tag(VALID_TAG_2));
 
         assertEquals(expectedTagSet, actualTagSet);
+    }
+
+    @Test
+    public void parseTags_caseVariantDuplicates_returnsSingleTag() throws Exception {
+        Set<Tag> actualTagSet = ParserUtil.parseTags(List.of("urgent", "URGENT"));
+
+        assertEquals(Set.of(new Tag("urgent")), actualTagSet);
     }
 
     @Test
@@ -364,5 +390,108 @@ public class ParserUtilTest {
     public void parseHousingTypes_collectionWithInvalidType_throwsParseException() {
         assertThrows(ParseException.class, HousingType.MESSAGE_CONSTRAINTS, ()
                 -> ParserUtil.parseHousingTypes(List.of("HDB", INVALID_HOUSING_TYPE)));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_unknownToken_throwsParseException() {
+        String expected = String.format(MESSAGE_UNKNOWN_PREFIX, "bb/") + "\nusage";
+
+        assertThrows(ParseException.class, expected, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel a/1 Road bb/400000-600000", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS, PREFIX_BUDGET));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_uppercaseUnknownToken_throwsParseException() {
+        String expected = String.format(MESSAGE_UNKNOWN_PREFIX, "BB/") + "\nusage";
+
+        assertThrows(ParseException.class, expected, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel BB/400000-600000", "usage",
+                        PREFIX_NAME, PREFIX_BUDGET));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_tokenBeforeAnyKnownPrefix_doesNotThrow() throws Exception {
+        ParserUtil.rejectUnknownPrefixes("bb/400000-600000 n/Rachel", "usage", PREFIX_NAME);
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_knownPrefixesAndHarmlessSlashes_doesNotThrow() throws Exception {
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel a/Blk 5/6, #08-45 t/2br/3ba", "usage",
+                PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG);
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel p/91234567", "usage", PREFIX_NAME, PREFIX_PHONE);
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_slashInAddressText_doesNotThrow() throws Exception {
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel a/12 Main Street c/o Mary Tan", "usage",
+                PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel a/7 Sunset Way w/ lift", "usage",
+                PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel a/9 Grove Road d/o Ramasamy", "usage",
+                PREFIX_NAME, PREFIX_ADDRESS);
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_tokenBeginningLikeAKnownPrefix_throwsParseException() {
+        String doubled = String.format(MESSAGE_UNKNOWN_PREFIX, "nn/") + "\nusage";
+        assertThrows(ParseException.class, doubled, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel a/1 Road nn/Someone Else", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
+
+        String wrongSecondLetter = String.format(MESSAGE_UNKNOWN_PREFIX, "pa/") + "\nusage";
+        assertThrows(ParseException.class, wrongSecondLetter, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel pa/91234567", "usage",
+                        PREFIX_NAME, PREFIX_PHONE));
+
+        String uppercaseDoubled = String.format(MESSAGE_UNKNOWN_PREFIX, "TT/") + "\nusage";
+        assertThrows(ParseException.class, uppercaseDoubled, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Rachel a/1 Road TT/urgent", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_uppercaseKnownPrefix_throwsParseException() {
+        Prefix[] allPrefixes = {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_BUDGET,
+            PREFIX_ASKING_PRICE, PREFIX_AREA, PREFIX_HOUSING_TYPE, PREFIX_TAG};
+        String[] uppercasePrefixes = {"N/", "P/", "E/", "A/", "B/", "S/", "L/", "H/", "T/"};
+
+        for (String uppercasePrefix : uppercasePrefixes) {
+            String expected = String.format(MESSAGE_UNKNOWN_PREFIX, uppercasePrefix) + "\nusage";
+            assertThrows(ParseException.class, expected, ()
+                    -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Road " + uppercasePrefix + "400000", "usage",
+                            allPrefixes));
+        }
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_prefixOfAnotherCommand_throwsParseException() {
+        String expected = String.format(MESSAGE_UNKNOWN_PREFIX, "r/") + "\nusage";
+
+        assertThrows(ParseException.class, expected, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Road r/buyer", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_addressTextBeginningLikeAPrefix_throwsParseException() {
+        // Limit of the rule: Tel/ and nr/ begin like a tag and a name prefix, so they are reported, not kept as text.
+        String telephone = String.format(MESSAGE_UNKNOWN_PREFIX, "Tel/") + "\nusage";
+        assertThrows(ParseException.class, telephone, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Test Road Tel/Fax 6", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
+
+        String near = String.format(MESSAGE_UNKNOWN_PREFIX, "nr/") + "\nusage";
+        assertThrows(ParseException.class, near, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Test Road nr/ MRT", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_freeTextAbbreviationInAnyCase_doesNotThrow() throws Exception {
+        ParserUtil.rejectUnknownPrefixes(" n/Bob a/12 Main Street s/o Ravi", "usage", PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Bob a/12 Main Street S/o Ravi", "usage", PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Bob a/12 Main Street b/c Tan", "usage", PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Bob a/12 Main Street B/c Tan", "usage", PREFIX_NAME, PREFIX_ADDRESS);
     }
 }

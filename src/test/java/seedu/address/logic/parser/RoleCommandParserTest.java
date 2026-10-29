@@ -15,6 +15,7 @@ public class RoleCommandParserTest {
 
     @Test
     public void parse_validArguments_success() {
+        // Equivalence partitions: all supported roles, with case and surrounding whitespace variations.
         assertParseSuccess(parser, " 1 buyer ",
                 new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BUYER));
         assertParseSuccess(parser, " 1 SELLER ",
@@ -30,8 +31,12 @@ public class RoleCommandParserTest {
     @Test
     public void parse_invalidFormat_failure() {
         String[] invalidInputs = {
-            "", "buyer", "1", "1   ", "0 buyer", "0 none", "-1 buyer", "-1 none",
-            "1.5 buyer", "abc buyer", "2147483648 buyer", "2147483648 none", "1 buyer extra"
+            // Missing required fields.
+            "", "buyer", "1", "1   ",
+            // Index boundaries: zero and negative values, then a value beyond the integer range.
+            "0 buyer", "0 none", "-1 buyer", "-1 none", "2147483648 buyer", "2147483648 none",
+            // Malformed index and surplus argument partitions.
+            "1.5 buyer", "abc buyer", "1 buyer extra"
         };
 
         for (String input : invalidInputs) {
@@ -41,6 +46,7 @@ public class RoleCommandParserTest {
 
     @Test
     public void parse_invalidRole_failure() {
+        // Equivalence partitions: unknown role and a combined role token.
         String[] invalidInputs = {"1 agent", "1 buyer-seller"};
 
         for (String input : invalidInputs) {

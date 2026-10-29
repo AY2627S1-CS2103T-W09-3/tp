@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.AREA_DESC_AMY;
@@ -78,12 +79,25 @@ public class AddCommandParserTest {
                 + ADDRESS_DESC_BOB + TAG_DESC_FRIEND, new AddCommand(expectedPerson));
 
 
+        // extra spaces inside the name - collapsed to single spaces
+        assertParseSuccess(parser, " n/Bob  Choo" + PHONE_DESC_BOB + EMAIL_DESC_BOB
+                + ADDRESS_DESC_BOB + TAG_DESC_FRIEND, new AddCommand(expectedPerson));
+
         // multiple tags - all accepted
         Person expectedPersonMultipleTags = new PersonBuilder(BOB).withTags(VALID_TAG_FRIEND, VALID_TAG_HUSBAND)
                 .build();
         assertParseSuccess(parser,
                 NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB + TAG_DESC_HUSBAND + TAG_DESC_FRIEND,
                 new AddCommand(expectedPersonMultipleTags));
+    }
+
+    @Test
+    public void parse_caseVariantDuplicateTags_returnsPersonWithSingleTag() {
+        Person expectedPerson = new PersonBuilder(BOB).withTags("urgent").build();
+
+        assertParseSuccess(parser,
+                NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB + " t/urgent t/URGENT",
+                new AddCommand(expectedPerson));
     }
 
     @Test
@@ -262,6 +276,60 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_mistypedRequirementPrefix_failure() {
+        String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
+        String expected = String.format(Messages.MESSAGE_UNKNOWN_PREFIX, "bb/") + "\n"
+                + AddCommand.MESSAGE_USAGE;
+
+        assertParseFailure(parser, validPerson + " bb/400000-600000", expected);
+    }
+
+    @Test
+    public void parse_doubledLetterPrefix_failure() {
+        String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
+        String expected = String.format(Messages.MESSAGE_UNKNOWN_PREFIX, "pp/") + "\n"
+                + AddCommand.MESSAGE_USAGE;
+
+        assertParseFailure(parser, validPerson + " pp/91234567", expected);
+    }
+
+    @Test
+    public void parse_slashInAddressText_success() {
+        String addressWithSlash = "12 Main Street c/o Mary Tan";
+        Person expectedPerson = new PersonBuilder(BOB).withAddress(addressWithSlash).withTags().build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithSlash,
+                new AddCommand(expectedPerson));
+
+        String addressWithLift = "7 Sunset Way w/ lift";
+        Person expectedLiftPerson = new PersonBuilder(BOB).withAddress(addressWithLift).withTags().build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithLift,
+                new AddCommand(expectedLiftPerson));
+
+        String addressWithSonOf = "12 Main Street s/o Ravi";
+        Person expectedSonOfPerson = new PersonBuilder(BOB).withAddress(addressWithSonOf).withTags().build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithSonOf,
+                new AddCommand(expectedSonOfPerson));
+
+        String addressWithBecauseOf = "12 Main Street b/c Tall";
+        Person expectedBecauseOfPerson = new PersonBuilder(BOB).withAddress(addressWithBecauseOf).withTags().build();
+
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/" + addressWithBecauseOf,
+                new AddCommand(expectedBecauseOfPerson));
+    }
+
+    @Test
+    public void parse_shortWordAfterNumericPrefix_failure() {
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/12 Main Street s/ab",
+                Price.MESSAGE_CONSTRAINTS);
+
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/7 Sunset Way b/xx",
+                Price.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_areaWithRepeatedInternalWhitespace_success() {
         String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
         Person expectedPerson = new PersonBuilder(BOB).withTags()
@@ -299,5 +367,26 @@ public class AddCommandParserTest {
 
         assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + addressWithSlash,
                 new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_uppercaseOrForeignPrefix_failure() {
+        String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
+
+        assertParseFailure(parser, validPerson + " B/400000-600000",
+                String.format(MESSAGE_UNKNOWN_PREFIX, "B/") + "\n" + AddCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, validPerson + " r/buyer",
+                String.format(MESSAGE_UNKNOWN_PREFIX, "r/") + "\n" + AddCommand.MESSAGE_USAGE);
+    }
+
+    @Test
+    public void parse_freeTextAbbreviationInAnyCase_success() {
+        Person expectedUpper = new PersonBuilder(BOB).withTags().withAddress("12 Main Street S/o Ravi").build();
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/12 Main Street S/o Ravi",
+                new AddCommand(expectedUpper));
+
+        Person expectedLower = new PersonBuilder(BOB).withTags().withAddress("12 Main Street s/o Ravi").build();
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/12 Main Street s/o Ravi",
+                new AddCommand(expectedLower));
     }
 }

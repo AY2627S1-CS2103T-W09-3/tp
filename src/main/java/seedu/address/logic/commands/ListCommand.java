@@ -14,6 +14,8 @@ public class ListCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "Listed all clients.";
 
+    public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: list.";
+
 
     @Override
     public CommandResult execute(Model model) {

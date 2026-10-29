@@ -137,41 +137,9 @@ public class MainWindowTest {
                 TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
                 MenuBar menuBar = (MenuBar) window.getRoot().getScene().lookup("#menuBar");
                 List<MenuItem> editItems = menuBar.getMenus().get(1).getItems();
-                assertEquals(List.of("Undo", "Redo", "History"),
-                        editItems.stream().map(MenuItem::getText).toList());
-
-                commandBox.setText("unfinished command");
-                editItems.get(0).fire();
-                editItems.get(1).fire();
-                editItems.get(2).fire();
-                assertEquals(List.of("undo", "redo", "history"), logic.executedCommands);
-                assertEquals("Executed history", feedback.getText());
-                assertEquals("unfinished command", commandBox.getText());
-
-                commandBox.requestFocus();
-                assertSame(commandBox, window.getRoot().getScene().getFocusOwner());
-                fireShortcut(commandBox, KeyCode.Z, false, true, false);
-                fireShortcut(commandBox, KeyCode.Z, false, false, true);
-                fireShortcut(commandBox, KeyCode.Y, false, true, false);
-                fireShortcut(commandBox, KeyCode.Z, true, false, true);
-                assertEquals(List.of("undo", "redo", "history", "undo", "undo", "redo", "redo"),
-                        logic.executedCommands);
-                assertEquals("Executed redo", feedback.getText());
-                assertEquals("unfinished command", commandBox.getText());
-
-                // Unrelated or modified key presses must not trigger history commands.
-                commandBox.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.Z,
-                        false, true, true, false));
-                fireShortcut(commandBox, KeyCode.Z, true, true, false);
-                fireShortcut(commandBox, KeyCode.A, false, false, false);
-                fireShortcut(commandBox, KeyCode.Z, false, true, true);
-                fireShortcut(commandBox, KeyCode.Z, false, false, false);
-                fireShortcut(commandBox, KeyCode.Y, false, false, false);
-                fireShortcut(commandBox, KeyCode.Y, true, true, false);
-                fireShortcut(commandBox, KeyCode.Z, true, false, false);
-                assertEquals(List.of("undo", "redo", "history", "undo", "undo", "redo", "redo"),
-                        logic.executedCommands);
-                assertEquals("unfinished command", commandBox.getText());
+                assertHistoryMenuActions(editItems, commandBox, feedback, logic);
+                assertHistoryShortcuts(window, commandBox, feedback, logic);
+                assertUnrelatedShortcutsIgnored(commandBox, logic);
 
                 enterCommand(window, commandBox, "list");
                 assertEquals("list", logic.executedCommands.get(logic.executedCommands.size() - 1));
@@ -180,6 +148,45 @@ public class MainWindowTest {
                 window.getRoot().close();
             }
         });
+    }
+
+    private static void assertHistoryMenuActions(List<MenuItem> editItems, TextField commandBox,
+            TextArea feedback, RecordingLogic logic) {
+        assertEquals(List.of("Undo", "Redo", "History"), editItems.stream().map(MenuItem::getText).toList());
+        commandBox.setText("unfinished command");
+        editItems.forEach(MenuItem::fire);
+        assertEquals(List.of("undo", "redo", "history"), logic.executedCommands);
+        assertEquals("Executed history", feedback.getText());
+        assertEquals("unfinished command", commandBox.getText());
+    }
+
+    private static void assertHistoryShortcuts(MainWindow window, TextField commandBox,
+            TextArea feedback, RecordingLogic logic) {
+        commandBox.requestFocus();
+        assertSame(commandBox, window.getRoot().getScene().getFocusOwner());
+        fireShortcut(commandBox, KeyCode.Z, false, true, false);
+        fireShortcut(commandBox, KeyCode.Z, false, false, true);
+        fireShortcut(commandBox, KeyCode.Y, false, true, false);
+        fireShortcut(commandBox, KeyCode.Z, true, false, true);
+        assertEquals(List.of("undo", "redo", "history", "undo", "undo", "redo", "redo"),
+                logic.executedCommands);
+        assertEquals("Executed redo", feedback.getText());
+        assertEquals("unfinished command", commandBox.getText());
+    }
+
+    private static void assertUnrelatedShortcutsIgnored(TextField commandBox, RecordingLogic logic) {
+        commandBox.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.Z,
+                false, true, true, false));
+        fireShortcut(commandBox, KeyCode.Z, true, true, false);
+        fireShortcut(commandBox, KeyCode.A, false, false, false);
+        fireShortcut(commandBox, KeyCode.Z, false, true, true);
+        fireShortcut(commandBox, KeyCode.Z, false, false, false);
+        fireShortcut(commandBox, KeyCode.Y, false, false, false);
+        fireShortcut(commandBox, KeyCode.Y, true, true, false);
+        fireShortcut(commandBox, KeyCode.Z, true, false, false);
+        assertEquals(List.of("undo", "redo", "history", "undo", "undo", "redo", "redo"),
+                logic.executedCommands);
+        assertEquals("unfinished command", commandBox.getText());
     }
 
     @Test
@@ -297,12 +304,8 @@ public class MainWindowTest {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
             model.addPerson(BOB);
-            Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            MainWindow window = openWindow(model);
             try {
-                window.fillInnerParts();
                 Region root = (Region) window.getRoot().getScene().getRoot();
                 root.applyCss();
 
@@ -386,30 +389,7 @@ public class MainWindowTest {
                 root.applyCss();
                 int[][] logicalSizes = {{853, 480}, {820, 440}};
                 for (int[] size : logicalSizes) {
-                    layoutWindow(root, size[0], size[1]);
-                    ScrollPane scroll = (ScrollPane) root.lookup("#detailScroll");
-                    VBox rows = (VBox) scroll.getContent();
-                    Label note = (Label) root.lookup("#note");
-                    assertTrue(root.lookup("#noteIndicator").isVisible());
-                    assertInsideViewport(root.lookup("#noteIndicator"), size[0], size[1]);
-                    assertInsideViewport(root.lookup("#detailPane"), size[0], size[1]);
-                    assertInsideViewport(root.lookup("#statusbarPlaceholder"), size[0], size[1]);
-                    assertTrue(rows.getHeight() > scroll.getViewportBounds().getHeight());
-                    assertTrue(rows.getWidth() <= scroll.getViewportBounds().getWidth() + 1);
-                    assertEquals(noteText, note.getText());
-                    assertTrue(note.getHeight() >= note.prefHeight(note.getWidth()) - 1);
-                    assertTrue(note.getHeight() > 25, "The note did not wrap");
-                    assertFalse(root.lookup("#emptyState").isVisible());
-
-                    scroll.setVvalue(1);
-                    layoutWindow(root, size[0], size[1]);
-                    Node viewport = scroll.lookup(".viewport");
-                    Bounds viewportBounds = viewport.localToScene(viewport.getBoundsInLocal());
-                    Node tagsRow = root.lookup("#tagsRow");
-                    Bounds lastRow = tagsRow.localToScene(tagsRow.getBoundsInLocal());
-                    assertTrue(lastRow.getMaxY() <= viewportBounds.getMaxY() + 1,
-                            "The final detail row is unreachable");
-                    assertTrue(lastRow.getMaxY() > viewportBounds.getMinY());
+                    assertDetailPaneFitsAtSize(root, noteText, size[0], size[1]);
                 }
 
                 window.getDetailPane().setPerson(null);
@@ -451,22 +431,10 @@ public class MainWindowTest {
 
                 ListView<?> personList = (ListView<?>) root.lookup("#personListView");
                 Bounds listBounds = personList.localToScene(personList.getLayoutBounds());
-                List<ListCell<?>> firstThree = personList.lookupAll(".list-cell").stream()
-                        .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < 3)
-                        .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
+                List<ListCell<?>> firstThree = visibleCellsBeforeIndex(personList, 3);
                 assertEquals(3, firstThree.size());
                 for (ListCell<?> cell : firstThree) {
-                    Bounds bounds = cell.localToScene(cell.getLayoutBounds());
-                    assertTrue(bounds.getMinY() >= listBounds.getMinY());
-                    assertTrue(bounds.getMaxY() <= listBounds.getMaxY());
-                    Region card = (Region) cell.getGraphic();
-                    Label name = (Label) card.lookup("#name");
-                    assertCardContentFits(card);
-                    assertEquals(clients.get(cell.getIndex()).getName().fullName, name.getText());
-                    assertFalse(name.isWrapText());
-                    assertFalse(((Label) card.lookup("#email")).isWrapText());
-                    assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().stream()
-                            .filter(Node::isManaged).count());
+                    assertCompactClientCard(cell, listBounds, clients.get(cell.getIndex()));
                 }
                 for (String id : List.of("commandTextField", "resultDisplayPlaceholder", "personList",
                         "detailPanePlaceholder", "emptyState", "clientCountStatus")) {
@@ -496,28 +464,20 @@ public class MainWindowTest {
                             .withEmail("cheryl@example.com").withRole(ClientRole.BOTH).withTags("upgrader")
                             .withBudget(new Budget(new Price("800000"), new Price("1200000")))
                             .withAskingPrice(new Price("1500000")).build());
-            ModelManager model = new ModelManager();
-            clients.forEach(model::addPerson);
-            MainWindow window = openWindow(model);
+            MainWindow window = openWindow(modelWithClients(clients));
             try {
                 // This is a logical-size check, not an actual OS display-scaling check.
                 Region root = (Region) window.getRoot().getScene().getRoot();
-                root.resize(853, 480);
-                root.applyCss();
-                root.layout();
+                layoutWindow(root, 853, 480);
 
                 ListView<?> personList = (ListView<?>) root.lookup("#personListView");
                 Node viewport = personList.lookup(".clipped-container");
                 Bounds viewportBounds = viewport.localToScene(viewport.getLayoutBounds());
                 // Requirement cards have an extra row: two must fit fully; remaining cards are scrollable.
-                List<ListCell<?>> firstTwo = personList.lookupAll(".list-cell").stream()
-                        .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < 2)
-                        .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
+                List<ListCell<?>> firstTwo = visibleCellsBeforeIndex(personList, 2);
                 assertEquals(2, firstTwo.size());
                 for (ListCell<?> cell : firstTwo) {
-                    Bounds bounds = cell.localToScene(cell.getLayoutBounds());
-                    assertTrue(bounds.getMinY() >= viewportBounds.getMinY() - 1);
-                    assertTrue(bounds.getMaxY() <= viewportBounds.getMaxY() + 1);
+                    assertCellWithinViewport(cell, viewportBounds, "Requirement card is clipped");
                     Region card = (Region) cell.getGraphic();
                     assertCardContentFits(card);
                     assertTrue(card.lookup("#requirementsSummary").isVisible());
@@ -525,33 +485,8 @@ public class MainWindowTest {
                             .filter(Node::isManaged).count());
                 }
 
-                List<Double> originalHeights = firstTwo.stream()
-                        .map(cell -> cell.getGraphic().getLayoutBounds().getHeight()).toList();
-                personList.getSelectionModel().select(0);
-                root.applyCss();
-                root.layout();
-                // Newly recreated cell graphics need CSS before their content-sized heights are measured.
-                root.applyCss();
-                root.layout();
-                for (int i = 0; i < firstTwo.size(); i++) {
-                    double selectedHeight = firstTwo.get(i).getGraphic().getLayoutBounds().getHeight();
-                    assertEquals(originalHeights.get(i), selectedHeight, 0.01);
-                }
-                personList.scrollTo(clients.size() - 1);
-                root.layout();
-                root.applyCss();
-                root.layout();
-                ListCell<?> lastCell = personList.lookupAll(".list-cell").stream()
-                        .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty()
-                                && cell.getIndex() == clients.size() - 1)
-                        .map(node -> (ListCell<?>) node).findFirst().orElseThrow();
-                Bounds lastBounds = lastCell.localToScene(lastCell.getLayoutBounds());
-                assertTrue(lastBounds.getMinY() >= viewportBounds.getMinY() - 1);
-                assertTrue(lastBounds.getMaxY() <= viewportBounds.getMaxY() + 1);
-                Label summary = (Label) lastCell.getGraphic().lookup("#requirementsSummary");
-                assertTrue(summary.isVisible());
-                assertTrue(summary.getText().contains("Budget ") && summary.getText().contains("Asking "));
-                assertTrue(summary.localToScene(summary.getLayoutBounds()).getMaxY() <= viewportBounds.getMaxY() + 1);
+                assertSelectionKeepsCardHeights(root, personList, firstTwo);
+                assertLastRequirementsCardReachable(root, personList, clients.size() - 1, viewportBounds);
                 for (String id : List.of("commandTextField", "resultDisplayPlaceholder", "detailPanePlaceholder",
                         "saveLocationStatus", "clientCountStatus")) {
                     assertInsideViewport(root.lookup("#" + id), 853, 480);
@@ -581,9 +516,7 @@ public class MainWindowTest {
                             .withAskingPrice(new Price("850000")).build(),
                     new PersonBuilder().withName("Ravi Kumar").withTags()
                             .withPhone("90000004").withEmail("ravi@example.com").build());
-            ModelManager model = new ModelManager();
-            clients.forEach(model::addPerson);
-            MainWindow window = openWindow(model);
+            MainWindow window = openWindow(modelWithClients(clients));
             try {
                 window.getDetailPane().setPerson(clients.get(2));
                 Region root = (Region) window.getRoot().getScene().getRoot();
@@ -592,41 +525,7 @@ public class MainWindowTest {
                 // These logical content sizes are not a substitute for actual display-scaling checks in #134.
                 int[][] contentSizes = {{820, 400}, {820, 412}, {853, 400}, {853, 452}, {853, 480}};
                 for (int[] size : contentSizes) {
-                    list.scrollTo(0);
-                    layoutWindow(root, size[0], size[1]);
-                    Bounds viewport = list.lookup(".clipped-container")
-                            .localToScene(list.lookup(".clipped-container").getLayoutBounds());
-                    List<ListCell<?>> firstThree = list.lookupAll(".list-cell").stream()
-                            .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < 3)
-                            .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
-                    assertEquals(3, firstThree.size());
-                    for (ListCell<?> cell : firstThree) {
-                        Bounds bounds = cell.localToScene(cell.getLayoutBounds());
-                        assertTrue(bounds.getMinY() >= viewport.getMinY() - 1);
-                        assertTrue(bounds.getMaxY() <= viewport.getMaxY() + 1,
-                                "Card " + (cell.getIndex() + 1) + " is clipped at " + size[0] + "x" + size[1]);
-                        Region card = (Region) cell.getGraphic();
-                        assertTrue(card.lookup("#requirementsSummary").isVisible());
-                        assertCardContentFits(card);
-                    }
-                    for (String id : List.of("menuBar", "commandTextField", "resultDisplay", "personList",
-                            "detailPane", "saveLocationStatus", "clientCountStatus")) {
-                        assertInsideViewport(root.lookup("#" + id), size[0], size[1]);
-                    }
-                    assertWithinRegion(root.lookup("#commandTextField"), root.lookup("#commandBoxPlaceholder"));
-                    assertWithinRegion(root.lookup("#resultDisplay"), root.lookup("#resultDisplayPlaceholder"));
-                    Node result = root.lookup("#resultDisplayPlaceholder");
-                    assertTrue(viewport.getMinY() >= result.localToScene(result.getLayoutBounds()).getMaxY());
-
-                    list.scrollTo(clients.size() - 1);
-                    layoutWindow(root, size[0], size[1]);
-                    ListCell<?> last = list.lookupAll(".list-cell").stream()
-                            .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty()
-                                    && cell.getIndex() == clients.size() - 1)
-                            .map(node -> (ListCell<?>) node).findFirst().orElseThrow();
-                    Bounds lastBounds = last.localToScene(last.getLayoutBounds());
-                    assertTrue(lastBounds.getMinY() >= viewport.getMinY() - 1);
-                    assertTrue(lastBounds.getMaxY() <= viewport.getMaxY() + 1);
+                    assertRequirementsCardsFitAtSize(root, list, clients.size(), size[0], size[1]);
                 }
             } finally {
                 window.getRoot().close();
@@ -685,12 +584,8 @@ public class MainWindowTest {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
             model.addPerson(BOB);
-            Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            MainWindow window = openWindow(model);
             try {
-                window.fillInnerParts();
                 TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
                 TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
                 ListView<?> personList = (ListView<?>) window.getRoot().getScene().lookup("#personListView");
@@ -732,12 +627,8 @@ public class MainWindowTest {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
             model.addPerson(BOB);
-            Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
+            MainWindow window = openWindow(model);
             try {
-                window.fillInnerParts();
                 TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
                 TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
                 Label footer = (Label) window.getRoot().getScene().lookup("#clientCountStatus");
@@ -774,11 +665,8 @@ public class MainWindowTest {
     public void execute_clientListChanges_updatesFooterCount() throws Exception {
         runOnFxThread(() -> {
             Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            MainWindow window = openWindow(new ModelManager());
             try {
-                window.fillInnerParts();
                 TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
                 Label count = (Label) window.getRoot().getScene().lookup("#clientCountStatus");
                 Label saveLocation = (Label) window.getRoot().getScene().lookup("#saveLocationStatus");
@@ -940,19 +828,8 @@ public class MainWindowTest {
                 layoutWindow(root, 1000, 700);
                 assertEmptySelection(window);
                 ListView<?> listView = (ListView<?>) root.lookup("#personListView");
-                ListCell<?> secondCell = listView.lookupAll(".list-cell").stream()
-                        .map(node -> (ListCell<?>) node)
-                        .filter(cell -> !cell.isEmpty() && cell.getIndex() == 1)
-                        .findFirst().orElseThrow();
-                Point2D point = secondCell.localToScene(10, 10);
-                secondCell.fireEvent(new MouseEvent(MouseEvent.MOUSE_PRESSED,
-                        point.getX(), point.getY(), point.getX(), point.getY(),
-                        MouseButton.PRIMARY, 1, false, false, false, false, true, false, false,
-                        false, false, true, new PickResult(secondCell, point.getX(), point.getY())));
-                secondCell.fireEvent(new MouseEvent(MouseEvent.MOUSE_RELEASED,
-                        point.getX(), point.getY(), point.getX(), point.getY(),
-                        MouseButton.PRIMARY, 1, false, false, false, false, false, false, false,
-                        false, false, true, new PickResult(secondCell, point.getX(), point.getY())));
+                ListCell<?> secondCell = visibleCellAtIndex(listView, 1);
+                clickCell(secondCell);
                 assertSelectedClient(window, BOB);
                 root.applyCss();
                 Region card = (Region) secondCell.getGraphic();
@@ -1184,12 +1061,8 @@ public class MainWindowTest {
 
     private void assertFailureAndRecovery(String command, String expectedError) throws Exception {
         runOnFxThread(() -> {
-            Path dataFile = temporaryFolder.resolve("addressbook.json");
-            StorageManager storage = new StorageManager(new JsonAddressBookStorage(dataFile),
-                    new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
-            MainWindow window = new MainWindow(new Stage(), new LogicManager(new ModelManager(), storage), dataFile);
+            MainWindow window = openWindow(new ModelManager());
             try {
-                window.fillInnerParts();
                 TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
                 TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
 
@@ -1213,10 +1086,143 @@ public class MainWindowTest {
     private static void assertInsideViewport(Node node, double width, double height) {
         Bounds bounds = node.localToScene(node.getLayoutBounds());
         String context = node.getId() + " at " + width + "x" + height;
-        assertTrue(bounds.getWidth() > 0 && bounds.getHeight() > 0, context + " is collapsed");
-        assertTrue(bounds.getMinX() >= -1 && bounds.getMinY() >= -1
-                && bounds.getMaxX() <= width + 1 && bounds.getMaxY() <= height + 1,
-                context + " extends beyond the viewport");
+        assertTrue(bounds.getWidth() > 0, context + " has no width");
+        assertTrue(bounds.getHeight() > 0, context + " has no height");
+        assertTrue(bounds.getMinX() >= -1, context + " extends beyond the left edge");
+        assertTrue(bounds.getMinY() >= -1, context + " extends beyond the top edge");
+        assertTrue(bounds.getMaxX() <= width + 1, context + " extends beyond the right edge");
+        assertTrue(bounds.getMaxY() <= height + 1, context + " extends beyond the bottom edge");
+    }
+
+    private static List<ListCell<?>> visibleCellsBeforeIndex(ListView<?> list, int indexLimit) {
+        return list.lookupAll(".list-cell").stream()
+                .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() < indexLimit)
+                .<ListCell<?>>map(node -> (ListCell<?>) node).toList();
+    }
+
+    private static void assertDetailPaneFitsAtSize(Region root, String noteText, int width, int height) {
+        layoutWindow(root, width, height);
+        ScrollPane scroll = (ScrollPane) root.lookup("#detailScroll");
+        VBox rows = (VBox) scroll.getContent();
+        Label note = (Label) root.lookup("#note");
+        assertTrue(root.lookup("#noteIndicator").isVisible());
+        assertInsideViewport(root.lookup("#noteIndicator"), width, height);
+        assertInsideViewport(root.lookup("#detailPane"), width, height);
+        assertInsideViewport(root.lookup("#statusbarPlaceholder"), width, height);
+        assertTrue(rows.getHeight() > scroll.getViewportBounds().getHeight());
+        assertTrue(rows.getWidth() <= scroll.getViewportBounds().getWidth() + 1);
+        assertEquals(noteText, note.getText());
+        assertTrue(note.getHeight() >= note.prefHeight(note.getWidth()) - 1);
+        assertTrue(note.getHeight() > 25, "The note did not wrap");
+        assertFalse(root.lookup("#emptyState").isVisible());
+
+        scroll.setVvalue(1);
+        layoutWindow(root, width, height);
+        Node viewport = scroll.lookup(".viewport");
+        Bounds viewportBounds = viewport.localToScene(viewport.getBoundsInLocal());
+        Node tagsRow = root.lookup("#tagsRow");
+        Bounds lastRow = tagsRow.localToScene(tagsRow.getBoundsInLocal());
+        assertTrue(lastRow.getMaxY() <= viewportBounds.getMaxY() + 1,
+                "The final detail row is unreachable");
+        assertTrue(lastRow.getMaxY() > viewportBounds.getMinY());
+    }
+
+    private static void assertRequirementsCardsFitAtSize(Region root, ListView<?> list,
+            int clientCount, int width, int height) {
+        list.scrollTo(0);
+        layoutWindow(root, width, height);
+        Node clippedContainer = list.lookup(".clipped-container");
+        Bounds viewport = clippedContainer.localToScene(clippedContainer.getLayoutBounds());
+        List<ListCell<?>> firstThree = visibleCellsBeforeIndex(list, 3);
+        assertEquals(3, firstThree.size());
+        for (ListCell<?> cell : firstThree) {
+            assertCellWithinViewport(cell, viewport,
+                    "Card " + (cell.getIndex() + 1) + " is clipped at " + width + "x" + height);
+            Region card = (Region) cell.getGraphic();
+            assertTrue(card.lookup("#requirementsSummary").isVisible());
+            assertCardContentFits(card);
+        }
+        for (String id : List.of("menuBar", "commandTextField", "resultDisplay", "personList",
+                "detailPane", "saveLocationStatus", "clientCountStatus")) {
+            assertInsideViewport(root.lookup("#" + id), width, height);
+        }
+        assertWithinRegion(root.lookup("#commandTextField"), root.lookup("#commandBoxPlaceholder"));
+        assertWithinRegion(root.lookup("#resultDisplay"), root.lookup("#resultDisplayPlaceholder"));
+        Node result = root.lookup("#resultDisplayPlaceholder");
+        assertTrue(viewport.getMinY() >= result.localToScene(result.getLayoutBounds()).getMaxY());
+
+        list.scrollTo(clientCount - 1);
+        layoutWindow(root, width, height);
+        ListCell<?> last = visibleCellAtIndex(list, clientCount - 1);
+        assertCellWithinViewport(last, viewport, "Last requirement card is clipped");
+    }
+
+    private static void assertSelectionKeepsCardHeights(Region root, ListView<?> list,
+            List<ListCell<?>> visibleCells) {
+        List<Double> originalHeights = visibleCells.stream()
+                .map(cell -> cell.getGraphic().getLayoutBounds().getHeight()).toList();
+        list.getSelectionModel().select(0);
+        root.applyCss();
+        root.layout();
+        // Newly recreated cell graphics need CSS before their content-sized heights are measured.
+        root.applyCss();
+        root.layout();
+        for (int i = 0; i < visibleCells.size(); i++) {
+            double selectedHeight = visibleCells.get(i).getGraphic().getLayoutBounds().getHeight();
+            assertEquals(originalHeights.get(i), selectedHeight, 0.01);
+        }
+    }
+
+    private static void assertLastRequirementsCardReachable(Region root, ListView<?> list,
+            int lastIndex, Bounds viewportBounds) {
+        list.scrollTo(lastIndex);
+        root.layout();
+        root.applyCss();
+        root.layout();
+        ListCell<?> lastCell = visibleCellAtIndex(list, lastIndex);
+        assertCellWithinViewport(lastCell, viewportBounds, "Last requirement card is clipped");
+        Label summary = (Label) lastCell.getGraphic().lookup("#requirementsSummary");
+        assertTrue(summary.isVisible());
+        assertTrue(summary.getText().contains("Budget ") && summary.getText().contains("Asking "));
+        assertTrue(summary.localToScene(summary.getLayoutBounds()).getMaxY() <= viewportBounds.getMaxY() + 1);
+    }
+
+    private static void assertCompactClientCard(ListCell<?> cell, Bounds listBounds, Person client) {
+        Bounds bounds = cell.localToScene(cell.getLayoutBounds());
+        assertTrue(bounds.getMinY() >= listBounds.getMinY());
+        assertTrue(bounds.getMaxY() <= listBounds.getMaxY());
+        Region card = (Region) cell.getGraphic();
+        Label name = (Label) card.lookup("#name");
+        assertCardContentFits(card);
+        assertEquals(client.getName().fullName, name.getText());
+        assertFalse(name.isWrapText());
+        assertFalse(((Label) card.lookup("#email")).isWrapText());
+        assertEquals(3, ((VBox) card.lookup("#cardContent")).getChildren().stream()
+                .filter(Node::isManaged).count());
+    }
+
+    private static void clickCell(ListCell<?> cell) {
+        Point2D point = cell.localToScene(10, 10);
+        cell.fireEvent(new MouseEvent(MouseEvent.MOUSE_PRESSED,
+                point.getX(), point.getY(), point.getX(), point.getY(),
+                MouseButton.PRIMARY, 1, false, false, false, false, true, false, false,
+                false, false, true, new PickResult(cell, point.getX(), point.getY())));
+        cell.fireEvent(new MouseEvent(MouseEvent.MOUSE_RELEASED,
+                point.getX(), point.getY(), point.getX(), point.getY(),
+                MouseButton.PRIMARY, 1, false, false, false, false, false, false, false,
+                false, false, true, new PickResult(cell, point.getX(), point.getY())));
+    }
+
+    private static ListCell<?> visibleCellAtIndex(ListView<?> list, int index) {
+        return list.lookupAll(".list-cell").stream()
+                .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.getIndex() == index)
+                .map(node -> (ListCell<?>) node).findFirst().orElseThrow();
+    }
+
+    private static void assertCellWithinViewport(ListCell<?> cell, Bounds viewport, String message) {
+        Bounds bounds = cell.localToScene(cell.getLayoutBounds());
+        assertTrue(bounds.getMinY() >= viewport.getMinY() - 1, message);
+        assertTrue(bounds.getMaxY() <= viewport.getMaxY() + 1, message);
     }
 
     private static void layoutWindow(Region root, double width, double height) {
@@ -1232,11 +1238,11 @@ public class MainWindowTest {
     private static void assertWithinRegion(Node child, Node parent) {
         Bounds childBounds = child.localToScene(child.getLayoutBounds());
         Bounds parentBounds = parent.localToScene(parent.getLayoutBounds());
-        assertTrue(childBounds.getMinX() >= parentBounds.getMinX() - 1
-                && childBounds.getMaxX() <= parentBounds.getMaxX() + 1
-                && childBounds.getMinY() >= parentBounds.getMinY() - 1
-                && childBounds.getMaxY() <= parentBounds.getMaxY() + 1,
-                child.getId() + " extends beyond " + parent.getId());
+        String context = child.getId() + " extends beyond " + parent.getId();
+        assertTrue(childBounds.getMinX() >= parentBounds.getMinX() - 1, context + " on the left");
+        assertTrue(childBounds.getMaxX() <= parentBounds.getMaxX() + 1, context + " on the right");
+        assertTrue(childBounds.getMinY() >= parentBounds.getMinY() - 1, context + " on the top");
+        assertTrue(childBounds.getMaxY() <= parentBounds.getMaxY() + 1, context + " on the bottom");
     }
 
     private MainWindow openWindow(ModelManager model) {
@@ -1246,6 +1252,12 @@ public class MainWindowTest {
         MainWindow window = new MainWindow(new Stage(), new LogicManager(model, storage), dataFile);
         window.fillInnerParts();
         return window;
+    }
+
+    private static ModelManager modelWithClients(List<Person> clients) {
+        ModelManager model = new ModelManager();
+        clients.forEach(model::addPerson);
+        return model;
     }
 
     /**

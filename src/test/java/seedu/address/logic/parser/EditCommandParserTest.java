@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.AREA_DESC_AMY;
@@ -70,6 +71,14 @@ public class EditCommandParserTest {
             String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE);
 
     private EditCommandParser parser = new EditCommandParser();
+
+    @Test
+    public void parse_mistypedRequirementPrefix_failure() {
+        String expected = String.format(Messages.MESSAGE_UNKNOWN_PREFIX, "bb/") + "\n"
+                + EditCommand.MESSAGE_USAGE;
+
+        assertParseFailure(parser, "1 a/1 Road bb/400000-600000", expected);
+    }
 
     @Test
     public void parse_missingParts_failure() {
@@ -179,11 +188,23 @@ public class EditCommandParserTest {
         expectedCommand = new EditCommand(targetIndex, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
 
+        // address containing a word that starts like a prefix
+        userInput = targetIndex.getOneBased() + " a/9 Grove Road s/o Ramasamy";
+        descriptor = new EditPersonDescriptorBuilder().withAddress("9 Grove Road s/o Ramasamy").build();
+        expectedCommand = new EditCommand(targetIndex, descriptor);
+        assertParseSuccess(parser, userInput, expectedCommand);
+
         // tags
         userInput = targetIndex.getOneBased() + TAG_DESC_FRIEND;
         descriptor = new EditPersonDescriptorBuilder().withTags(VALID_TAG_FRIEND).build();
         expectedCommand = new EditCommand(targetIndex, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_shortWordAfterAddress_failure() {
+        assertParseFailure(parser, "1 a/9 Grove Road s/ab", Price.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 a/9 Grove Road b/xx", Price.MESSAGE_CONSTRAINTS);
     }
 
     @Test
@@ -353,5 +374,11 @@ public class EditCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_BUDGET));
         assertParseFailure(parser, "1" + ASKING_PRICE_DESC_AMY + ASKING_PRICE_DESC_AMY,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ASKING_PRICE));
+    }
+
+    @Test
+    public void parse_uppercaseKnownPrefix_failure() {
+        assertParseFailure(parser, "1 a/1 Test Road B/400000-600000",
+                String.format(MESSAGE_UNKNOWN_PREFIX, "B/") + "\n" + EditCommand.MESSAGE_USAGE);
     }
 }

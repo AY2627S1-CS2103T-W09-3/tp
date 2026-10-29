@@ -65,9 +65,12 @@ public class AddressBookParser {
             case ClearCommand.COMMAND_WORD -> new ClearCommandParser().parse(arguments);
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
             case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
-            case ListCommand.COMMAND_WORD -> new ListCommand();
-            case ExitCommand.COMMAND_WORD -> new ExitCommand();
-            case HelpCommand.COMMAND_WORD -> new HelpCommand();
+            case ListCommand.COMMAND_WORD -> parseNoArguments(arguments, new ListCommand(),
+                    ListCommand.MESSAGE_INVALID_FORMAT);
+            case ExitCommand.COMMAND_WORD -> parseNoArguments(arguments, new ExitCommand(),
+                    ExitCommand.MESSAGE_INVALID_FORMAT);
+            case HelpCommand.COMMAND_WORD -> parseNoArguments(arguments, new HelpCommand(),
+                    HelpCommand.MESSAGE_INVALID_FORMAT);
             case NoteCommand.COMMAND_WORD -> new NoteCommandParser().parse(arguments);
             case RoleCommand.COMMAND_WORD -> new RoleCommandParser().parse(arguments);
             case ViewCommand.COMMAND_WORD -> new ViewCommandParser().parse(arguments);

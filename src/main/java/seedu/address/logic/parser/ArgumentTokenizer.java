@@ -3,6 +3,8 @@ package seedu.address.logic.parser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -14,6 +16,12 @@ import java.util.stream.Collectors;
  *    in the above example.<br>
  */
 public class ArgumentTokenizer {
+
+    /**
+     * Abbreviations that legitimately appear inside an address value and must not be read as a numeric field.
+     * Only a numeric prefix, such as the budget {@code b/} or the asking price {@code s/}, consults this set.
+     */
+    private static final Set<String> FREE_TEXT_ABBREVIATIONS = Set.of("s/o", "b/c");
 
     /**
      * Tokenizes an arguments string and returns an {@code ArgumentMultimap} object that maps prefixes to their
@@ -49,12 +57,52 @@ public class ArgumentTokenizer {
 
         int prefixPosition = findPrefixPosition(argsString, prefix.getPrefix(), 0);
         while (prefixPosition != -1) {
-            PrefixPosition extendedPrefix = new PrefixPosition(prefix, prefixPosition);
-            positions.add(extendedPrefix);
+            if (startsField(argsString, prefixPosition, prefix)) {
+                PrefixPosition extendedPrefix = new PrefixPosition(prefix, prefixPosition);
+                positions.add(extendedPrefix);
+            }
             prefixPosition = findPrefixPosition(argsString, prefix.getPrefix(), prefixPosition);
         }
 
         return positions;
+    }
+
+    /**
+     * Returns true if the occurrence of {@code prefix} at {@code prefixPosition} starts a new argument.
+     * A prefix that introduces a numeric value is treated as free text when it is followed by one of the
+     * abbreviations in {@code FREE_TEXT_ABBREVIATIONS}, which is how {@code s/o} or {@code b/c} inside an
+     * address look. Everything else counts as a new argument, so a short mistyped value such as {@code s/ab}
+     * still reports the price or budget error, and an empty value still clears the field.
+     */
+    private static boolean startsField(String argsString, int prefixPosition, Prefix prefix) {
+        if (!prefix.hasNumericValue()) {
+            return true;
+        }
+
+        int valueIndex = prefixPosition + prefix.getPrefix().length();
+        while (valueIndex < argsString.length() && argsString.charAt(valueIndex) == ' ') {
+            valueIndex++;
+        }
+
+        if (valueIndex == argsString.length()) {
+            return true;
+        }
+
+        int wordEnd = valueIndex;
+        while (wordEnd < argsString.length() && Character.isLetter(argsString.charAt(wordEnd))) {
+            wordEnd++;
+        }
+
+        String token = argsString.substring(prefixPosition, wordEnd).toLowerCase(Locale.ROOT);
+        boolean tokenEnds = wordEnd == argsString.length() || argsString.charAt(wordEnd) == ' ';
+        return !(tokenEnds && isFreeTextAbbreviation(token));
+    }
+
+    /**
+     * Returns true if {@code word} is one of the abbreviations that stay free text, ignoring case.
+     */
+    static boolean isFreeTextAbbreviation(String word) {
+        return FREE_TEXT_ABBREVIATIONS.contains(word.toLowerCase(Locale.ROOT));
     }
 
     /**

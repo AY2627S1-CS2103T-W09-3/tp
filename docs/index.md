@@ -6,9 +6,9 @@ title: EstateBookUltraProMax
 ## Keep your client book in view
 
 EstateBookUltraProMax is a desktop client book for property agents who manage
-buyers and sellers. Find contact details during a call, record property
-requirements, and keep follow-up notes in one place. Type short commands to
-work quickly while the app shows your client list and selected client's full
+many buyers and sellers at once. Find contact details during a call, record
+property requirements, and keep follow-up notes in one place. Type short commands
+to work quickly while the app shows your client list and selected client's full
 profile side by side.
 
 [Get started with the User Guide](UserGuide.html#quick-start) ·
@@ -33,3 +33,7 @@ See the [Developer Guide](DeveloperGuide.html) for the architecture and setup
 instructions. EstateBookUltraProMax builds on
 [AddressBook-Level3](https://github.com/se-edu/addressbook-level3) by the
 [SE-EDU initiative](https://se-education.org).
+
+Libraries used: [JavaFX](https://openjfx.io/),
+[Jackson](https://github.com/FasterXML/jackson) and
+[JUnit 5](https://github.com/junit-team/junit5).

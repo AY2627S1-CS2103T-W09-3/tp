@@ -30,6 +30,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.RoleCommand;
+import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -87,6 +88,31 @@ public class LogicManagerTest {
         assertEquals(beforeBob, model.captureSnapshot());
         assertEquals(undo, model.getUndoHistory());
         assertEquals(redo, model.getRedoHistory());
+    }
+
+    @Test
+    public void execute_addNameWithExtraSpaces_isRejectedAsDuplicate() throws Exception {
+        logic.execute("add n/Alpha Tester p/90010001 e/alpha.tester@example.com a/1 Test Road");
+
+        assertCommandException("add n/Alpha  Tester p/90010301 e/alpha.spaces@example.com a/21 Test Road",
+                Messages.MESSAGE_DUPLICATE_NAME);
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_addEmailInDifferentCase_isRejectedAsDuplicate() throws Exception {
+        logic.execute("add n/Alpha Tester p/90010001 e/alpha.tester@example.com a/1 Test Road");
+
+        assertCommandException("add n/Email Case Test p/90010302 e/alpha.tester@EXAMPLE.COM a/22 Test Road",
+                String.format(Messages.MESSAGE_DUPLICATE_EMAIL, "Alpha Tester"));
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_addNameWithExtraSpaces_isStoredWithSingleSpaces() throws Exception {
+        logic.execute("add n/Alpha   Tester p/90010001 e/alpha.tester@example.com a/1 Test Road");
+
+        assertEquals("Alpha Tester", model.getAddressBook().getPersonList().get(0).getName().fullName);
     }
 
     @Test
@@ -172,6 +198,97 @@ public class LogicManagerTest {
         JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
         ReadOnlyAddressBook reloadedAddressBook = storage.readAddressBook().orElseThrow();
         assertEquals(List.of(expectedPerson), reloadedAddressBook.getPersonList());
+    }
+
+    @Test
+    public void execute_readOnlyCommandsWithUnwritableStorage_succeed() throws Exception {
+        model.addPerson(AMY);
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_AD_EXCEPTION));
+
+        assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("list").getFeedbackToUser());
+        assertEquals(Messages.getShowingMessage(1, 1), logic.execute("find Amy").getFeedbackToUser());
+        assertEquals(String.format(ViewCommand.MESSAGE_SUCCESS, AMY.getName()),
+                logic.execute("view 1").getFeedbackToUser());
+        assertTrue(logic.execute("clear").isAwaitingConfirmation());
+    }
+
+    @Test
+    public void execute_readOnlyCommand_doesNotSave() throws Exception {
+        model.addPerson(AMY);
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("list");
+        logic.execute("find Amy");
+        logic.execute("view 1");
+        logic.execute("clear");
+
+        assertEquals(0, storage.getSaveCount());
+    }
+
+    @Test
+    public void execute_modifyingCommand_savesOnce() throws Exception {
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("add" + NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY);
+
+        assertEquals(1, storage.getSaveCount());
+    }
+
+    @Test
+    public void execute_changeThatSnapshotsCannotSee_stillSaves() throws Exception {
+        // A model whose snapshots never differ stands in for a field that model equality ignores.
+        AddressBookSnapshot blindSnapshot = new ModelManager().captureSnapshot();
+        model = new ModelManager() {
+            @Override
+            public AddressBookSnapshot captureSnapshot() {
+                return blindSnapshot;
+            }
+        };
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("add" + NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + ADDRESS_DESC_AMY);
+
+        assertEquals(1, storage.getSaveCount());
+        assertEquals(1, storage.readAddressBook().orElseThrow().getPersonList().size());
+    }
+
+    @Test
+    public void execute_noteTextThatLooksLikeNull_stillSaves() throws Exception {
+        // A client with no note and a client whose note text is "null" look the same to Person#toString.
+        model.addPerson(AMY);
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("note 1 null");
+
+        assertEquals(1, storage.getSaveCount());
+        assertEquals("null",
+                storage.readAddressBook().orElseThrow().getPersonList().get(0).getNote().toString());
+    }
+
+    @Test
+    public void execute_tagEditThatChangesOnlyCase_stillSaves() throws Exception {
+        // Person equality compares tag names, so urgent and Urgent differ; the file must record the new casing.
+        model.addPerson(new PersonBuilder(AMY).withTags("urgent").build());
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("edit 1 t/Urgent");
+
+        assertEquals(1, storage.getSaveCount());
+        Person saved = storage.readAddressBook().orElseThrow().getPersonList().get(0);
+        assertEquals("Urgent", saved.getTags().iterator().next().tagName);
+    }
+
+    @Test
+    public void execute_readOnlyCommandsWithTaggedClients_doNotSave() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withTags("urgent", "friend").build());
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("list");
+        logic.execute("view 1");
+        logic.execute("find Amy");
+        logic.execute("history");
+
+        assertEquals(0, storage.getSaveCount());
     }
 
     @Test
@@ -280,6 +397,26 @@ public class LogicManagerTest {
 
         assertThrows(IllegalStateException.class, "Could not restore history after a failed save", () ->
                 logic.execute("undo"));
+    }
+
+    @Test
+    public void execute_redoSaveAndRollbackFail_reportsHistoryFailure() throws Exception {
+        model = new ModelManager() {
+            @Override
+            public void rollbackRedo(HistoryEntry entry) throws HistoryOperationException {
+                throw new HistoryOperationException("History changed before rollback");
+            }
+        };
+        JsonAddressBookStorage dataFile = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        logic = new LogicManager(model, new StorageManager(dataFile,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+        logic.execute("undo");
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
+
+        assertThrows(IllegalStateException.class, "Could not restore history after a failed save", () ->
+                logic.execute("redo"));
+        assertTrue(dataFile.readAddressBook().orElseThrow().getPersonList().isEmpty());
     }
 
     @Test
@@ -499,11 +636,15 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_storageFailsAfterClearWarning_doesNotStartPendingClear() throws Exception {
+    public void execute_clearWarningWithUnwritableStorage_warnsThenClearsOnlyOnConfirm() throws Exception {
         model.addPerson(AMY);
         logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
 
-        assertCommandException("clear", String.format(
+        // The warning does not write, so an unwritable location still shows it.
+        assertTrue(logic.execute("clear").isAwaitingConfirmation());
+
+        // Confirming does write, so the failure surfaces there and the data is restored.
+        assertCommandException("clear confirm", String.format(
                 LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
         assertCommandException("clear confirm", ClearCommand.MESSAGE_NO_CLEAR_PENDING);
         assertEquals(1, model.getAddressBook().getPersonList().size());
@@ -619,5 +760,36 @@ public class LogicManagerTest {
         JsonUserPrefsStorage userPrefsStorage =
                 new JsonUserPrefsStorage(temporaryFolder.resolve("ExceptionUserPrefs.json"));
         return new StorageManager(addressBookStorage, userPrefsStorage);
+    }
+
+    /**
+     * Points {@code logic} at a storage that counts saves, and returns it.
+     */
+    private CountingAddressBookStorage createCountingStorage() {
+        CountingAddressBookStorage addressBookStorage =
+                new CountingAddressBookStorage(temporaryFolder.resolve("countingAddressBook.json"));
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("countingUserPrefs.json"));
+        logic = new LogicManager(model, new StorageManager(addressBookStorage, userPrefsStorage));
+        return addressBookStorage;
+    }
+
+    /** An address book storage that records how many times saving was attempted. */
+    private static class CountingAddressBookStorage extends JsonAddressBookStorage {
+        private int saveCount;
+
+        CountingAddressBookStorage(Path filePath) {
+            super(filePath);
+        }
+
+        @Override
+        public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+            saveCount++;
+            super.saveAddressBook(addressBook);
+        }
+
+        int getSaveCount() {
+            return saveCount;
+        }
     }
 }
