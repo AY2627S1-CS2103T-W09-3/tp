@@ -37,6 +37,8 @@ public class MainAppTest {
 
     private static final Path V1_4_SPACED_NAMES_FILE = Paths.get("src", "test", "data",
             "JsonSerializableAddressBookTest", "duplicateNameSpacesAddressBook.json");
+    private static final String ADD_CLIENT_COMMAND =
+            "add n/Recovered Client p/91234567 e/recovered@example.com a/1 Recovered Road";
 
     @TempDir
     public Path temporaryFolder;
@@ -146,10 +148,14 @@ public class MainAppTest {
         Path backup = findUnreadableDataBackup();
         assertEquals(v14Json, Files.readString(backup));
 
-        app.logic.execute("list");
+        app.logic.execute(ADD_CLIENT_COMMAND);
 
+        // the first command that changes data replaces the file, and the backup keeps the original text
         assertEquals(v14Json, Files.readString(backup));
-        assertEquals(new AddressBook(), new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+        AddressBook afterAdd = new AddressBook(
+                new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+        assertEquals(1, afterAdd.getPersonList().size());
+        assertEquals("Recovered Client", afterAdd.getPersonList().get(0).getName().fullName);
     }
 
     @Test
