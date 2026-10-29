@@ -426,9 +426,10 @@ not the same question as whether the model is equal. Three cases separate the tw
 permission message appears only when a command really writes. A failed write restores the before snapshot and
 shows the access-denied or general storage message, and no history entry has been recorded at that point.
 
-**Cost.** Every command serialises the client book twice, which is the same order of work as one file write. A
-command that writes therefore costs about twice what it did before, and a command that only reads costs one
-serialisation instead of a write. The cost grows with the number of clients, one serialisation per client per
+**Cost.** Every command serialises the client book twice, once before it executes and once after, which is the
+same order of work as one file write. A command that writes serialises a third time inside `JsonUtil#saveJsonFile`,
+so it does about three times the serialisation work that a save used to do, while a command that only reads pays
+two serialisations and no write. The cost grows with the number of clients, one serialisation per client per
 comparison.
 
 ### Undo, redo and history
@@ -546,10 +547,10 @@ still reads as a name prefix and is reported as a repeated field. The rule trave
 the field in `edit`.
 
 The other failure is the opposite one: a label that is not a prefix at all. `ArgumentTokenizer` folds such a word
-into the value before it, so `add ... a/1 Road B/400000-600000` would store the budget text inside the address and
-the client would save without any error. `ParserUtil#rejectUnknownPrefixes` therefore runs before the tokenizer and
-reports the first word that begins with one to three letters and a slash, follows a recognised prefix, and is not
-itself a recognised prefix:
+into the value before it, so before this check existed `add ... a/1 Road B/400000-600000` stored the budget text
+inside the address and saved without any error. `ParserUtil#rejectUnknownPrefixes` therefore runs before the
+tokenizer and reports the first word that begins with one to three letters and a slash, follows a recognised
+prefix, and is not itself a recognised prefix:
 
 * Matching is case-sensitive, like the tokenizer, so a known prefix typed in the wrong case, such as `B/`, is
   reported here instead of being accepted by the guard and then ignored by the tokenizer.
@@ -1034,7 +1035,7 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `role 1 buyer extra`<br>
       Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
 
-### Rejecting mistyped prefixes
+### Reporting mistyped prefixes
 
 1. Rejecting a label that is not a prefix
 
@@ -1065,7 +1066,7 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `edit 1 a/1 Test Road B/400000`<br>
       Expected: `Unknown prefix: B/` followed by the `edit` usage, and the first client's address is unchanged.
 
-### Commands that take no arguments
+### Rejecting extra words after a command
 
 1. Rejecting text after a command that takes none
 
@@ -1565,7 +1566,7 @@ testers are expected to do more *exploratory* testing.
       Expected: The client is added and the result box shows `Requirements: Toa Payoh`, with one space.
 
    1. Test case: `filter l/Toa  Payoh`<br>
-      Expected: The list narrows to the clients whose preferred areas include `Toa Payoh`.
+      Expected: `Alicia Tan` and `Space Test` are displayed, because both store `Toa Payoh` as an area.
 
 1. Storing the standard spelling
 

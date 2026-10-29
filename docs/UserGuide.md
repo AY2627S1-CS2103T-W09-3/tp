@@ -88,7 +88,7 @@ These rules apply when adding or editing clients.
 | Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. Extra spaces between words are reduced to one, so `n/Alpha  Tester` is stored as `Alpha Tester`. |
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
-| Address | Cannot be blank. Free text, so the abbreviations `s/o` and `b/c` stay part of the address; a short word such as `s/ab` is read as an asking price and rejected. |
+| Address | Cannot be blank. Free text, so the abbreviations `s/o` and `b/c` stay part of the address; a short word such as `s/ab` is read as an asking price and rejected, and so is `s/o,`, because an abbreviation must be a whole word. |
 | Budget | Two whole-dollar amounts joined by a hyphen, such as `400000-600000`. Each amount is from 1 to 1,000,000,000, commas are optional, and the first amount cannot exceed the second. |
 | Asking price | One whole-dollar amount from 1 to 1,000,000,000, with optional correctly placed commas. |
 | Area | One of the 32 supported areas. Case is ignored and the standard spelling is stored, and extra spaces between words are reduced to one, so `l/Toa  Payoh` is stored as `Toa Payoh`. |
