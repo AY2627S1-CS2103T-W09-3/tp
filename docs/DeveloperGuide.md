@@ -416,8 +416,9 @@ word with the format message owned by that command, so `list now` fails with
 `Invalid command format. Use: list.` and `help 123` fails with `Invalid command format. Use: help.`.
 The message names that command's own form rather than a generic error, because the extra text is usually an
 argument borrowed from another command, such as `undo 1` typed after `edit 1`. The check lives in one helper,
-so a new command of this kind cannot forget it, while each command keeps its own message, which stays right
-when the command is renamed or gains an argument.
+which a new command of this kind calls with one line, while each command keeps its own message, which stays
+right when the command is renamed or gains an argument. The call is still explicit: a command added to the switch
+without it would accept extra words.
 
 Three commands sit on either side of the rule. `clear` takes one optional argument, `confirm`, in any letter
 case, and rejects everything else in `ClearCommandParser`, for the reasons in
@@ -446,8 +447,10 @@ not the same question as whether the model is equal. Three cases separate the tw
 * A tag edited from `urgent` to `Urgent` keeps the new casing in `Tag`'s `tagName` field, which `JsonAdaptedTag`
   writes, while `Tag#equals` compares the lowercased names, so any comparison that relies on equality can accept a
   change the file has to record.
-* A field added to `Person` later is compared automatically, because the comparison is the file format itself
-  rather than a list of fields that has to be kept in step with the model.
+* A field added to `Person` still needs one edit in `JsonAdaptedPerson` before it reaches the file. Once the
+  adapter carries it, the comparison sees it without a second list to keep in step, because the comparison is the
+  file format itself. A field the adapter omits is invisible to both the file and the comparison, so it is never
+  saved.
 
 **What the skip gives the user.** Read-only and no-op commands never touch the file, so `list`, `find`, `view`,
 `help`, the initial `clear` warning and rejected input all work when the data folder is not writable, and the
