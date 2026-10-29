@@ -105,6 +105,7 @@ Prefix rules:
 
 * Each of `n/`, `p/`, `e/` and `a/` can appear only once per command.
 * Repeat `t/` to supply multiple tags, such as `t/urgent t/firsttime`.
+* Tags that differ only in letter case are treated as the same tag, so `t/urgent t/URGENT` stores one tag.
 * For `edit`, use an empty `t/` to remove all tags.
 * Each of `b/` and `s/` can appear only once per command.
 * Repeat `l/` to supply multiple areas, such as `l/Bedok l/Tampines`.

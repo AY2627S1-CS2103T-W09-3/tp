@@ -128,6 +128,11 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        // tag differs only in case -> returns false because the displayed data is different
+        Person lowerCaseTagAlice = new PersonBuilder(ALICE).withTags("urgent").build();
+        Person upperCaseTagAlice = new PersonBuilder(ALICE).withTags("URGENT").build();
+        assertFalse(lowerCaseTagAlice.equals(upperCaseTagAlice));
+
         // different role -> different details, but still the same person
         editedAlice = new PersonBuilder(ALICE).withRole(ClientRole.SELLER).build();
         assertFalse(ALICE.equals(editedAlice));
