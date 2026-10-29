@@ -961,11 +961,37 @@ The preserved backup remains available for Agent to inspect or recover separatel
 
 ### Non-Functional Requirements
 
-1. **Usability:** A user with an above average typing speed for English text should be able to accomplish most tasks using the _Command Line Interface (CLI)_ faster than with a mouse-driven GUI.
-2. **Environment:** The system should work on a _mainstream OS_ with Java `25` and a graphical desktop environment.
-3. **Performance:** The system should be able to hold up to <ins>100</ins> active client records without any noticeable sluggishness in performance during typical usage (e.g., searching, filtering).
-4. **Data Reliability:** Successful data-changing actions must be saved before success is reported. A failed save must retain the preceding client data and undo/redo history. An unreadable data file must be backed up before the application permits new client data to replace it.
-5. **Fault Tolerance:** The application must gracefully handle invalid inputs (e.g., invalid client references, missing roles, or conflicting duplicate details) by displaying clear error messages, instead of crashing.
+1. **Keyboard usability:** With the main window focused, an agent must be able to add, find, view,
+   update and delete clients, and request help, using the keyboard without a required mouse action.
+   Opening help or viewing a client through a shortcut must preserve an unfinished command draft.
+2. **Portability:** The same released JAR must launch and support the client-management workflow
+   on Windows 11, macOS and desktop Linux with Java 25, a working graphical environment and a
+   writable data directory. Each release must be smoke-tested on those OS families; a successful
+   test on one OS does not establish compatibility with another OS or CPU architecture.
+3. **Responsiveness:** With 100 valid clients on a desktop with at least 4 GB of RAM and local SSD
+   storage, each warmed-up `list`, `find` and `filter` request should display its result within one
+   second. Measure five successive requests of each kind after one untimed warm-up request, with
+   no background build or test workload. Startup, external browser loading and slow/network storage
+   are excluded. This is a release-testing target, not a measured result or a 100-client input limit.
+4. **Data integrity:** A successful data-changing request must remain intact after a normal restart.
+   A failed save must leave the previous saved file intact and restore the preceding in-memory
+   client data and undo/redo history. The application must not report success for an unsaved change.
+   An unreadable original file must remain recoverable rather than be silently overwritten; UC05
+   specifies the backup and startup-failure interaction.
+5. **Robustness and error feedback:** Invalid commands, missing required arguments, invalid displayed
+   indexes and duplicate-contact conflicts must produce actionable feedback without terminating the
+   application or changing client data or undo/redo history. An operational save failure must report
+   the failure and leave the application available for a retry after the file-access problem is fixed.
+6. **Layout accessibility:** At logical window sizes of 853 × 480 and 820 × 440, the command box,
+   feedback area, client list and detail panel must remain within the main window. A 500-character
+   note must wrap and be readable to its end using vertical scrolling. Actual Windows checks at
+   1920 × 1080 (100% and 125% scaling) and 1280 × 720 (150% scaling) must additionally verify that
+   controls and client details remain reachable. See [Testing](Testing.md#main-window-layout-checks)
+   for the distinction between logical-size tests and OS scaling tests.
+7. **Maintainability:** On a documented development setup, `./gradlew check` must pass before a
+   release, including automated tests and configured style checks. Changes to parsing, client
+   updates or history/persistence behavior must have regression tests for the changed behavior.
+   This is a verification requirement, not a minimum coverage-percentage target.
 
 
 ### Glossary
