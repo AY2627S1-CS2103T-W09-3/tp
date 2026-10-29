@@ -927,18 +927,28 @@ not lost, and they carry no v1.4 commitment.
 
 --------------------------------------------------------------------------------------------------------------------
 
-## **Appendix: Instructions for manual testing**
+## **Appendix: Instructions for Manual Testing**
 
-Given below are instructions to test the app manually.
+Use the [User Guide](UserGuide.html) for command syntax and the checks below to
+exercise interactions, persistence and UI state. They are starting points for
+exploration, not an exhaustive list of input variations.
 
-Unless stated otherwise, start each subsection in a separate test folder that initially contains only the JAR file.
-This ensures that the five sample clients are loaded and that their indexes are predictable. Back up
-`data/addressbook.json` before any test that edits or removes it.
+Unless stated otherwise, start each level-three section (`###`) in a separate
+writable test folder that initially contains only the JAR. Run the steps within
+that section in order, except where a prerequisite explicitly requests a fresh
+folder. This keeps the five sample clients and their indexes predictable. Enter
+each command separately and press Enter; do not paste two commands together.
+Close the app and back up `data/addressbook.json` before manually changing its
+contents or permissions. Use disposable data for deletion and recovery checks.
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** These instructions only provide a starting point for testers to work on;
-testers are expected to do more *exploratory* testing.
-
-</div>
+| Suggested route | What to observe |
+|---|---|
+| [Launch and shutdown](#launch-and-shutdown) | Initial sample data and saved window preferences. |
+| [Roles](#changing-a-clients-role), [filtered indexes](#using-indexes-from-a-filtered-list) and [requirements](#recording-client-requirements) | Changes target the displayed client and retain unrelated fields. |
+| [Search](#searching-clients-by-name-phone-email-or-address), [filter](#filtering-clients-by-role-tag-and-requirements) and [detail panel](#viewing-a-client-in-the-detail-panel) | Results, indexes and selected details stay consistent. |
+| [Notes](#adding-replacing-and-clearing-a-client-note) and [layout](#checking-the-list-and-detail-panel-layout) | Optional fields, tag overflow and filter status remain visible and readable. |
+| [Undo/redo](#undo-and-redo-across-client-changes), [history controls](#history-controls-and-unfinished-input) and [clear confirmation](#clearing-all-clients-with-confirmation) | Data, history, draft input and selection follow the same command path. |
+| [Role persistence](#saving-and-loading-role-data) and [data recovery](#handling-missing-or-corrupted-data) | Restarted data matches saved changes, and unreadable originals remain recoverable. |
 
 ### Launch and shutdown
 
@@ -971,14 +981,6 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `edit 1 p/99998888`<br>
       Expected: Alicia's phone number changes to `99998888`, and her `Seller` badge remains displayed.
-
-   1. Test case: `role 1 BUYER`<br>
-      Expected: Role input is case-insensitive. Alicia's badge changes to `Buyer`. The result box shows
-      `Role updated: Alicia Tan is now marked as Buyer`.
-
-   1. Test case: `role 1 both`<br>
-      Expected: Alicia's badge changes to `Buyer, Seller`. The result box shows
-      `Role updated: Alicia Tan is now marked as Buyer, Seller`.
 
    1. Test case: `role 1 none`<br>
       Expected: Alicia has no role badge. The result box shows
@@ -1472,12 +1474,46 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `list`<br>
       Expected: The list refreshes and the detail panel returns to `Select a client to see details.`.
 
+1. Compact cards and tag overflow
+
+   1. Test case: `edit 1 n/Alicia Tan With A Deliberately Long Name For Layout Checks t/firsttime t/viewing t/followup t/urgent t/financingdocumentspending`<br>
+      Expected: The role and note markers remain visible beside the name. Narrow the window until the name
+      and tags no longer fit. The name uses an ellipsis, and tags remain on one row with a `+N` count.
+      Hover over that count to read the hidden tags, then widen the window and confirm it recalculates.
+
+   1. Test case: `view 1`<br>
+      Expected: The full name and all five tags are available in the detail panel. At a short window height,
+      the detail panel scrolls rather than losing its lower fields. Check actual display scaling using the
+      [Testing guide](Testing.md#manual-display-scaling-checks); resizing alone does not test scaling.
+
 1. Distinguishing an active search from the full list
 
    1. Prerequisites: Start with the five sample clients. Run `find example.com`.
 
    1. Expected: All five clients match, but the footer shows `5 of 5 clients (filtered; use list)`.
       Run `list` and confirm that it returns to `5 clients`.
+
+### Undo and redo across client changes
+
+Start a fresh session with the five sample clients. Run the commands below in
+order; these checks exercise history across multiple commands rather than
+repeat their individual syntax rules.
+
+| Command | Expected result |
+|---|---|
+| `add n/History Probe p/90000992 e/history.probe@example.com a/1 Test Road` | A sixth client is added. |
+| `edit 6 p/90000993` | Only the new client's phone changes. |
+| `delete 6` | The new client disappears; five clients remain. |
+| `undo` | The deleted client returns at index 6 with phone `90000993`. Use `view 6` to inspect it. |
+| `undo` | The phone reverts to `90000992`. The read-only `view` did not add an undo entry. |
+| `redo` | The phone becomes `90000993` again. |
+| `history` | The edit is the next undo action, and the deletion is the next redo action. |
+| `note 6 Called after viewing` | The note is saved, and this new change discards the pending redo action. |
+| `redo` | The result reports `There is no action to redo`; the client and note stay unchanged. |
+
+Exit and restart from the same folder. `view 6` should show the updated phone
+and note, while `history` reports empty undo and redo stacks: client data is
+persistent, but command history lasts only for the session.
 
 ### History controls and unfinished input
 
