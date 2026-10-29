@@ -42,7 +42,7 @@ public class ParserUtil {
 
     /**
      * Parses a {@code String name} into a {@code Name}.
-     * Leading and trailing whitespaces will be trimmed.
+     * Leading and trailing whitespaces will be trimmed, and each run of spaces inside the name becomes one space.
      *
      * @throws ParseException if the given {@code name} is invalid.
      */
@@ -52,7 +52,7 @@ public class ParserUtil {
         if (!Name.isValidName(trimmedName)) {
             throw new ParseException(Name.MESSAGE_CONSTRAINTS);
         }
-        return new Name(trimmedName);
+        return new Name(Name.collapseSpaces(trimmedName));
     }
 
     /**

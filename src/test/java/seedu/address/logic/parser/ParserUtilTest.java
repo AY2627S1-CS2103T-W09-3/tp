@@ -91,6 +91,15 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parseName_validValueWithExtraInternalSpaces_returnsNameWithSingleSpaces() throws Exception {
+        Name expectedName = new Name("Alpha Tester");
+        assertEquals(expectedName, ParserUtil.parseName("Alpha  Tester"));
+        assertEquals(expectedName, ParserUtil.parseName("Alpha     Tester"));
+        assertEquals(expectedName, ParserUtil.parseName(WHITESPACE + "Alpha   Tester" + WHITESPACE));
+        assertEquals(new Name("Alpha Tester Lim"), ParserUtil.parseName("Alpha  Tester   Lim"));
+    }
+
+    @Test
     public void parsePhone_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> ParserUtil.parsePhone((String) null));
     }

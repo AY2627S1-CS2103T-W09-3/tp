@@ -155,6 +155,8 @@ The `Model` component,
 
 </div>
 
+**Why duplicate names ignore extra spaces.** `Person#isSamePerson` treats two clients as the same if their names match, or their phone numbers or email addresses are equal. `Name#isSameName` compares names ignoring case, leading and trailing spaces, and extra spaces between words, using `Name#collapseSpaces`. `Alpha  Tester` is therefore the same client as `Alpha Tester`, because an accidental extra space would otherwise create a second record for the same person. `ParserUtil#parseName` also collapses the spaces, so the name is stored as `Alpha Tester` and `find Alpha Tester` still finds it. The comparison still collapses spaces itself, so a name loaded from a data file that has extra spaces is compared in the same way.
+
 
 ### Storage component
 
@@ -919,6 +921,10 @@ testers are expected to do more *exploratory* testing.
       Expected: No client is added. The result box shows
       `Error: A client with this name already exists in the client book.`
 
+   1. Test case: `add n/Alicia  Tan p/81111111 e/alicia.test@example.com a/1 Test Road` (two spaces between `Alicia` and `Tan`)<br>
+      Expected: No client is added, because extra spaces do not make the name different. The result box shows
+      `Error: A client with this name already exists in the client book.`
+
    1. Test case: `add n/Test Buyer p/81234567 e/test.buyer@example.com a/2 Test Road`<br>
       Expected: No client is added. The result box shows
       `Error: This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
@@ -934,6 +940,10 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `edit 2 p/81234567`<br>
       Expected: Benjamin's details are unchanged. The result box shows
       `Error: This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+
+   1. Test case: `add n/Test  Spacing p/89990001 e/test.spacing@example.com a/4 Test Road` (two spaces between `Test` and `Spacing`)<br>
+      Expected: The client is added with the name `Test Spacing`, with a single space. Run `list` and `delete` on this
+      client afterwards to leave the sample data as it was.
 
 ### Using indexes from a filtered list
 
