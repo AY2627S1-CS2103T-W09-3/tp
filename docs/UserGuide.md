@@ -89,7 +89,7 @@ These rules apply when adding or editing clients.
 
 | Field | Rules |
 |---|---|
-| Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. Extra spaces between words are reduced to one, so `n/Alpha  Tester` is stored as `Alpha Tester`. |
+| Name | Must start with a letter or number. Supports Unicode letters (including accented letters), combining marks, numbers, spaces, apostrophes (`'` and `’`), hyphens (`-`) and slashes (`/`), e.g. `Anne-Marie Tan`, `José Tan` and `Kumar s/o Ravi`. Extra spaces between words are reduced to one. |
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
 | Address | Cannot be blank. Free text, so the abbreviations `s/o` and `b/c` stay part of the address; a short word such as `s/ab` is read as an asking price and rejected. |
@@ -117,12 +117,16 @@ Prefix rules:
 * Repeat `l/` to supply multiple areas, such as `l/Bedok l/Tampines`.
 * Repeat `h/` to supply multiple housing types, such as `h/HDB h/Condo`.
 * For `edit`, an empty `b/`, `s/`, `l/` or `h/` clears that field. In `add`, an empty prefix is an error.
+* Inside `n/NAME`, the whole relationship markers `s/o`, `d/o`, `a/l` and `a/p` are kept as part of the name, ignoring their capitalization. For example, `n/Kumar s/o Ravi s/950000` records the name `Kumar s/o Ravi` and an asking price of $950,000. Other field prefixes still end the name.
+* If an address starts with `L` or `P` as a whole word (ignoring case), put the address before the name: `edit 1 a/P Ryan Road n/Bob`. Writing `edit 1 n/Bob a/P Ryan Road` instead stores `Bob a/P Ryan Road` as the name and leaves the address unchanged.
+* Other slash text, such as `x/y`, is also valid in names: `n/Bob x/y` stores the name `Bob x/y`. Check field prefixes for typing errors.
 
 ### Duplicate clients
 
 An `add` or `edit` command is rejected if it would match another client's:
 
 * Name, ignoring case and extra spaces. For example, `Alpha  Tester` (with two spaces) matches `Alpha Tester`.
+  Accented letters are stored in a standard Unicode form, so typing the same accent using a separate combining mark does not create a different name.
 * Phone number exactly.
 * Email address, ignoring case. For example, `alpha.tester@EXAMPLE.COM` matches `alpha.tester@example.com`.
 
@@ -346,8 +350,9 @@ Formats:
 * `note INDEX clear` to clear a note.
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
-* `TEXT` can contain spaces and must contain between 1 and 500 characters after `\n` is decoded and surrounding whitespace is removed.
+* `TEXT` can contain spaces and must contain between 1 and 500 characters after escape sequences are decoded and surrounding whitespace is removed.
 * Type the two characters `\n` where a line break should appear in the note.
+* Type `\\` where a literal backslash should appear. For example, type `\\n` to store the two characters `\n` without creating a line break.
 * Only the exact lowercase text `clear`, after surrounding whitespace is removed, clears the note.
 * Other capitalization and text containing `clear` are stored as ordinary note text.
 * The currently displayed client filter remains active after setting or clearing a note.
@@ -357,6 +362,7 @@ Examples:
 
 * `note 1 Call again next Monday` adds or replaces the first displayed client's note.
 * `note 2 First line\nSecond line` stores a note containing two lines.
+* `note 2 Saved at C:\\new folder\\notes` stores `Saved at C:\new folder\notes` without changing either `\n` into a line break.
 * `note 3 clear` clears the third displayed client's note.
 * `note 1 Clear` stores `Clear` as ordinary note text.
 * `note 1 CLEAR` stores `CLEAR` as ordinary note text.

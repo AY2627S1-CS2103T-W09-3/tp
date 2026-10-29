@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 public class NameTest {
@@ -61,8 +63,36 @@ public class NameTest {
 
     @Test
     public void messageConstraints_hasExpectedWording() {
-        assertEquals("Name should only contain alphanumeric characters and spaces, and it should not be blank",
+        assertEquals("Names must start with a letter or number and contain only letters, numbers, spaces, "
+                + "apostrophes (' or ’), hyphens (-), or slashes (/).",
                 Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void isValidName_commonNameForms_returnsTrue() {
+        for (String name : List.of("Anne-Marie Tan", "José Tan", "Jose\u0301 Tan", "D'Arcy Tan", "D’Arcy Tan",
+                "Kumar s/o Ravi", "Devi d/o Ravi", "Arun a/l Mani", "Devi a/p Mani", "陈伟", "அருண்")) {
+            assertTrue(Name.isValidName(name), name);
+        }
+    }
+
+    @Test
+    public void isValidName_unsupportedCharacters_returnsFalse() {
+        for (String name : List.of("-", "/", "'", "’", "\u0301Jose", "Anne_Marie", "José@", "José\tTan",
+                "José\nTan", " Anne-Marie")) {
+            assertFalse(Name.isValidName(name), name);
+        }
+    }
+
+    @Test
+    public void constructor_canonicallyEquivalentNames_normalizesUnicode() {
+        Name composed = new Name("José Tan");
+        Name decomposed = new Name("Jose\u0301 Tan");
+
+        assertEquals("José Tan", decomposed.fullName);
+        assertEquals(composed, decomposed);
+        assertEquals(composed.hashCode(), decomposed.hashCode());
+        assertTrue(composed.isSameName(decomposed));
     }
 
     @Test

@@ -1,5 +1,7 @@
 package seedu.address.logic.parser;
 
+import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +19,8 @@ import java.util.stream.Collectors;
  */
 public class ArgumentTokenizer {
 
+    private static final List<String> NAME_RELATIONSHIP_MARKERS = List.of("s/o", "d/o", "a/l", "a/p");
+
     /**
      * Abbreviations that legitimately appear inside an address value and must not be read as a numeric field.
      * Only a numeric prefix, such as the budget {@code b/} or the asking price {@code s/}, consults this set.
@@ -26,6 +30,7 @@ public class ArgumentTokenizer {
     /**
      * Tokenizes an arguments string and returns an {@code ArgumentMultimap} object that maps prefixes to their
      * respective argument values. Only the given prefixes will be recognized in the arguments string.
+     * Whole relationship markers such as {@code s/o} and {@code a/l} within a {@code n/} field remain in the name.
      *
      * @param argsString Arguments string of the form: {@code preamble <prefix>value <prefix>value ...}
      * @param prefixes   Prefixes to tokenize the arguments string with
@@ -136,6 +141,7 @@ public class ArgumentTokenizer {
 
         // Sort by start position
         prefixPositions.sort((prefix1, prefix2) -> prefix1.getStartPosition() - prefix2.getStartPosition());
+        prefixPositions = preserveNameMarkers(argsString, prefixPositions);
 
         // Insert a PrefixPosition to represent the preamble
         PrefixPosition preambleMarker = new PrefixPosition(new Prefix(""), 0);
@@ -155,6 +161,37 @@ public class ArgumentTokenizer {
         }
 
         return argMultimap;
+    }
+
+    /**
+     * Keeps relationship markers inside a name from being mistaken for asking-price or address prefixes.
+     */
+    private static List<PrefixPosition> preserveNameMarkers(String argsString, List<PrefixPosition> positions) {
+        List<PrefixPosition> fieldPositions = new ArrayList<>();
+        Prefix currentPrefix = null;
+        for (PrefixPosition position : positions) {
+            if (PREFIX_NAME.equals(currentPrefix)
+                    && isNameRelationshipMarker(argsString, position.getStartPosition())) {
+                continue;
+            }
+            fieldPositions.add(position);
+            currentPrefix = position.getPrefix();
+        }
+        return fieldPositions;
+    }
+
+    /**
+     * Returns true if a whole relationship marker begins at {@code start}, ignoring case.
+     */
+    static boolean isNameRelationshipMarker(String argsString, int start) {
+        for (String marker : NAME_RELATIONSHIP_MARKERS) {
+            int end = start + marker.length();
+            if (argsString.regionMatches(true, start, marker, 0, marker.length())
+                    && (end == argsString.length() || Character.isWhitespace(argsString.charAt(end)))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

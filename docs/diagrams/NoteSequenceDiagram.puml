@@ -15,11 +15,21 @@ activate Util
 Util --> NoteParser : index
 deactivate Util
 
+NoteParser -> Util : parseNote(rawText)
+activate Util
+note over Util
+Decode escapes once, left to right:
+backslash-n becomes a line break;
+two backslashes become one literal backslash.
+Preserve unknown and trailing backslashes.
+Trim and validate the decoded text (1-500 characters).
+end note
+Util --> NoteParser : note:Note
+deactivate Util
+
 note over NoteParser
-Decode literal backslash-n to a line break,
-then trim surrounding whitespace.
-Validate the decoded note text (1-500 characters).
-Only the exact decoded text clear removes a note.
+Check the decoded, trimmed value for clear.
+Only exact lowercase clear removes the note.
 end note
 
 create Command

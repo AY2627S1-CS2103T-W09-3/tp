@@ -157,6 +157,31 @@ How the parsing works:
 * When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
+`ArgumentTokenizer` keeps whole relationship markers (`s/o`, `d/o`, `a/l` and `a/p`,
+ignoring case) within the current `n/` field. It processes candidate prefixes in
+input order, so `s/o` inside a name does not become an asking-price field, and
+`a/l` or `a/p` does not become an address field. Other prefixes retain their usual
+meaning. `ParserUtil#rejectUnknownPrefixes` tracks the current field and allows
+the same markers within names before tokenization, including uppercase `A/P` and
+`A/L`, while still rejecting uppercase field prefixes elsewhere. Outside names,
+the existing free-text abbreviation rules still apply to `s/o` and `b/c`.
+`Name` validates
+Unicode letters and combining marks, numbers, spaces, apostrophes, hyphens and
+slashes, with a letter or number first. Its constructor normalises Unicode to
+NFC, so composed and decomposed spellings of the same accent compare equally
+for duplicate detection and are saved in the same form. `ParserUtil#parseName`
+also preserves the existing rule that collapses extra spaces, and
+`Name#isSameName` ignores extra spaces as well as letter case.
+Search also normalises fields and keywords to NFC, so either spelling of an
+accent finds the saved client without removing the accent itself.
+
+The marker rule makes `n/Bob a/P Ryan Road` ambiguous: the tokenizer keeps
+`a/P Ryan Road` in the name. To record an address starting with the whole word
+`L` or `P` (ignoring case), place it before the name, for example
+`a/P Ryan Road n/Bob`. The User Guide documents this ordering and the fact that
+other slash text, such as `x/y`, can be stored in names. Tokenizer and integration
+tests cover both the ambiguity and the address-first form.
+
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
@@ -324,7 +349,7 @@ with additional conventions and validation that the dedicated field already supp
 
 A note is free-text working detail kept on a client: where a negotiation stands, when to call back, what to prepare for a viewing. It holds 1 to 500 characters after surrounding whitespace is trimmed, and it may contain real line breaks.
 
-**Parsing.** `NoteCommandParser` splits the index from the note text, and the text runs to the end of the line, so it may contain spaces. Because a note is free text, the parser must know where the text ends before it can decode anything: each two-character `\n` is replaced with a real line break, and the result is trimmed of surrounding whitespace. Only then is the text handed to `Note`, which validates it, so `Note` never sees an escape sequence. The lowercase word `clear` is reserved after trimming: only the exact decoded text `clear` clears the note, while `CLEAR` and sentences such as `Please clear the outstanding paperwork` are stored as ordinary text. A blank note or one longer than 500 characters raises a `ParseException` carrying `Notes should be 1 to 500 characters.`
+**Parsing.** `NoteCommandParser` splits the index from the note text, and the text runs to the end of the line, so it may contain spaces. The parser delegates ordinary note text to `ParserUtil#parseNote`, which scans it once from left to right: `\n` becomes a real line break, `\\` becomes a literal backslash, and an unrecognised or trailing backslash is preserved. This makes `\\n` an escaped backslash followed by `n`, so users can store a literal `\n` in paths and other text. The decoded result is trimmed of surrounding whitespace and handed to `Note` for validation. The lowercase word `clear` is reserved after trimming surrounding whitespace: only `clear` clears the note, while `CLEAR` and sentences such as `Please clear the outstanding paperwork` are stored as ordinary text. A blank note or one longer than 500 decoded characters raises a `ParseException` carrying `Notes should be 1 to 500 characters.`
 
 **Executing.** `NoteCommand` builds a new `Person` that carries the new note, or no note for the clear form, and copies every other field from the client being edited, then calls `Model#setPerson`. It does not touch the filtered list, so an active search or filter stays in effect. The result message is `Note updated for <name>.` or `Note cleared for <name>.`
 
@@ -1030,7 +1055,7 @@ The preserved backup remains available for Agent to inspect or recover separatel
 | **Asking Price**                 | The price a seller is asking for their property, in whole Singapore dollars.                                                                                                       |
 | **Area**                         | One of 32 Singapore planning areas a client wants to buy in. Stored in title case.                                                                                                 |
 | **Housing Type**                 | One of `HDB`, `Condo`, `EC` or `Landed`.                                                                                                                                           |
-| **Note**                         | Up to 500 characters of free text attached to a client. The two characters `\n` store a line break.                                                                                |
+| **Note**                         | Up to 500 characters of free text attached to a client. `\n` stores a line break and `\\` stores a literal backslash.                                                             |
 | **Sample Data**                  | A set of realistic, pre-loaded dummy client records provided to help new agents explore and learn the application's features safely before clearing it to start their actual work. |
 | **Displayed index** | A one-based position in the currently displayed client list. It is not a permanent client identifier and can change after a search, filter or data update. |
 | **Active predicate** | The rule selecting clients for the displayed list. `find`, `filter` and `list` replace this rule rather than stack rules from earlier commands. |
@@ -1204,6 +1229,27 @@ contents or permissions. Use disposable data for deletion and recovery checks.
 
    1. Test case: `role 1 buyer extra`<br>
       Expected: No role is changed. The result box shows `Error: Invalid command format. Use: role INDEX ROLE.`
+
+### Recording names with common punctuation and accented letters
+
+1. Adding and editing names
+
+   1. Prerequisites: Use a separate test copy of the client book. The phone numbers and email addresses below must be unused.
+
+   1. Test case: `add n/Kumar s/o Ravi p/90010103 e/kumar.ravi@example.com a/3 Test Road`<br>
+      Expected: The client is added with the full name `Kumar s/o Ravi`. No asking-price error is shown.
+
+   1. Test case: `add n/Anne-Marie Tan p/90010104 e/anne.marie@example.com a/4 Test Road`<br>
+      Expected: The hyphenated name is accepted.
+
+   1. Test case: `add n/José Tan p/90010105 e/jose.tan@example.com a/5 Test Road`<br>
+      Expected: The accented name is accepted. Restart the application and confirm that all three names are retained.
+
+   1. Test case: Run `list`, identify Kumar's current index, then run `edit INDEX n/Arun a/l Mani s/950000`.<br>
+      Expected: The full name becomes `Arun a/l Mani`, and the asking price becomes $950,000. `undo` restores the old name and asking price; `redo` reapplies both changes.
+
+   1. Test case: `edit INDEX n/Kumar s/o Ravi*`, using the same displayed client index.<br>
+      Expected: The result box identifies the invalid name, no client data changes, and no history entry is added.
 
 ### Rejecting duplicate clients
 
@@ -1449,6 +1495,11 @@ contents or permissions. Use disposable data for deletion and recovery checks.
    1. Test case: `note 1 First line\nSecond line`<br>
       Expected: Alicia's note becomes two lines, `First line` and `Second line`. The detail panel shows the note
       with a line break.
+
+1. Using `\\` for a literal backslash
+
+   1. Test case: `note 1 Saved at C:\\new folder\\notes`<br>
+      Expected: Alicia's note becomes `Saved at C:\new folder\notes`, with both backslashes preserved and no line breaks.
 
 1. Clearing a note
 
