@@ -479,6 +479,21 @@ simpler rule, because a letter can be a real value there: `n/Al` and `t/s` are
 valid input, so a word such as `n/a` inside an address still reads as a name
 prefix and is reported as a repeated field.
 
+The guard runs before the tokenizer. `ParserUtil#rejectUnknownPrefixes` scans the
+arguments for any word of one to three letters followed by a slash, and reports the
+first such word that follows a recognised prefix and is not one itself, because
+`ArgumentTokenizer` would otherwise fold it into the previous value:
+`a/1 Road B/400000-600000` stores the budget text inside the address. Matching is
+case-sensitive, like the tokenizer, so a known prefix typed in the wrong case is
+reported instead of being accepted here and then ignored there. A word is reported
+only when its first letter begins a prefix anywhere in `CliSyntax`, which catches a
+mistyped prefix such as `bb/` and a prefix belonging to another command, such as
+`r/` in `add`, while `c/o` and `w/` in an address stay text. The cost is that
+address text beginning like a prefix, such as `Tel/Fax` or `nr/`, is reported as
+unknown, and the User Guide states that limit. A word before the first recognised
+prefix is not reported, because the command parsers reject a non-empty preamble with
+their own message.
+
 ### Filter command
 
 `filter` narrows the displayed clients by role and tag. It uses the same filtered list as `find` and `list`, so the three commands share one active predicate and the latest of them wins.

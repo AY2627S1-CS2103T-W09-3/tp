@@ -95,6 +95,8 @@ These rules apply when adding or editing clients.
 | Housing type | `HDB`, `Condo`, `EC` or `Landed`, ignoring case. |
 | Tag | Letters and numbers only; no spaces or symbols. |
 
+Prefixes are case-sensitive and must be lowercase, so `B/400000` is not read as a budget. A slash word that begins like a prefix but is not one, such as `bb/`, is reported as `Unknown prefix: bb/` rather than kept as text, and so is a prefix from another command, such as `r/`. A few address fragments that begin like a prefix, such as `Tel/Fax` or `nr/`, are reported the same way.
+
 Email rules:
 
 * Before `@`, use letters, digits and the symbols `+`, `_`, `.`, `-`.
