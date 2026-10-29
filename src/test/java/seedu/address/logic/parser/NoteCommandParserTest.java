@@ -38,6 +38,11 @@ public class NoteCommandParserTest {
     }
 
     @Test
+    public void parse_clearWithEscapedSurroundingWhitespace_returnsClearCommand() {
+        assertParseSuccess(parser, "1 \\nclear\\n", new NoteCommand(INDEX_FIRST_PERSON));
+    }
+
+    @Test
     public void parse_uppercaseClear_isOrdinaryText() {
         assertParseSuccess(parser, "1 CLEAR",
                 new NoteCommand(INDEX_FIRST_PERSON, new Note("CLEAR")));

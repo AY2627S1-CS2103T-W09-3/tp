@@ -6,6 +6,7 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Note;
 
 /**
  * Parses input arguments and creates a new {@code NoteCommand} object.
@@ -30,10 +31,11 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         }
 
         String rawText = arguments.length == 2 ? arguments[1] : "";
-        if (rawText.trim().equals("clear")) {
+        Note note = ParserUtil.parseNote(rawText);
+        if (note.value.equals("clear")) {
             return new NoteCommand(index);
         }
 
-        return new NoteCommand(index, ParserUtil.parseNote(rawText));
+        return new NoteCommand(index, note);
     }
 }
