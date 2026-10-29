@@ -46,18 +46,24 @@ The following provides a quick overview of the main components and their interac
 
 The bulk of the app's work is done by the following four components:
 
-* [**`UI`**](#ui-component): The UI of the App.
-* [**`Logic`**](#logic-component): The command executor.
-* [**`Model`**](#model-component): Holds the data of the App in memory.
-* [**`Storage`**](#storage-component): Reads data from, and writes data to, the hard disk.
+* [**`UI`**](#ui-component): Accepts commands and displays client lists, profiles and feedback.
+* [**`Logic`**](#logic-component): Interprets commands and coordinates data changes, saving and session history.
+* [**`Model`**](#model-component): Holds client data, the active list view and undo/redo state in memory.
+* [**`Storage`**](#storage-component): Loads and saves client data and preferences in local JSON files.
 
-[**`Commons`**](#common-classes) represents a collection of classes used by multiple other components.
+[**`Commons`**](#common-classes) provides shared utilities. Its individual dependencies
+are omitted from the overview to avoid clutter; it is not a separate step in command execution.
 
 **How the architecture components interact with each other**
 
 The *Sequence Diagram* below shows how the components interact with each other for the scenario where the user issues the command `delete 1`.
 
 <img src="images/ArchitectureSequenceDiagram.png" width="574" />
+
+### Component boundaries
+
+The following partial class diagram is an implementation roadmap, not another
+architecture-level view. It explains how component boundaries are represented in code.
 
 Each of the four main components (also shown in the diagram above),
 
@@ -117,6 +123,12 @@ The `UI` component,
 
 Here's a (partial) class diagram of the `Logic` component:
 
+`LogicManager` holds one `AddressBookParser` instance, not a parser package.
+Concrete command parsers are expanded in the parser diagram below; the package
+boundary here only groups classes and is not an association endpoint.
+`XYZCommand` represents concrete commands such as `AddCommand` and `FindCommand`.
+Links to Model and Storage end at their API interfaces, not their packages.
+
 <img src="images/LogicClassDiagram.png" width="550"/>
 
 The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
@@ -162,6 +174,9 @@ The `Model` component,
 The following class diagram expands `Person`. Multiplicities distinguish required,
 optional and multi-valued fields; `Price` serves both asking prices and budget bounds.
 Methods and history classes are omitted because this view concerns stored client fields.
+These links are navigable associations, not compositions: immutable field values
+can be reused when a client is replaced or captured in a history snapshot. A field
+does not have an exclusive lifetime tied to one `Person` or `Budget`.
 
 <img src="images/PersonClassDiagram.png" width="340" alt="Client fields and their multiplicities" />
 

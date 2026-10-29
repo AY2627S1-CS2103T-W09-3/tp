@@ -20,17 +20,17 @@ class Area
 enum ClientRole
 enum HousingType
 
-Person *--> "1" Name
-Person *--> "1" Phone
-Person *--> "1" Email
-Person *--> "1" Address
-Person *--> "0..1" Note
-Person *--> "*" Tag
-Person *--> "0..1" Budget
-Person *--> "0..1" Price : asking price
-Person *--> "*" Area
+Person --> "1" Name
+Person --> "1" Phone
+Person --> "1" Email
+Person --> "1" Address
+Person --> "0..1" Note
+Person --> "*" Tag
+Person --> "0..1" Budget
+Person --> "0..1" Price : asking price
+Person --> "*" Area
 Person --> "*" HousingType
 Person --> "0..1" ClientRole
-Budget *--> "1" Price : min
-Budget *--> "1" Price : max
+Budget --> "1" Price : min
+Budget --> "1" Price : max
 @enduml
