@@ -202,6 +202,12 @@ model. It passes the backup path to `UiManager`, which warns the user where the
 original bytes were saved. The backup is created before a command can overwrite
 the data file; if the copy fails, startup does not continue with the empty book.
 
+Preferences use a separate recovery path. `JsonUtil#readJsonFile` rejects a root JSON
+`null`, and `JsonUserPrefsStorage` rejects a preferences object whose `guiSettings` is
+null. Both report `DataLoadingException`, allowing `MainApp#initPrefs` to log the
+problem, use default settings and attempt to save valid preferences. This fallback
+does not replace or rewrite the client data file. Valid saved settings remain unchanged.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.

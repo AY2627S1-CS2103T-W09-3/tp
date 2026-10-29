@@ -86,6 +86,49 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_nullPreferences_usesDefaultsAndPreservesClients() throws Exception {
+        assertInvalidPreferencesUseDefaults("null");
+    }
+
+    @Test
+    public void init_nullGuiSettings_usesDefaultsAndPreservesClients() throws Exception {
+        assertInvalidPreferencesUseDefaults("{\"guiSettings\":null}");
+    }
+
+    @Test
+    public void init_validPreferences_retainsSettingsAndPreservesClients() throws Exception {
+        UserPrefs expected = new UserPrefs();
+        expected.setGuiSettings(new GuiSettings(1000, 700, 100, 200));
+        new JsonUserPrefsStorage(userPrefsPath).saveUserPrefs(expected);
+        AddressBook clients = TypicalPersons.getTypicalAddressBook();
+        new JsonAddressBookStorage(addressBookPath).saveAddressBook(clients);
+        String originalJson = Files.readString(addressBookPath);
+
+        app.init();
+
+        assertEquals(expected, app.model.getUserPrefs());
+        assertEquals(expected, new JsonUserPrefsStorage(userPrefsPath).readUserPrefs().orElseThrow());
+        assertEquals(clients, app.model.getAddressBook());
+        assertEquals(originalJson, Files.readString(addressBookPath));
+    }
+
+    private void assertInvalidPreferencesUseDefaults(String preferencesJson) throws Exception {
+        Files.writeString(userPrefsPath, preferencesJson);
+        AddressBook clients = TypicalPersons.getTypicalAddressBook();
+        new JsonAddressBookStorage(addressBookPath).saveAddressBook(clients);
+        String originalJson = Files.readString(addressBookPath);
+
+        app.init();
+
+        assertNotNull(app.ui);
+        assertEquals(new UserPrefs(), app.model.getUserPrefs());
+        assertEquals(new UserPrefs(), new JsonUserPrefsStorage(userPrefsPath).readUserPrefs().orElseThrow());
+        assertEquals(clients, app.model.getAddressBook());
+        assertEquals(originalJson, Files.readString(addressBookPath));
+        assertTrue(logHandler.messages.stream().anyMatch(message -> message.contains("Using default preferences.")));
+    }
+
+    @Test
     public void init_existingClients_preservesDataFile() throws Exception {
         AddressBook existing = TypicalPersons.getTypicalAddressBook();
         new JsonAddressBookStorage(addressBookPath).saveAddressBook(existing);
