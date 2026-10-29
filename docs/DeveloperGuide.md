@@ -999,18 +999,21 @@ The preserved backup remains available for Agent to inspect or recover separatel
 | Term                             | Definition                                                                                                                                                                         |
 |:---------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **CLI (Command Line Interface)** | A text-based user interface where the agent interacts with the application by typing commands, optimised for speed and keyboard-driven workflows.                                  |
-| **Mainstream OS**                | The supported desktop operating systems: Windows, Linux and macOS. |
 | **Client Role**                  | The classification of a client's relationship with the agent: `Buyer`, `Seller`, or `Both`. A client may also have no assigned role. |
 | **Tag**                          | A custom, meaningful label assigned to a client to group them according to specific attributes relevant to the agent's work.                                                       |
-| **Duplicate Contact**            | A client record that shares a name, phone number or email with another record, which the system detects to prevent fragmented information.                                         |
+| **Duplicate Contact** | A record whose name, phone number or email conflicts with another client's. Name matching ignores case and repeated spaces; email matching ignores case. Any one conflicting field is sufficient. |
 | **Household Record**             | One record kept for couples or co-buyers who share contact details, tagged `t/couple`, since clients cannot share a phone number or email.                                         |
-| **Requirements**                 | The property a client is looking for: a budget range, an asking price, one or more preferred areas and one or more housing types.                                                  |
+| **Client requirements** | The optional property-related fields on a client: budget, asking price, preferred areas and housing types. This domain term is distinct from the software requirements in this appendix. |
 | **Budget**                       | A client's price range, held as a minimum and a maximum whole-dollar amount. The two may be equal.                                                                                 |
 | **Asking Price**                 | The price a seller is asking for their property, in whole Singapore dollars.                                                                                                       |
 | **Area**                         | One of 32 Singapore planning areas a client wants to buy in. Stored in title case.                                                                                                 |
 | **Housing Type**                 | One of `HDB`, `Condo`, `EC` or `Landed`.                                                                                                                                           |
 | **Note**                         | Up to 500 characters of free text attached to a client. The two characters `\n` store a line break.                                                                                |
 | **Sample Data**                  | A set of realistic, pre-loaded dummy client records provided to help new agents explore and learn the application's features safely before clearing it to start their actual work. |
+| **Displayed index** | A one-based position in the currently displayed client list. It is not a permanent client identifier and can change after a search, filter or data update. |
+| **Active predicate** | The rule selecting clients for the displayed list. `find`, `filter` and `list` replace this rule rather than stack rules from earlier commands. |
+| **Snapshot** | An immutable view of the whole client book at a point in time, including hidden clients. It preserves client data, not the active predicate or UI selection. |
+| **History entry** | A saved change's before/after snapshots, command word and action description. Entries move between undo and redo stacks during the current application session; they are not a persistent audit log. |
 
 --------------------------------------------------------------------------------------------------------------------
 
