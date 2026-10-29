@@ -170,10 +170,14 @@ public class ArgumentTokenizerTest {
 
     @Test
     public void tokenize_markerAtEnd_preservesName() {
-        ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" n/Kumar s/o", PREFIX_NAME, PREFIX_ASKING_PRICE);
+        for (String marker : List.of("s/o", "d/o", "a/l", "a/p")) {
+            ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" n/Kumar " + marker,
+                    PREFIX_NAME, PREFIX_ASKING_PRICE, PREFIX_ADDRESS);
 
-        assertArgumentPresent(arguments, PREFIX_NAME, "Kumar s/o");
-        assertArgumentAbsent(arguments, PREFIX_ASKING_PRICE);
+            assertArgumentPresent(arguments, PREFIX_NAME, "Kumar " + marker);
+            assertArgumentAbsent(arguments, PREFIX_ASKING_PRICE);
+            assertArgumentAbsent(arguments, PREFIX_ADDRESS);
+        }
     }
 
     @Test
