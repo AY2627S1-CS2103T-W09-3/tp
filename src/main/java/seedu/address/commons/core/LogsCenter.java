@@ -91,7 +91,7 @@ public class LogsCenter {
             fileHandler.setLevel(Level.ALL);
             baseLogger.addHandler(fileHandler);
         } catch (IOException e) {
-            logger.warning("Error adding file handler for logger.");
+            baseLogger.warning("Error adding file handler for logger.");
         }
     }
 
