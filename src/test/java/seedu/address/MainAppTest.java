@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Handler;
@@ -33,6 +34,11 @@ import seedu.address.testutil.TypicalPersons;
 import seedu.address.ui.Ui;
 
 public class MainAppTest {
+
+    private static final Path CASE_ONLY_EMAILS_FILE = Paths.get("src", "test", "data",
+            "JsonSerializableAddressBookTest", "duplicateEmailCaseAddressBook.json");
+    private static final String ADD_CLIENT_COMMAND =
+            "add n/Recovered Client p/91234567 e/recovered@example.com a/1 Recovered Road";
 
     @TempDir
     public Path temporaryFolder;
@@ -129,6 +135,27 @@ public class MainAppTest {
 
         assertEquals(invalidJson, Files.readString(backup));
         assertEquals(new AddressBook(), new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void init_bookWithCaseOnlyDuplicateEmails_keepsOriginalInBackupAfterNextCommand() throws Exception {
+        String originalJson = Files.readString(CASE_ONLY_EMAILS_FILE);
+        Files.writeString(addressBookPath, originalJson);
+
+        app.init();
+
+        assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+        Path backup = findUnreadableDataBackup();
+        assertEquals(originalJson, Files.readString(backup));
+
+        app.logic.execute(ADD_CLIENT_COMMAND);
+
+        // the first command that changes data replaces the file, and the backup keeps the original text
+        assertEquals(originalJson, Files.readString(backup));
+        AddressBook afterAdd = new AddressBook(
+                new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+        assertEquals(1, afterAdd.getPersonList().size());
+        assertEquals("Recovered Client", afterAdd.getPersonList().get(0).getName().fullName);
     }
 
     @Test

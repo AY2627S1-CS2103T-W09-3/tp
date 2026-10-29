@@ -122,7 +122,7 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name (ignoring case), phone or email.
+     * Returns true if both persons have the same name (ignoring case), phone or email (ignoring case).
      * If any of the 3 are identical, persons are duplicates of each other.
      */
     public boolean isSamePerson(Person otherPerson) {
@@ -132,7 +132,7 @@ public class Person {
         return otherPerson != null
                 && (otherPerson.getName().isSameName(this.name)
                         || otherPerson.getPhone().equals(this.phone)
-                        || otherPerson.getEmail().equals(this.email));
+                        || otherPerson.getEmail().isSameEmail(this.email));
     }
 
     /**

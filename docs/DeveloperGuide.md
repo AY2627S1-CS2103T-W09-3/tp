@@ -147,6 +147,8 @@ The `Model` component,
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
+**Why duplicate emails ignore case.** `Person#isSamePerson` treats two clients as the same if their names match, or their phone numbers or email addresses are equal. It compares emails with `Email#isSameEmail`, which ignores case, because email providers treat `alpha.tester@EXAMPLE.COM` and `alpha.tester@example.com` as one mailbox, so an exact comparison would let the same address into two records. Strictly, only the domain is case-insensitive and the part before `@` may be case-sensitive, but no mainstream provider treats it that way, so the whole address is compared ignoring case. `Email#equals` stays exact, because it defines whether two clients hold identical data, which the undo history and the no-change check in `edit` rely on. The email is stored as it was typed.
+
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
 <img src="images/BetterModelClassDiagram.png" width="700" />
@@ -923,6 +925,10 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `add n/Test Seller p/82222222 e/alicia.tan@example.com a/3 Test Road`<br>
       Expected: No client is added. The result box shows
+      `Error: This email address already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+
+   1. Test case: `add n/Email Case Test p/82222223 e/ALICIA.TAN@EXAMPLE.COM a/5 Test Road`<br>
+      Expected: No client is added, because email addresses are compared ignoring case. The result box shows
       `Error: This email address already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
 
    1. Test case: `edit 2 p/81234567`<br>
