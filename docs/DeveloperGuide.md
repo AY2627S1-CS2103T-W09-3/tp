@@ -428,11 +428,11 @@ permission message appears only when a command really writes. A failed write rol
 before the command, shows the access-denied or general storage message, and no history entry has been recorded at
 that point.
 
-**Cost.** Every command serialises the client book twice, once before it executes and once after, which is the
-same order of work as one file write. A command that writes serialises a third time inside `JsonUtil#saveJsonFile`,
-so it does about three times the serialisation work that a save used to do, while a command that only reads pays
-two serialisations and no write. The cost grows with the number of clients, one serialisation per client per
-comparison.
+**Cost.** A command that completes serialises the client book twice, once before it executes and once after, which
+is the same order of work as one file write. A command that writes serialises a third time inside
+`JsonUtil#saveJsonFile`, so it does about three times the serialisation work that a save used to do, while a
+command that only reads pays two serialisations and no write. Input rejected at parsing stops before the first
+comparison. The cost grows with the number of clients, one serialisation per client per comparison.
 
 ### Undo, redo and history
 
@@ -561,8 +561,8 @@ prefix, and is not itself a recognised prefix:
   `w/` in an address stay text.
 * The guard skips the same two abbreviations as the tokenizer, `s/o` and `b/c`, in any letter case, through
   `ArgumentTokenizer#isFreeTextAbbreviation`, so the two classes cannot drift apart.
-* A word before the first recognised prefix is not reported, because every command parser already rejects a
-  non-empty preamble with its own message.
+* A word before the first recognised prefix is not reported. `AddCommandParser` requires that position to be empty
+  and `EditCommandParser` reads it as the index, so a stray word is rejected before the guard is reached.
 
 The error carries `MESSAGE_UNKNOWN_PREFIX` plus the usage of the command that rejected it, so the result box shows
 `Unknown prefix: bb/` followed by the `add` format.
