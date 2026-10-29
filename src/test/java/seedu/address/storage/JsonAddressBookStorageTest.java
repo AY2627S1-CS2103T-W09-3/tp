@@ -3,8 +3,9 @@ package seedu.address.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.HOON;
@@ -166,6 +167,72 @@ public class JsonAddressBookStorageTest {
         try (var files = Files.list(testFolder)) {
             assertEquals(1, files.count());
         }
+    }
+
+    @Test
+    public void saveAddressBook_replacementAndCleanupFail_preservesOriginalFailure() throws Exception {
+        // Error-path combination: replacement and cleanup both fail; the original save failure must remain primary.
+        Path filePath = testFolder.resolve("addressBook.json");
+        AddressBook original = new AddressBook();
+        original.addPerson(ALICE);
+        new JsonAddressBookStorage(filePath).saveAddressBook(original);
+        String previousJson = Files.readString(filePath);
+
+        AddressBook updated = new AddressBook(original);
+        updated.addPerson(BOB);
+        IOException replacementFailure = new IOException("Simulated replacement failure");
+        IOException cleanupFailure = new IOException("Simulated cleanup failure");
+        JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(filePath) {
+            @Override
+            void replaceDataFile(Path temporaryFile, Path destination) throws IOException {
+                throw replacementFailure;
+            }
+
+            @Override
+            void deleteTemporaryFile(Path temporaryFile) throws IOException {
+                throw cleanupFailure;
+            }
+        };
+
+        IOException thrown = assertThrows(
+                IOException.class, () -> failingStorage.saveAddressBook(updated));
+        assertSame(replacementFailure, thrown);
+        assertEquals(1, thrown.getSuppressed().length);
+        assertSame(cleanupFailure, thrown.getSuppressed()[0]);
+        assertEquals(previousJson, Files.readString(filePath));
+    }
+
+    @Test
+    public void saveAddressBook_runtimeReplacementAndCleanupFail_preservesOriginalFailure() throws Exception {
+        // A runtime save failure must remain primary even when temporary-file cleanup also fails.
+        Path filePath = testFolder.resolve("addressBook.json");
+        AddressBook original = new AddressBook();
+        original.addPerson(ALICE);
+        new JsonAddressBookStorage(filePath).saveAddressBook(original);
+        String previousJson = Files.readString(filePath);
+
+        AddressBook updated = new AddressBook(original);
+        updated.addPerson(BOB);
+        IllegalStateException replacementFailure = new IllegalStateException("Simulated replacement failure");
+        IOException cleanupFailure = new IOException("Simulated cleanup failure");
+        JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(filePath) {
+            @Override
+            void replaceDataFile(Path temporaryFile, Path destination) {
+                throw replacementFailure;
+            }
+
+            @Override
+            void deleteTemporaryFile(Path temporaryFile) throws IOException {
+                throw cleanupFailure;
+            }
+        };
+
+        IllegalStateException thrown = assertThrows(
+                IllegalStateException.class, () -> failingStorage.saveAddressBook(updated));
+        assertSame(replacementFailure, thrown);
+        assertEquals(1, thrown.getSuppressed().length);
+        assertSame(cleanupFailure, thrown.getSuppressed()[0]);
+        assertEquals(previousJson, Files.readString(filePath));
     }
 
     @Test

@@ -7,7 +7,9 @@ import seedu.address.model.Model;
 import seedu.address.model.history.HistoryEntry;
 import seedu.address.model.history.HistoryOperationException;
 
-/** Reapplies the most recently undone change. */
+/**
+ * Reapplies the most recently undone change.
+ */
 public class RedoCommand extends Command {
     public static final String COMMAND_WORD = "redo";
     public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: redo.";
@@ -26,7 +28,9 @@ public class RedoCommand extends Command {
         return new CommandResult("Redid: " + redoneEntry.getActionDescription());
     }
 
-    /** Returns the exact entry transferred by the most recent successful execution. */
+    /**
+     * Returns the exact entry transferred by the most recent successful execution.
+     */
     public HistoryEntry getRedoneEntry() {
         return redoneEntry;
     }
