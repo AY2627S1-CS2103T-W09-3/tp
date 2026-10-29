@@ -13,6 +13,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ModelManager;
@@ -47,7 +49,7 @@ public class ClientNameIntegrationTest {
     @Test
     public void execute_commonNameForms_addsAndReloadsClients() throws Exception {
         List<String> names = List.of("Kumar s/o Ravi", "Anne-Marie Tan", "José Tan", "D’Arcy O'Neil",
-                "Arun a/l Mani", "Devi a/p Mani", "Devi d/o Ravi", "陈伟");
+                "Arun A/L Mani", "Devi A/P Mani", "Devi d/o Ravi", "陈伟");
         for (int i = 0; i < names.size(); i++) {
             addClient(names.get(i), i + 1);
             assertEquals(new Name(names.get(i)), model.getFilteredPersonList().get(i).getName());
@@ -101,6 +103,60 @@ public class ClientNameIntegrationTest {
     }
 
     @Test
+    public void execute_accentedNameWithExtraSpaces_normalizesAndRejectsDuplicate() throws Exception {
+        addClient("Jose\u0301   Tan", 1);
+        assertEquals("José Tan", model.getFilteredPersonList().getFirst().getName().fullName);
+        AddressBookSnapshot before = model.captureSnapshot();
+
+        assertThrows(CommandException.class, Messages.MESSAGE_DUPLICATE_NAME, () -> addClient("JOSÉ  Tan", 2));
+
+        assertEquals(before, model.captureSnapshot());
+        assertEquals(1, model.getUndoHistory().size());
+        assertEquals("José Tan", addressBookStorage.readAddressBook().orElseThrow()
+                .getPersonList().getFirst().getName().fullName);
+    }
+
+    @Test
+    public void execute_relationshipMarkersInNameAndAddress_preservesFields() throws Exception {
+        logic.execute("add n/Arun A/L Mani p/90010103 e/arun@example.com"
+                + " a/3 Test Road S/o Ravi s/950000");
+
+        Person client = model.getFilteredPersonList().getFirst();
+        assertEquals(new Name("Arun A/L Mani"), client.getName());
+        assertEquals("3 Test Road S/o Ravi", client.getAddress().value);
+        assertEquals(new Price("950000"), client.getAskingPrice());
+        assertEquals(model.getAddressBook(), addressBookStorage.readAddressBook().orElseThrow());
+
+        logic.execute("edit 1 n/Devi A/P Mani s/850000");
+
+        Person edited = model.getFilteredPersonList().getFirst();
+        assertEquals(new Name("Devi A/P Mani"), edited.getName());
+        assertEquals("3 Test Road S/o Ravi", edited.getAddress().value);
+        assertEquals(new Price("850000"), edited.getAskingPrice());
+        assertEquals(model.getAddressBook(), addressBookStorage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void execute_unknownOrUppercasePrefix_rejectsWithoutChangingData() throws Exception {
+        addClient("Original Client", 1);
+        AddressBookSnapshot before = model.captureSnapshot();
+        String saved = Files.readString(addressBookStorage.getAddressBookFilePath());
+
+        for (String prefix : List.of("B/", "bb/", "r/", "A/")) {
+            String expected = String.format(Messages.MESSAGE_UNKNOWN_PREFIX, prefix);
+            assertThrows(ParseException.class, expected + "\n" + AddCommand.MESSAGE_USAGE, () ->
+                    logic.execute("add n/Arun A/L Mani p/90010102 e/new@example.com a/3 Test Road "
+                            + prefix + "400000"));
+            assertThrows(ParseException.class, expected + "\n" + EditCommand.MESSAGE_USAGE, () ->
+                    logic.execute("edit 1 n/Arun A/L Mani a/3 Test Road " + prefix + "400000"));
+        }
+
+        assertEquals(before, model.captureSnapshot());
+        assertEquals(1, model.getUndoHistory().size());
+        assertEquals(saved, Files.readString(addressBookStorage.getAddressBookFilePath()));
+    }
+
+    @Test
     public void execute_findEquivalentAccentSpellings_findsSavedClient() throws Exception {
         addClient("Jose\u0301 Tan", 1);
 
@@ -134,7 +190,7 @@ public class ClientNameIntegrationTest {
             logic.execute("add n/Valid Client s/office p/90010103 e/client@example.com a/3 Test Road");
         });
         assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> {
-            logic.execute("add n/Valid Client p/90010103 e/client@example.com a/3 Test Road s/o");
+            logic.execute("add n/Valid Client p/90010103 e/client@example.com a/3 Test Road s/ab");
         });
 
         assertTrue(model.getFilteredPersonList().isEmpty());

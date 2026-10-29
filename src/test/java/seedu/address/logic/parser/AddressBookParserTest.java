@@ -91,7 +91,11 @@ public class AddressBookParserTest {
     @Test
     public void parseCommand_exit() throws Exception {
         assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD) instanceof ExitCommand);
-        assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD + " 3") instanceof ExitCommand);
+        assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD + "  ") instanceof ExitCommand);
+        assertThrows(ParseException.class, ExitCommand.MESSAGE_INVALID_FORMAT, () ->
+                parser.parseCommand(ExitCommand.COMMAND_WORD + " 3"));
+        assertThrows(ParseException.class, ExitCommand.MESSAGE_INVALID_FORMAT, () ->
+                parser.parseCommand(ExitCommand.COMMAND_WORD + " now"));
     }
 
     @Test
@@ -106,21 +110,29 @@ public class AddressBookParserTest {
     public void parseCommand_filter() throws Exception {
         FilterCommand command = (FilterCommand) parser.parseCommand(
                 FilterCommand.COMMAND_WORD + " r/buyer t/urgent");
-        PersonMatchesFilterPredicate predicate =
-                new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of(new Tag("urgent")));
+        PersonMatchesFilterPredicate predicate = new PersonMatchesFilterPredicate.Builder()
+                .withRole(ClientRole.BUYER).withTags(Set.of(new Tag("urgent"))).build();
         assertEquals(new FilterCommand(predicate), command);
     }
 
     @Test
     public void parseCommand_help() throws Exception {
         assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD) instanceof HelpCommand);
-        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD + " 3") instanceof HelpCommand);
+        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD + "  ") instanceof HelpCommand);
+        assertThrows(ParseException.class, HelpCommand.MESSAGE_INVALID_FORMAT, () ->
+                parser.parseCommand(HelpCommand.COMMAND_WORD + " 3"));
+        assertThrows(ParseException.class, HelpCommand.MESSAGE_INVALID_FORMAT, () ->
+                parser.parseCommand(HelpCommand.COMMAND_WORD + " me please"));
     }
 
     @Test
     public void parseCommand_list() throws Exception {
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + "  ") instanceof ListCommand);
+        assertThrows(ParseException.class, ListCommand.MESSAGE_INVALID_FORMAT, () ->
+                parser.parseCommand(ListCommand.COMMAND_WORD + " 3"));
+        assertThrows(ParseException.class, ListCommand.MESSAGE_INVALID_FORMAT, () ->
+                parser.parseCommand(ListCommand.COMMAND_WORD + " extra"));
     }
 
     @Test
