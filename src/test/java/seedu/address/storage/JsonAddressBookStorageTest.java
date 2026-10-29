@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
@@ -28,6 +29,8 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.Area;
+import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
@@ -294,5 +297,38 @@ public class JsonAddressBookStorageTest {
 
         assertEquals(JsonAddressBookStorage.toPersistedJson(first),
                 JsonAddressBookStorage.toPersistedJson(second));
+    }
+
+    @Test
+    public void toPersistedJson_tagsAddedInDifferentOrder_returnsSameText() {
+        // "an" and "c0" share a hash code, so a set lists them in the order they were added.
+        Person anFirst = new PersonBuilder().withName("Amy Bee").withTags("an", "c0").build();
+        Person c0First = new PersonBuilder().withName("Amy Bee").withTags("c0", "an").build();
+
+        assertEquals(JsonAddressBookStorage.toPersistedJson(anFirst),
+                JsonAddressBookStorage.toPersistedJson(c0First));
+    }
+
+    @Test
+    public void toPersistedJson_tagsAreasAndHousingTypes_areWrittenInSortedOrder() {
+        Person person = new PersonBuilder().withTags("c0", "an")
+                .withAreas(Set.of(new Area("Tampines"), new Area("Bedok")))
+                .withHousingTypes(Set.of(HousingType.LANDED, HousingType.HDB, HousingType.EC, HousingType.CONDO))
+                .build();
+
+        String json = JsonAddressBookStorage.toPersistedJson(person);
+
+        assertTrue(json.contains("\"tags\":[\"an\",\"c0\"]"));
+        assertTrue(json.contains("\"areas\":[\"Bedok\",\"Tampines\"]"));
+        assertTrue(json.contains("\"housingTypes\":[\"Condo\",\"EC\",\"HDB\",\"Landed\"]"));
+    }
+
+    @Test
+    public void toPersistedJson_tagsDifferingOnlyInCase_returnsDifferentText() {
+        Person lowerCase = new PersonBuilder().withName("Amy Bee").withTags("urgent").build();
+        Person upperCase = new PersonBuilder().withName("Amy Bee").withTags("Urgent").build();
+
+        assertNotEquals(JsonAddressBookStorage.toPersistedJson(lowerCase),
+                JsonAddressBookStorage.toPersistedJson(upperCase));
     }
 }
