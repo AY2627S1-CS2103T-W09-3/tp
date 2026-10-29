@@ -395,8 +395,9 @@ the text stays right when a command is renamed or gains an argument.
 
 Three commands sit on either side of the rule. `clear` takes one optional argument, `confirm`, in any letter
 case, and rejects everything else in `ClearCommandParser`, for the reasons in
-[Clear confirmation](#clear-confirmation). `find` and `filter` require arguments and reject text before the first
-prefix in their own parsers. Every other command takes arguments, so nothing else calls `parseNoArguments`.
+[Clear confirmation](#clear-confirmation). `find` takes ordinary search words rather than prefixes, and
+`FindCommandParser` rejects an empty list of terms. `filter` reads prefixes, and `FilterCommandParser` rejects text
+before the first one. Every other command takes arguments, so nothing else calls `parseNoArguments`.
 
 ### Writing the data file
 
@@ -579,11 +580,12 @@ four leaves the clause out entirely. A full message therefore reads `New client 
 Email: johntan@example.com; Address: 12 Bedok Road; Requirements: Budget $400,000 to $600,000, Asking $520,000,
 Bedok, Tampines, HDB; Tags: `.
 
-Why the stored values rather than the input: the requirement prefixes are optional and adjacent, so `b/` and `s/`
-are easy to swap, and a range typed into the wrong one is accepted silently. The result box is the last thing the
-agent sees before typing the next command, so it names the values that were actually saved. Because the clause is
-built from the `Person` that was stored, it shows canonical spellings too, so `l/bishan` reads `Bishan`, and a
-field that was cleared disappears: `edit 3 s/` reports no `Asking` part at all.
+Why the stored values rather than the input: the four requirement fields are optional, and the reply is the only
+place that reports what the book now holds for that client. Because the clause is built from the `Person` that was
+stored, it also shows the canonical spelling, so `l/bishan` reads `Bishan`, and a field that was cleared
+disappears: `edit 3 s/` reports no `Asking` part at all. Validation still runs before storage, so the reply never
+reports a value the book refused: a range under `s/`, such as `s/400000-600000`, is rejected as a price rather
+than stored.
 
 Two details follow from the code. With no tags the message still ends with `; Tags: ` and no names, because the
 suffix is appended before the tags are. The parts are in a fixed order set by `describeRequirements`, so the same
@@ -1193,23 +1195,28 @@ testers are expected to do more *exploratory* testing.
 
 ### Read-only commands with an unwritable data folder
 
-1. Read-only commands still work
+1. Commands that do not write
 
-   1. Prerequisites: Run `list` once so that `data/addressbook.json` exists. Make the `data` folder read-only, for
-      example with `chmod 500 data` on macOS or Linux, or by clearing the write permission on the folder in
-      Windows. Back up `data/addressbook.json` first.
+   1. Prerequisites: Add a client, for example `add n/Test Zero p/90000000 e/t0@example.com a/1 Road`, so that
+      `data/addressbook.json` exists; `list` does not create it. Back up the file, then make the `data` folder
+      read-only, for example with `chmod 500 data` on macOS or Linux, or by clearing the write permission on the
+      folder in Windows.
 
    1. Test case: `list`, `find Alicia`, `view 1` and `help`<br>
       Expected: Each command succeeds and the client list is unchanged. None of them writes to the file, so the
       folder permission does not matter.
 
+   1. Test case: `add n/Test Six p/90000006 e/t6@example.com a/3 Road`<br>
+      Expected: The client is not added, and the result box reports `Could not save data to file ... due to
+      insufficient permissions to write to the file or the folder.`
+
    1. Test case: `clear`<br>
       Expected: The warning counts the clients and asks for `clear confirm`. The warning did not change any client
       data, so it needs no write.
 
-   1. Test case: `add n/Test Six p/90000006 e/t6@example.com a/3 Road`<br>
-      Expected: The client is not added, and the result box reports `Could not save data to file ... due to
-      insufficient permissions to write to the file or the folder.`
+   1. Test case: `list`<br>
+      Expected: The result box shows `Clear cancelled.` and the list is unchanged. A pending confirmation consumes
+      the next command, so this step also cancels it before the tests below.
 
    1. Restore the folder permission, for example `chmod 700 data`, so later tests can save.
 
