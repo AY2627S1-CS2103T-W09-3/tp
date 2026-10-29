@@ -1,110 +1,50 @@
 @startuml
 !include style.puml
 skinparam ArrowFontStyle plain
+skinparam ParticipantFontColor #FFFFFF
 
-box Logic LOGIC_COLOR_T1
-participant ":LogicManager" as LogicManager LOGIC_COLOR
-participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
-participant ":RoleCommandParser" as RoleCommandParser LOGIC_COLOR
-participant "<<class>>\nParserUtil" as ParserUtil LOGIC_COLOR
-participant "c:RoleCommand" as RoleCommand LOGIC_COLOR
-participant "result:CommandResult" as CommandResult LOGIC_COLOR
-end box
-
-box Model MODEL_COLOR_T1
-participant "<<class>>\nClientRole" as ClientRole MODEL_COLOR
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant "c:RoleCommand" as Command LOGIC_COLOR
 participant "m:Model" as Model MODEL_COLOR
-participant "editedClient:Person" as Person MODEL_COLOR
-end box
 
-[-> LogicManager : execute("role 1 buyer")
-activate LogicManager
+note over Logic, Command
+Input has been parsed as role 1 buyer.
+The client remains visible after the update.
+end note
 
-LogicManager -> AddressBookParser : parseCommand("role 1 buyer")
-activate AddressBookParser
-
-create RoleCommandParser
-AddressBookParser -> RoleCommandParser
-activate RoleCommandParser
-
-RoleCommandParser --> AddressBookParser
-deactivate RoleCommandParser
-
-AddressBookParser -> RoleCommandParser : parse("1 buyer")
-activate RoleCommandParser
-
-RoleCommandParser -> ParserUtil : parseIndex("1")
-activate ParserUtil
-
-ParserUtil --> RoleCommandParser : index
-deactivate ParserUtil
-
-RoleCommandParser -> ClientRole : isValidRole("buyer")
-activate ClientRole
-
-ClientRole --> RoleCommandParser : true
-deactivate ClientRole
-
-RoleCommandParser -> ClientRole : fromString("buyer")
-activate ClientRole
-
-ClientRole --> RoleCommandParser : BUYER
-deactivate ClientRole
-
-create RoleCommand
-RoleCommandParser -> RoleCommand
-activate RoleCommand
-
-RoleCommand --> RoleCommandParser
-deactivate RoleCommand
-
-RoleCommandParser --> AddressBookParser : c
-deactivate RoleCommandParser
-'Hidden arrow to position the destroy marker below the end of the activation bar.
-RoleCommandParser -[hidden]-> AddressBookParser
-destroy RoleCommandParser
-
-AddressBookParser --> LogicManager : c
-deactivate AddressBookParser
-
-LogicManager -> RoleCommand : execute(m)
-activate RoleCommand
-
-RoleCommand -> Model : getFilteredPersonList()
+Logic -> Command : execute(m)
+activate Command
+Command -> Model : getFilteredPersonList()
 activate Model
-
-Model --> RoleCommand : lastShownList
+Model --> Command : lastShownList
 deactivate Model
 
-create Person
-RoleCommand -> Person
-activate Person
+note over Command
+Validate the displayed index.
+Copy the client with the new role;
+preserve all other fields.
+end note
 
-Person --> RoleCommand
-deactivate Person
-
-RoleCommand -> Model : setPerson(clientToEdit, editedClient)
+Command -> Model : setPerson(clientToEdit, editedClient)
 activate Model
-
-Model --> RoleCommand
+Model --> Command
 deactivate Model
 
-RoleCommand -> Model : getFilteredPersonList()
+Command -> Model : getFilteredPersonList()
 activate Model
-
-Model --> RoleCommand : updated displayed clients
+Model --> Command : updated displayed clients
 deactivate Model
 
-create CommandResult
-RoleCommand -> CommandResult : new CommandResult(feedback, index)
-activate CommandResult
+note over Command
+Find the replacement client's displayed index.
+If hidden, return feedback without a view index.
+end note
 
-CommandResult --> RoleCommand
-deactivate CommandResult
+Command --> Logic : result:CommandResult
+deactivate Command
 
-RoleCommand --> LogicManager : result
-deactivate RoleCommand
-
-[<--LogicManager : result
-deactivate LogicManager
+note over Logic
+Persistence and history recording follow
+the command result and are omitted here.
+end note
 @enduml

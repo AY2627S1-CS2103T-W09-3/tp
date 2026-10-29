@@ -1,0 +1,36 @@
+@startuml
+!pragma layout smetana
+!include style.puml
+left to right direction
+skinparam arrowThickness 1.1
+skinparam arrowColor MODEL_COLOR
+skinparam classBackgroundColor MODEL_COLOR
+skinparam nodesep 12
+
+class Person
+class Name
+class Phone
+class Email
+class Address
+class Note
+class Tag
+class Budget
+class Price
+class Area
+enum ClientRole
+enum HousingType
+
+Person *--> "1" Name
+Person *--> "1" Phone
+Person *--> "1" Email
+Person *--> "1" Address
+Person *--> "0..1" Note
+Person *--> "*" Tag
+Person *--> "0..1" Budget
+Person *--> "0..1" Price : asking price
+Person *--> "*" Area
+Person --> "*" HousingType
+Person --> "0..1" ClientRole
+Budget *--> "1" Price : min
+Budget *--> "1" Price : max
+@enduml

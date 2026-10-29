@@ -29,9 +29,12 @@ Refer to the guide [_Setting up and getting started_](SettingUp.md). When launch
 
 ### Architecture
 
-<img src="images/ArchitectureDiagram.png" width="280" />
+<img src="images/ArchitectureDiagram.png" width="320" alt="High-level application architecture" />
 
 The ***Architecture Diagram*** given above explains the high-level design of the App.
+It is an architectural overview rather than a UML class model: solid arrows show
+associations and dashed arrows show dependencies. The user and document icons
+represent the agent and local files, not implementation classes.
 
 The following provides a quick overview of the main components and their interactions.
 
@@ -63,7 +66,7 @@ Each of the four main components (also shown in the diagram above),
 
 For example, the `Logic` component defines its API in `Logic.java` and implements it in `LogicManager.java`. Other components interact with a component through its interface rather than its concrete class, preventing them from coupling to that component's implementation, as illustrated in the following partial class diagram.
 
-<img src="images/ComponentManagers.png" width="300" />
+<img src="images/ComponentManagers.png" width="335" alt="Component API interfaces and their manager implementations" />
 
 The sections below give more details of each component.
 
@@ -133,7 +136,7 @@ How the `Logic` component works:
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
-<img src="images/ParserClasses.png" width="600"/>
+<img src="images/ParserClasses.png" width="700" alt="Parser dependencies, using XYZ as a representative command" />
 
 How the parsing works:
 * When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
@@ -142,7 +145,10 @@ How the parsing works:
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<img src="images/ModelClassDiagram.png" width="750" />
+The first class diagram focuses on model ownership and the filtered client list;
+client value objects are shown separately below to keep both views readable.
+
+<img src="images/ModelClassDiagram.png" width="500" alt="Model ownership and filtered client list" />
 
 
 The `Model` component,
@@ -153,11 +159,20 @@ The `Model` component,
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
+The following class diagram expands `Person`. Multiplicities distinguish required,
+optional and multi-valued fields; `Price` serves both asking prices and budget bounds.
+Methods and history classes are omitted because this view concerns stored client fields.
+
+<img src="images/PersonClassDiagram.png" width="340" alt="Client fields and their multiplicities" />
+
 **Why duplicate emails ignore case.** `Person#isSamePerson` treats two clients as the same if their names match, or their phone numbers or email addresses are equal. It compares emails with `Email#isSameEmail`, which ignores case, because email providers treat `alpha.tester@EXAMPLE.COM` and `alpha.tester@example.com` as one mailbox, so an exact comparison would let the same address into two records. Strictly, only the domain is case-insensitive and the part before `@` may be case-sensitive, but no mainstream provider treats it that way, so the whole address is compared ignoring case. `Email#equals` stays exact, because it defines whether two clients hold identical data, which the undo history and the no-change check in `edit` rely on. The email is stored as it was typed.
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
-<img src="images/BetterModelClassDiagram.png" width="700" />
+Only the tag-related associations are shown; this is a proposed alternative, not the
+current implementation.
+
+<img src="images/BetterModelClassDiagram.png" width="330" alt="Alternative ownership of shared tags" />
 
 </div>
 
@@ -168,7 +183,7 @@ The `Model` component,
 
 **API** : [`Storage.java`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/storage/Storage.java)
 
-<img src="images/StorageClassDiagram.png" width="550" />
+<img src="images/StorageClassDiagram.png" width="610" alt="Storage interfaces and JSON adapter dependencies" />
 
 The `Storage` component,
 * can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
@@ -248,12 +263,12 @@ Invalid inputs do not change the client's role:
 | The index is zero or has invalid syntax | `Error: Invalid command format. Use: role INDEX ROLE.` |
 | The positive index is outside the currently displayed list, or no clients are displayed | `Error: The client index provided is invalid.` |
 
-The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
+The following sequence diagram focuses on executing an already parsed `role 1 buyer`:
 
-![Interactions for the `role 1 buyer` command](images/RoleSequenceDiagram.png)
+<img src="images/RoleSequenceDiagram.png" width="700" alt="Role command updates a client through the Model API" />
 
 The diagram assumes that the updated client remains visible. It focuses on
-parsing and the model update; snapshot capture, persistence and UI rendering are
+the command's model update; parsing, snapshot capture, persistence and UI rendering are
 omitted. The source is [RoleSequenceDiagram.puml](diagrams/RoleSequenceDiagram.puml).
 
 ### Client role storage
@@ -284,7 +299,11 @@ A note is free-text working detail kept on a client: where a negotiation stands,
 
 **Executing.** `NoteCommand` builds a new `Person` that carries the new note, or no note for the clear form, and copies every other field from the client being edited, then calls `Model#setPerson`. It does not touch the filtered list, so an active search or filter stays in effect. The result message is `Note updated for <name>.` or `Note cleared for <name>.`
 
-![Interactions for the `note 1 Call at 6 PM\non Monday` command](images/NoteSequenceDiagram.png)
+The sequence below isolates the note parser's successful replacement path. It
+omits note-object construction and error paths; executing the resulting command
+uses the same indexed-client update pattern as `role` above.
+
+<img src="images/NoteSequenceDiagram.png" width="740" alt="Parsing a two-line client note" />
 
 **Storing.** `JsonAdaptedPerson` mirrors the note as a string under the `note` key. Because the field carries `@JsonInclude(JsonInclude.Include.NON_NULL)`, a client with no note leaves the key out of the data file entirely. A real line break in the model value is represented by the escaped characters `\n` in the JSON file and is decoded back into a line break when the file is read. A missing key becomes no note, and a value that is blank or longer than 500 characters raises an `IllegalValueException` carrying the same message, so a hand-edited data file is reported rather than silently accepted. A 500-character two-line note therefore survives a restart unchanged.
 
@@ -328,8 +347,9 @@ clear the selection when they do not provide a view index.
 ![Sequence from view 1 to selecting and rendering the first displayed client](images/ViewSequenceDiagram.png)
 
 The diagram shows a successful `view 1` with at least one displayed client and
-no pending clear confirmation. Parser internals, the save check and the
-feedback display are abbreviated to keep the selection flow readable.
+no pending clear confirmation. Logic is treated as a black box so the diagram
+focuses on UI selection and the listener that refreshes the detail panel.
+Rendering details and the feedback display are omitted.
 The source is [ViewSequenceDiagram.puml](diagrams/ViewSequenceDiagram.puml).
 
 **Selection and rendering.** `MainWindow` reads `CommandResult#getViewIndex()`

@@ -1,7 +1,7 @@
 @startuml
 skin rose
 skinparam ActivityFontSize 15
-skinparam ArrowFontSize 12
+skinparam ArrowFontSize 15
 start
 :User executes filter command;
 
@@ -19,7 +19,11 @@ else ([else])
     stop
 endif
 
-:User executes add, edit, delete, role, note or clear confirm;
+:User executes a data-changing command;
+note right
+Successful add, edit, delete, role,
+note or confirmed clear only.
+end note
 :Change the address book;
 :Keep the active predicate;
 :Update the displayed list
