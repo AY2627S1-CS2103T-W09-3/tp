@@ -384,14 +384,15 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 
 ### Commands that take no arguments
 
-`list`, `help`, `exit`, `undo`, `redo` and `history` act on the app or on the command history rather than on
-stored client data, so they take no arguments. `AddressBookParser#parseNoArguments(String, Command, String)`
-rejects any input after the command word with the format message owned by that command, so `list now` reports
-`Invalid command format. Use: list.` and `help 123` reports `Invalid command format. Use: help.`. The message
-names the correct form rather than a generic error, because the extra text is usually an argument borrowed from
-another command, such as `undo 1` typed after `edit 1`, and the correction is the command word alone. The check
-lives in one helper so a new command of this kind cannot forget it, while each command keeps its own message, so
-the text stays right when a command is renamed or gains an argument.
+`list`, `help`, `exit`, `undo`, `redo` and `history` take no arguments, because none of them names a client or a
+field, so the command word already says everything the parser needs.
+`AddressBookParser#parseNoArguments(String, Command, String)` rejects any input after the command word with the
+format message owned by that command, so `list now` reports `Invalid command format. Use: list.` and `help 123`
+reports `Invalid command format. Use: help.`. The message names the correct form rather than a generic error,
+because the extra text is usually an argument borrowed from another command, such as `undo 1` typed after
+`edit 1`, and the correction is the command word alone. The check lives in one helper so a new command of this
+kind cannot forget it, while each command keeps its own message, so the text stays right when a command is
+renamed or gains an argument.
 
 Three commands sit on either side of the rule. `clear` takes one optional argument, `confirm`, in any letter
 case, and rejects everything else in `ClearCommandParser`, for the reasons in
@@ -423,8 +424,9 @@ not the same question as whether the model is equal. Three cases separate the tw
 
 **What the skip gives the user.** Read-only and no-op commands never touch the file, so `list`, `find`, `view`,
 `help`, the initial `clear` warning and rejected input all work when the data folder is not writable, and the
-permission message appears only when a command really writes. A failed write restores the before snapshot and
-shows the access-denied or general storage message, and no history entry has been recorded at that point.
+permission message appears only when a command really writes. A failed write rolls the model back to its state
+before the command, shows the access-denied or general storage message, and no history entry has been recorded at
+that point.
 
 **Cost.** Every command serialises the client book twice, once before it executes and once after, which is the
 same order of work as one file write. A command that writes serialises a third time inside `JsonUtil#saveJsonFile`,
@@ -536,7 +538,7 @@ described under [Rejecting mistyped prefixes](#rejecting-mistyped-prefixes).
 
 Requirement prefixes are optional, so the tokenizer has to decide whether a slash word starts a new field or
 belongs to the value before it. `a/12 Main Street s/o Ravi` shows both readings: taken as a prefix, `s/` becomes
-the asking price and `o Ravi` fails `parsePrice`, which rejects the whole command. `ArgumentTokenizer` therefore
+the asking price and `o Ravi` fails `parsePrice`, which would reject the whole command. `ArgumentTokenizer` therefore
 treats an occurrence of `b/` or `s/` as a new argument unless the word is one of a closed list of abbreviations,
 `s/o` and `b/c`; `c/o` and `w/` were never prefixes, so they always stayed text. The list is closed rather than a
 rule about word length because `s/ab` and `s/o` have the same shape, so no length test separates a mistyped price
