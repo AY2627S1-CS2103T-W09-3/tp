@@ -283,6 +283,26 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_redoSaveAndRollbackFail_reportsHistoryFailure() throws Exception {
+        model = new ModelManager() {
+            @Override
+            public void rollbackRedo(HistoryEntry entry) throws HistoryOperationException {
+                throw new HistoryOperationException("History changed before rollback");
+            }
+        };
+        JsonAddressBookStorage dataFile = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        logic = new LogicManager(model, new StorageManager(dataFile,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+        logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
+        logic.execute("undo");
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_IO_EXCEPTION));
+
+        assertThrows(IllegalStateException.class, "Could not restore history after a failed save", () ->
+                logic.execute("redo"));
+        assertTrue(dataFile.readAddressBook().orElseThrow().getPersonList().isEmpty());
+    }
+
+    @Test
     public void execute_noOpAfterUndo_keepsRedoUntilNextChange() throws Exception {
         logic.execute("add n/Amy Bee p/87654321 e/amy@example.com a/1 Test Road");
         logic.execute("add n/Bob Choo p/81234567 e/bob@example.com a/2 Test Road");

@@ -1,5 +1,7 @@
 package seedu.address.logic;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.logging.Logger;
@@ -103,11 +105,11 @@ public class LogicManager implements Logic {
     private void rollbackFailedSave(Command command, AddressBookSnapshot beforeCommand) {
         try {
             if (command instanceof UndoCommand undoCommand) {
-                assert undoCommand.getUndoneEntry() != null : "Successful undo must retain its history entry";
-                model.rollbackUndo(undoCommand.getUndoneEntry());
+                model.rollbackUndo(requireNonNull(undoCommand.getUndoneEntry(),
+                        "Successful undo must retain its history entry"));
             } else if (command instanceof RedoCommand redoCommand) {
-                assert redoCommand.getRedoneEntry() != null : "Successful redo must retain its history entry";
-                model.rollbackRedo(redoCommand.getRedoneEntry());
+                model.rollbackRedo(requireNonNull(redoCommand.getRedoneEntry(),
+                        "Successful redo must retain its history entry"));
             } else {
                 model.restoreSnapshot(beforeCommand);
             }
