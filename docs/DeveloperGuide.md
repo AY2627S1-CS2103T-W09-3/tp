@@ -555,6 +555,13 @@ not the same question as whether the model is equal. Three cases separate the tw
   file format itself. A field the adapter omits is invisible to both the file and the comparison, so it is never
   saved.
 
+**Keeping equal clients equal as text.** `Person` keeps its tags, areas and housing types in `HashSet`s, which list
+their values by hash code and, when two values share a bucket, by the order they were added. `an` and `c0` have the
+same hash code, so `t/an t/c0` and `t/c0 t/an` list them differently although the clients are equal. `JsonAdaptedPerson`
+therefore writes all three lists in sorted order, so an edit that only reorders values produces the same text, no
+write and no history entry. The sort uses the exact text, so a change of letter case still gives different text and is
+still saved.
+
 **What the skip gives the user.** Read-only and no-op commands never touch the file, so `list`, `find`, `view`,
 `help`, the initial `clear` warning and rejected input all work when the data folder is not writable, and the
 permission message appears only when a command really writes. A failed write rolls the model back to its state
