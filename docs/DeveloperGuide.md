@@ -692,7 +692,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 #### Future requirements
 
-These stories are deliberately out of scope for v1.4. They stay listed so the
+These stories are deliberately out of scope for v1.5. They stay listed so the
 backlog below the shipped features is visible.
 
 | Priority | As a …​ | I want to …​ | So that I can…​ |
@@ -881,7 +881,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 ## **Appendix: Proposed features**
 
 The features below are not implemented. They are kept here so the design work is
-not lost, and they carry no v1.4 commitment.
+not lost, and they carry no v1.5 commitment.
 
 ### Use cases
 
