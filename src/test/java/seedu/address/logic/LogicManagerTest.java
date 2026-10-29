@@ -266,6 +266,19 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_tagEditThatChangesOnlyCase_stillSaves() throws Exception {
+        // Person equality compares tag names, so urgent and Urgent differ; the file must record the new casing.
+        model.addPerson(new PersonBuilder(AMY).withTags("urgent").build());
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("edit 1 t/Urgent");
+
+        assertEquals(1, storage.getSaveCount());
+        Person saved = storage.readAddressBook().orElseThrow().getPersonList().get(0);
+        assertEquals("Urgent", saved.getTags().iterator().next().tagName);
+    }
+
+    @Test
     public void execute_readOnlyCommandsWithTaggedClients_doNotSave() throws Exception {
         model.addPerson(new PersonBuilder(AMY).withTags("urgent", "friend").build());
         CountingAddressBookStorage storage = createCountingStorage();
