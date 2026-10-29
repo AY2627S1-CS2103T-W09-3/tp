@@ -752,7 +752,7 @@ of the data file, not dedicated application commands.
 | `* * *` | property agent | tag contacts using meaningful labels | group clients according to attributes relevant to my work |
 | `* * *` | property agent | exit the application safely | finish a session without losing successfully saved changes |
 | `* *` | new property agent | view realistic sample clients | understand what information the application can manage |
-| `* *` | new property agent | open or copy the User Guide link from the help window | find instructions for the available commands |
+| `* *` | new property agent | copy the User Guide URL from the help window | open the guide in my browser and find instructions for the available commands |
 | `* *` | user ready to begin | clear all sample or experimental data | start with a clean client list |
 | `* *` | property agent | filter contacts by buyer or seller role | focus on the relevant side of my client pipeline |
 | `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
@@ -770,7 +770,7 @@ of the data file, not dedicated application commands.
 | `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
 | `* *` | property agent | redo an undone data-changing action | restore a change I still need |
 | `* *` | property agent | inspect the current session's undo and redo history | understand which changes can be reversed or reapplied |
-| `* *` | keyboard-oriented property agent | use shortcuts to view a client or open help without overwriting my draft | navigate without losing a partially typed command |
+| `* *` | keyboard-oriented property agent | open help or invoke undo and redo through shortcuts without overwriting my draft | access guidance or reverse changes without losing a partially typed command |
 | `* *` | property agent | retain the previous data when saving an update fails | retry a change without leaving an unsaved record in the client book |
 | `* *` | property agent | preserve an unreadable data file before starting with an empty client book | recover the original information rather than overwrite it |
 | `*` | property agent | create a backup of my client records | reduce the risk of losing important information |
@@ -1010,7 +1010,9 @@ The preserved backup remains available for Agent to inspect or recover separatel
 
 1. **Keyboard usability:** With the main window focused, an agent must be able to add, find, view,
    update and delete clients, and request help, using the keyboard without a required mouse action.
-   Opening help or viewing a client through a shortcut must preserve an unfinished command draft.
+   Opening help with F1 or invoking undo/redo through a shortcut must preserve an unfinished
+   command draft. Viewing a client uses the typed `view INDEX` command or a mouse selection;
+   it has no dedicated shortcut.
 2. **Portability:** The same released JAR must launch and support the client-management workflow
    on Windows 11, macOS and desktop Linux with Java 25, a working graphical environment and a
    writable data directory. Each release must be smoke-tested on those OS families; a successful
