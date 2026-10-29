@@ -772,9 +772,10 @@ These use cases cover distinct interactions with meaningful alternatives. Simple
 listing clients, viewing a profile and opening help are covered by the user stories and User Guide.
 Unless stated otherwise, no clear confirmation is pending when a use case begins.
 
-**Shared save-failure extension:** If a data-changing step cannot be saved, the system reports the
-failure and restores the client data and undo/redo history from before that step. The Agent can
-resolve the file-access problem and retry; the unsuccessful change is not reported as completed.
+**Shared extension for UC01 steps 2 and 4, UC02 step 4, UC03 step 4, and UC04 steps 2 and 4:**
+If saving fails, the system reports the failure and retains the client data and undo/redo history
+from before that step. The use case ends without completing that change. After resolving the
+file-access problem, Agent can retry the failed request; earlier successful changes remain saved.
 
 #### UC01: Register and classify a new client
 
@@ -800,7 +801,8 @@ resolve the file-access problem and retry; the unsuccessful change is not report
   Use case resumes at step 1.
 
 * 2a. The new client does not match the active search or filter and is absent from the displayed list.
-  * 2a1. Agent requests to list all clients and identifies the new client's displayed index.
+  * 2a1. Agent requests to list all clients.
+  * 2a2. EstateBookUltraProMax displays all clients, including the newly added client.
 
   Use case resumes at step 3.
 
@@ -813,6 +815,10 @@ resolve the file-access problem and retry; the unsuccessful change is not report
   * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or an error indicating the permitted roles if it is invalid.
 
   Use case resumes at step 3.
+
+* 3c. Agent does not wish to assign a role yet.
+
+  Use case ends. The added client remains saved without an assigned role.
 
 #### UC02: Update a displayed client
 
@@ -852,8 +858,7 @@ resolve the file-access problem and retry; the unsuccessful change is not report
   Use case resumes at step 3.
 
 * 4a. The updated client no longer matches the active search or filter.
-  * 4a1. EstateBookUltraProMax removes the client from the displayed results and clears its selection.
-  * 4a2. Agent can list all clients to locate the updated record.
+  * 4a1. EstateBookUltraProMax removes the client from the matching results while retaining the saved update.
 
   Use case ends.
 
@@ -870,7 +875,7 @@ do not require separate copies of the lookup and invalid-index scenarios.
 
 1. Agent requests to clear the client book.
 2. EstateBookUltraProMax warns how many clients will be removed and requests confirmation.
-3. Agent confirms with `clear confirm` as the next command.
+3. Agent submits the clear confirmation as the next command.
 4. EstateBookUltraProMax clears and saves the whole client book, including clients hidden by a search or filter.
 
    Use case ends.
@@ -882,19 +887,20 @@ do not require separate copies of the lookup and invalid-index scenarios.
 
   Use case ends.
 
+* 1b. Agent requests confirmation directly instead of first requesting to clear the client book.
+  * 1b1. EstateBookUltraProMax reports that no clear is pending and retains all clients.
+
+  Use case resumes at step 1.
+
 * 3a. Agent enters any input other than a valid clear confirmation.
   * 3a1. EstateBookUltraProMax cancels the pending clear without executing that input as another command.
 
   Use case ends. Agent must enter the desired command again to execute it.
 
-* 3b. Agent requests confirmation when no clear is pending.
-  * 3b1. EstateBookUltraProMax reports that no clear is pending and retains all clients.
-
-  Use case resumes at step 1.
-
 #### UC04: Undo and redo a saved change
 
-**Precondition:** Agent has successfully changed client data during the current session.
+**Scope:** Undo/redo actions belong to the current session. Agent can also enter this use case
+at step 3 when an action has already been undone.
 
 **MSS**
 
@@ -941,9 +947,10 @@ do not require separate copies of the lookup and invalid-index scenarios.
 1. Agent launches EstateBookUltraProMax.
 2. EstateBookUltraProMax preserves a backup of the unreadable file.
 3. EstateBookUltraProMax starts with an empty client book and displays a warning identifying the backup location.
-4. Agent can inspect the preserved file or continue entering clients without losing that backup.
 
    Use case ends.
+
+The preserved backup remains available for Agent to inspect or recover separately.
 
 **Extensions**
 
