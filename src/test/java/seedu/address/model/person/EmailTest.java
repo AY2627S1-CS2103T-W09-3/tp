@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 public class EmailTest {
@@ -65,6 +67,33 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("peter_jack@very-very-very-long-example.com")); // long domain name
         assertTrue(Email.isValidEmail("if.you.dream.it_you.can.do.it@example.com")); // long local part
         assertTrue(Email.isValidEmail("e1234567@u.nus.edu")); // more than one period in domain
+    }
+
+    @Test
+    public void isValidEmail_internalDomainHyphens_returnsTrue() {
+        for (String email : List.of("client@foo--bar.com", "client@foo---bar.com", "client@xn--bcher-kva.de",
+                "client@example.xn--p1ai", "client@XN--BCHER-KVA.DE", "client@a--b", "client@a-b",
+                "client@a.b-c", "client@x.ab", "client@ab")) {
+            assertTrue(Email.isValidEmail(email), email);
+        }
+    }
+
+    @Test
+    public void isValidEmail_invalidDomainBoundaries_returnsFalse() {
+        for (String email : List.of("client@--example.com", "client@example--.com", "client@example.--com",
+                "client@example.com--", "client@-.com", "client@example.-", "client@example.c",
+                "client@a..com", "client@.example.com", "client@example.com.", "client@foo_bar.com")) {
+            assertFalse(Email.isValidEmail(email), email);
+        }
+    }
+
+    @Test
+    public void isValidEmail_invalidLocalPartWithDomainHyphens_returnsFalse() {
+        for (String email : List.of("client--name@foo--bar.com", "client..name@foo--bar.com",
+                "-client@foo--bar.com", "client-@foo--bar.com", "client__name@foo--bar.com",
+                "client+-name@foo--bar.com")) {
+            assertFalse(Email.isValidEmail(email), email);
+        }
     }
 
     @Test

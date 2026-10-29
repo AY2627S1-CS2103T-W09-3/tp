@@ -105,7 +105,9 @@ Email rules:
 
 * Before `@`, use letters, digits and the symbols `+`, `_`, `.`, `-`.
 * These symbols cannot appear at the start or end, or consecutively.
-* Domain labels use letters, digits and internal hyphens, separated by dots. The final label must have at least 2 characters.
+* Domain labels use letters, digits and internal hyphens (including consecutive hyphens), separated by dots.
+  The final label must have at least 2 characters.
+  Examples: `client@foo--bar.com` and `client@xn--bcher-kva.de`.
 
 Prefix rules:
 
