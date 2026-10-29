@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.AREA_DESC_AMY;
@@ -353,5 +354,15 @@ public class AddCommandParserTest {
 
         assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + addressWithSlash,
                 new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_uppercaseOrForeignPrefix_failure() {
+        String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
+
+        assertParseFailure(parser, validPerson + " B/400000-600000",
+                String.format(MESSAGE_UNKNOWN_PREFIX, "B/") + "\n" + AddCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, validPerson + " r/buyer",
+                String.format(MESSAGE_UNKNOWN_PREFIX, "r/") + "\n" + AddCommand.MESSAGE_USAGE);
     }
 }

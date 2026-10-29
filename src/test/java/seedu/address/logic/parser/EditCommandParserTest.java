@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.AREA_DESC_AMY;
@@ -373,5 +374,11 @@ public class EditCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_BUDGET));
         assertParseFailure(parser, "1" + ASKING_PRICE_DESC_AMY + ASKING_PRICE_DESC_AMY,
                 Messages.getErrorMessageForDuplicatePrefixes(PREFIX_ASKING_PRICE));
+    }
+
+    @Test
+    public void parse_uppercaseKnownPrefix_failure() {
+        assertParseFailure(parser, "1 a/1 Test Road B/400000-600000",
+                String.format(MESSAGE_UNKNOWN_PREFIX, "B/") + "\n" + EditCommand.MESSAGE_USAGE);
     }
 }

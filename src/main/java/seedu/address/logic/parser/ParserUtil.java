@@ -5,10 +5,10 @@ import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
@@ -33,6 +33,14 @@ public class ParserUtil {
     private static final Pattern PREFIX_TOKEN_PATTERN = Pattern.compile("(?<!\\S)[A-Za-z]{1,3}/");
 
     /**
+     * Every first letter that begins a prefix anywhere in the product, so a prefix belonging to another command,
+     * such as {@code r/} in {@code add}, is reported instead of being absorbed into the previous value.
+     */
+    private static final Set<Character> PREFIX_INITIALS = CliSyntax.ALL_PREFIXES.stream()
+            .map(prefix -> prefix.getPrefix().charAt(0))
+            .collect(Collectors.toUnmodifiableSet());
+
+    /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
      * trimmed.
      * @throws ParseException if the specified index is invalid (not a non-zero unsigned integer).
@@ -49,12 +57,17 @@ public class ParserUtil {
      * Throws a {@code ParseException} if {@code args} contains a token shaped like a prefix that is not one of
      * {@code knownPrefixes}, so a mistyped prefix is reported instead of being read as part of the previous value.
      *
+     * <p>Prefixes are case-sensitive, matching {@link ArgumentTokenizer}: a token counts as known only when it equals
+     * a prefix exactly. {@code B/} is therefore reported instead of being accepted as {@code b/} and then ignored by
+     * the tokenizer, which would leave the budget text inside the previous value.
+     *
      * <p>Only tokens that follow a recognised prefix are reported. A token before the first recognised prefix sits in
      * the preamble, which the command parsers already reject with their own message.
      *
-     * <p>An unrecognised token is reported only when its first letter begins one of {@code knownPrefixes}, so a
-     * mistyped field prefix such as {@code bb/} or {@code pa/} is caught while ordinary text containing a slash, such
-     * as {@code c/o Mary Tan} or {@code w/ lift} in an address, is left alone.
+     * <p>An unrecognised token is reported only when its first letter begins a prefix anywhere in the product. That
+     * catches a mistyped prefix such as {@code bb/} or {@code pa/}, and also a prefix belonging to another command
+     * such as {@code r/} in {@code add}, while leaving ordinary text that contains a slash, such as {@code c/o Mary
+     * Tan} or {@code w/ lift} in an address, alone.
      *
      * @param usage Command usage shown with the error, usually a command's {@code MESSAGE_USAGE}.
      */
@@ -62,20 +75,16 @@ public class ParserUtil {
             throws ParseException {
         requireNonNull(args);
         Set<String> known = new HashSet<>();
-        Set<Character> knownInitials = new HashSet<>();
         for (Prefix prefix : knownPrefixes) {
-            String knownPrefix = prefix.getPrefix().toLowerCase(Locale.ROOT);
-            known.add(knownPrefix);
-            knownInitials.add(knownPrefix.charAt(0));
+            known.add(prefix.getPrefix());
         }
         boolean seenKnownPrefix = false;
         Matcher matcher = PREFIX_TOKEN_PATTERN.matcher(args);
         while (matcher.find()) {
             String token = matcher.group();
-            String lowerCaseToken = token.toLowerCase(Locale.ROOT);
-            if (known.contains(lowerCaseToken)) {
+            if (known.contains(token)) {
                 seenKnownPrefix = true;
-            } else if (seenKnownPrefix && knownInitials.contains(lowerCaseToken.charAt(0))) {
+            } else if (seenKnownPrefix && PREFIX_INITIALS.contains(Character.toLowerCase(token.charAt(0)))) {
                 throw new ParseException(String.format(MESSAGE_UNKNOWN_PREFIX, token) + "\n" + usage);
             }
         }

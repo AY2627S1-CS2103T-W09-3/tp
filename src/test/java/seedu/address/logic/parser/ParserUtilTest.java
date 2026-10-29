@@ -4,7 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_AREA;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_ASKING_PRICE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_HOUSING_TYPE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
@@ -349,7 +353,7 @@ public class ParserUtilTest {
     public void rejectUnknownPrefixes_knownPrefixesAndHarmlessSlashes_doesNotThrow() throws Exception {
         ParserUtil.rejectUnknownPrefixes(" n/Rachel a/Blk 5/6, #08-45 t/2br/3ba", "usage",
                 PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG);
-        ParserUtil.rejectUnknownPrefixes(" N/Rachel P/91234567", "usage", PREFIX_NAME, PREFIX_PHONE);
+        ParserUtil.rejectUnknownPrefixes(" n/Rachel p/91234567", "usage", PREFIX_NAME, PREFIX_PHONE);
     }
 
     @Test
@@ -378,5 +382,42 @@ public class ParserUtilTest {
         assertThrows(ParseException.class, uppercaseDoubled, ()
                 -> ParserUtil.rejectUnknownPrefixes(" n/Rachel a/1 Road TT/urgent", "usage",
                         PREFIX_NAME, PREFIX_ADDRESS, PREFIX_TAG));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_uppercaseKnownPrefix_throwsParseException() {
+        Prefix[] allPrefixes = {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_BUDGET,
+            PREFIX_ASKING_PRICE, PREFIX_AREA, PREFIX_HOUSING_TYPE, PREFIX_TAG};
+        String[] uppercasePrefixes = {"N/", "P/", "E/", "A/", "B/", "S/", "L/", "H/", "T/"};
+
+        for (String uppercasePrefix : uppercasePrefixes) {
+            String expected = String.format(MESSAGE_UNKNOWN_PREFIX, uppercasePrefix) + "\nusage";
+            assertThrows(ParseException.class, expected, ()
+                    -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Road " + uppercasePrefix + "400000", "usage",
+                            allPrefixes));
+        }
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_prefixOfAnotherCommand_throwsParseException() {
+        String expected = String.format(MESSAGE_UNKNOWN_PREFIX, "r/") + "\nusage";
+
+        assertThrows(ParseException.class, expected, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Road r/buyer", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_addressTextBeginningLikeAPrefix_throwsParseException() {
+        // Limit of the rule: Tel/ and nr/ begin like a tag and a name prefix, so they are reported, not kept as text.
+        String telephone = String.format(MESSAGE_UNKNOWN_PREFIX, "Tel/") + "\nusage";
+        assertThrows(ParseException.class, telephone, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Test Road Tel/Fax 6", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
+
+        String near = String.format(MESSAGE_UNKNOWN_PREFIX, "nr/") + "\nusage";
+        assertThrows(ParseException.class, near, ()
+                -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Test Road nr/ MRT", "usage",
+                        PREFIX_NAME, PREFIX_ADDRESS));
     }
 }
