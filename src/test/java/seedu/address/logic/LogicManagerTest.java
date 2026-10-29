@@ -253,6 +253,19 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_noteTextThatLooksLikeNull_stillSaves() throws Exception {
+        // A client with no note and a client whose note text is "null" look the same to Person#toString.
+        model.addPerson(AMY);
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("note 1 null");
+
+        assertEquals(1, storage.getSaveCount());
+        assertEquals("null",
+                storage.readAddressBook().orElseThrow().getPersonList().get(0).getNote().toString());
+    }
+
+    @Test
     public void execute_readOnlyCommandsWithTaggedClients_doNotSave() throws Exception {
         model.addPerson(new PersonBuilder(AMY).withTags("urgent", "friend").build());
         CountingAddressBookStorage storage = createCountingStorage();

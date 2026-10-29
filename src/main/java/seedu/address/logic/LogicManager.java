@@ -21,6 +21,7 @@ import seedu.address.model.Model;
 import seedu.address.model.history.AddressBookSnapshot;
 import seedu.address.model.history.HistoryOperationException;
 import seedu.address.model.person.Person;
+import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.Storage;
 
 /**
@@ -128,11 +129,13 @@ public class LogicManager implements Logic {
     }
 
     /**
-     * Returns every stored field of every client, so a command counts as a change whenever what is saved changes,
-     * even if the model considers the before and after states equal.
+     * Returns the JSON text of every client, so a command counts as a change whenever the text that would be written
+     * to the data file changes, even if the model considers the before and after states equal.
      */
     private static List<String> persistedState(Model model) {
-        return model.getAddressBook().getPersonList().stream().map(Person::toString).toList();
+        return model.getAddressBook().getPersonList().stream()
+                .map(JsonAddressBookStorage::toPersistedJson)
+                .toList();
     }
 
     @Override
