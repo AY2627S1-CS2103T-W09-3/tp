@@ -72,9 +72,9 @@ versions from sharing data or settings.
 * Prefixed fields in `add` and `edit` can appear in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list` and `exit`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
-  The `undo`, `redo` and `history` commands are exceptions: they reject extra parameters.
+* Commands that take no parameters reject anything after the command word with `Invalid command format. Use: <command>.`
+  This applies to `help`, `list` and `exit`, and to `undo`, `redo` and `history`, so `help 123` and `exit now` are errors
+  rather than being silently accepted.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
