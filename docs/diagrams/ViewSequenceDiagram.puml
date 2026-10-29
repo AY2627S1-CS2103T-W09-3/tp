@@ -32,8 +32,8 @@ end note
 Command --> Logic : result: CommandResult(feedback, index)
 deactivate Command
 ref over Logic, Model
-Shared save path: saveAddressBook(model.getAddressBook()).
-Continue only if saving succeeds.
+The stored client data is unchanged by view.
+Skip writing the data file.
 end ref
 Logic --> Window : result
 deactivate Logic

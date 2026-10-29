@@ -89,14 +89,14 @@ activate Model
 Model --> RoleCommand
 deactivate Model
 
-RoleCommand -> Model : updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS)
+RoleCommand -> Model : getFilteredPersonList()
 activate Model
 
-Model --> RoleCommand
+Model --> RoleCommand : updated displayed clients
 deactivate Model
 
 create CommandResult
-RoleCommand -> CommandResult
+RoleCommand -> CommandResult : new CommandResult(feedback, index)
 activate CommandResult
 
 CommandResult --> RoleCommand

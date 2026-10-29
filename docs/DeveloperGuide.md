@@ -93,6 +93,12 @@ startup and refreshes them after every command attempt, including a failed
 save that rolls back a history transition. The History menu item remains
 available even when both stacks are empty.
 
+The scene-level history key filter runs before the command text field can handle
+its own text undo. It consumes a recognized history shortcut even when the
+corresponding menu item is disabled, so the app reports an unavailable action
+instead of editing the user's draft. `MainWindowTest` covers this routing,
+draft preservation, input styling and menu state.
+
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
 The `UI` component,
@@ -170,12 +176,19 @@ The `Storage` component,
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
 `JsonUtil` reads JSON from a byte stream, allowing Jackson to detect a UTF-8 or
-UTF-16 byte-order mark in a manually edited client book. If an existing client
-book still cannot be loaded, `MainApp` first copies it beside the original as
-`addressbook.json.unreadable-<unique number>.bak`, then starts with an empty
-model. It passes the backup path to `UiManager`, which warns the user where the
-original bytes were saved. The backup is created before a command can overwrite
-the data file; if the copy fails, startup does not continue with the empty book.
+UTF-16 byte-order mark in a manually edited client book.
+
+**Recovery belongs to startup.** The JSON reader reports invalid data;
+`MainApp#initModelManager` decides whether it is safe to offer an empty book.
+A missing file loads and saves sample clients. An unreadable file instead goes
+through `backUpUnreadableDataFile`, which copies the original bytes beside it as
+`addressbook.json.unreadable-<unique number>.bak` before creating an empty model.
+`UiManager` shows the backup path after opening the main window. The backup is
+for manual recovery, not an automatic repair.
+
+If the backup fails, startup logs the cause and stops, preventing a later
+command from overwriting the only copy. `MainAppTest` covers recovery and backup
+failure, and `UiManagerTest` covers the warning and normal startup without it.
 
 ### Common classes
 
@@ -210,16 +223,20 @@ Clearing a role with `none` instead shows `Role cleared: CLIENT_NAME has no assi
 If the client is already unassigned, it shows `Role unchanged: CLIENT_NAME already has no assigned role`.
 That case does not change the client or add an undo-history entry.
 
-The examples below are independent and assume that `Alicia Tan` is client 1 in
-the currently displayed list.
+**Implementation.** `RoleCommandParser` requires exactly two arguments and
+validates the index before the role. It translates `none` into a null role rather
+than adding a fourth enum value. `RoleCommand#execute` looks up the displayed
+client and creates a replacement `Person`, copying every other field. It does
+not reset the predicate. After replacement, it looks up the client's new
+displayed index: the result reselects a visible client, or clears the detail
+panel if the role change removes the client from the active filter.
 
-| Command | Expected result |
-|---------|-----------------|
-| `role 1 buyer` | Alicia Tan's role becomes `Buyer`. The result box shows `Role updated: Alicia Tan is now marked as Buyer`. |
-| `role 1 seller` | Alicia Tan's role becomes `Seller`. The result box shows `Role updated: Alicia Tan is now marked as Seller`. |
-| `role 1 both` | Alicia Tan's role becomes `Buyer, Seller`. The result box shows `Role updated: Alicia Tan is now marked as Buyer, Seller`. |
-| `role 1 none` | Alicia Tan has no assigned role or role badge. The result box shows `Role cleared: Alicia Tan has no assigned role`. |
-| `role 1 none` again | Alicia Tan remains unassigned. The result box shows `Role unchanged: Alicia Tan already has no assigned role`. |
+The command supplies its undoable flag and action description; history recording
+and persistence remain the responsibility of `LogicManager`. This keeps the
+typed command and menu-driven history on the same transaction path.
+`RoleCommandParserTest` covers validation, and `RoleCommandTest` covers clearing,
+unchanged roles and filtered indexes. `UndoRedoIntegrationTest` checks that role
+changes survive undo, redo and a storage round trip.
 
 Invalid inputs do not change the client's role:
 
@@ -234,6 +251,10 @@ Invalid inputs do not change the client's role:
 The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
 
 ![Interactions for the `role 1 buyer` command](images/RoleSequenceDiagram.png)
+
+The diagram assumes that the updated client remains visible. It focuses on
+parsing and the model update; snapshot capture, persistence and UI rendering are
+omitted. The source is [RoleSequenceDiagram.puml](diagrams/RoleSequenceDiagram.puml).
 
 ### Client role storage
 
@@ -330,8 +351,8 @@ After successful command execution, `MainWindow` applies these rules:
 | Command result | Selection handling |
 |---|---|
 | Contains a view index | Select that client in the current filtered list. |
-| No view index, and neither awaiting confirmation nor showing help | Clear selection, even if the list contents did not change. |
-| Awaiting clear confirmation or showing help | Preserve selection unless a list change already cleared it. |
+| No view index, and no confirmation, help or selection-preservation flag | Clear selection, even if the list contents did not change. |
+| Awaiting clear confirmation, showing help, or `shouldPreserveSelection()` is true | Preserve selection unless a list change already cleared it. |
 | Parsing or execution throws an exception | Show the error without explicitly changing selection; a list change may already have cleared it. |
 | Any input other than `clear confirm` while a clear is pending | `LogicManager` swallows any `ParseException`, skips the command and returns `Clear cancelled.` with no view index, so the panel is cleared and no error is shown. |
 
@@ -348,6 +369,39 @@ returns no view index and clears the panel, while preserving client data.
 `MainWindowTest` exercises the command-to-panel path, filtered selection,
 refresh after edits, selection clearing and preservation on errors/help/clear
 warnings. `DetailPaneTest` checks optional rows, wrapping and scrolling.
+
+### Compact client cards and filter status
+
+The list is a scanning view; `DetailPane` is the full record. `PersonCard` and
+`PersonListCard.fxml` keep the identity, contact and tag rows compact, with an
+optional single-line requirements summary. Long names, emails and summaries may
+use ellipses, while the index and role badge keep their preferred widths.
+Absent role badges, note markers and requirements are both invisible and
+unmanaged, so they do not reserve layout space.
+
+**Tag overflow.** `PersonCard` sorts the tags before passing them to `TagRow`,
+which fits whole labels into the available width, reserving room for a `+N`
+overflow label. Its tooltip lists the hidden tags. Fitting runs during layout
+and uses the labels' computed widths
+and the overflow label's current font, so resizing and platform font metrics do
+not require a fixed character limit. This avoids multi-line tags pushing the
+next client out of view; all tags remain available in the detail panel.
+
+**Small windows.** Card height follows its content rather than a fixed list-cell
+height. `MainWindow#updateLayoutDensity` sets the `compact` pseudo-class from the
+usable content height, and `DarkTheme.css` reduces surrounding padding and the
+feedback viewport without reducing text size. Change the FXML and CSS together
+when adjusting density. `PersonCardTest`, `InterfaceStyleTest` and
+`MainWindowTest` cover fitting and logical viewport sizes; actual operating-system
+display scaling still needs the checks in the [Testing guide](Testing.md#manual-display-scaling-checks).
+
+**Filter status.** `StatusBarFooter` binds to the displayed list size, total list
+size and `Model#personListFilteredProperty`. The last property describes whether
+an active predicate differs from the show-all predicate; it is not inferred from
+the counts. Even a search matching every client therefore shows the filtered
+indicator until `list` resets it: a client added later is still subject to the
+active predicate, even when the current counts are equal.
+`MainWindowTest` checks these states, including empty results and data changes.
 
 ### Clear confirmation
 
@@ -429,12 +483,24 @@ reverses the stack transfer, leaving the action available to retry. Undo and red
 do not record additional history entries. The same access-denied and general
 storage-error messages apply as for ordinary commands.
 
+`LogicManager#saveAddressBookOrRollback` keeps the save error and rollback in one
+path. If rollback itself reports a `HistoryOperationException`, it becomes an
+`IllegalStateException`: this signals an internal history inconsistency rather
+than an ordinary retryable save failure. `LogicManagerTest` exercises failed
+saves after undo and redo, including failures of the rollback itself.
+
 **Keeping the saved file consistent.** `JsonAddressBookStorage` serialises the
 complete address book into a temporary file beside the destination, then atomically
 replaces the destination. The app never writes partial JSON directly into the saved
 file, and it removes the temporary file after a failed save. If atomic replacement
 is unsupported, saving fails and `LogicManager` rolls back the in-memory state and
 stacks rather than reporting success for an unsaved change.
+
+If removing the temporary file also fails, `JsonAddressBookStorage` attaches that
+cleanup failure as a suppressed exception and rethrows the original save failure.
+This preserves the reason the save failed while retaining cleanup diagnostics.
+`JsonAddressBookStorageTest` checks this for both I/O and runtime failures and
+verifies that the previous file remains intact.
 
 ### Client requirements
 
@@ -922,6 +988,16 @@ testers are expected to do more *exploratory* testing.
       Expected: Alicia remains unassigned. The result box shows
       `Role unchanged: Alicia Tan already has no assigned role`. No new undo-history entry is added.
 
+1. Clearing a role while a filter is active
+
+   1. Prerequisites: In a fresh test folder, run `filter r/buyer`, then `view 1`.
+
+   1. Test case: `role 1 none`<br>
+      Expected: Alicia leaves the filtered list and the detail panel clears. No other client is selected.
+
+   1. Test case: `undo`<br>
+      Expected: Alicia returns to the buyer results. Run `view 1` to confirm that her Buyer badge is restored.
+
 ### Rejecting invalid role commands
 
 1. Rejecting invalid formats, roles, and indexes
@@ -1021,7 +1097,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Starting with a missing data file
 
-   1. Prerequisites: Run `list` to create the data file. Exit the app and rename `data/addressbook.json` to
+   1. Prerequisites: Confirm that `data/addressbook.json` exists after startup. Exit the app and rename it to
       `addressbook.backup.json`.
 
    1. Relaunch the app.<br>
@@ -1044,9 +1120,22 @@ testers are expected to do more *exploratory* testing.
       copied to `data/addressbook.json.unreadable-<unique number>.bak`.
 
    1. Run `list`.<br>
-      Expected: The result box shows `Listed all clients.` and the corrupted file is replaced with a valid empty
-      client book. The `.bak` copy still contains the corrupted file's original bytes. Restore the valid backup
-      made before this test after completing it.
+      Expected: The result box shows `Listed all clients.` and the client list stays empty. The original
+      unreadable file and its `.bak` copy are unchanged.
+
+   1. Test case: `add n/Recovery Test p/90000991 e/recovery@example.com a/1 Test Road`<br>
+      Expected: The original data file is replaced with valid JSON containing the new client. The `.bak` copy
+      still contains the unreadable file's original bytes. Close the app and restore the valid backup made
+      before this test after completing it.
+
+3. A backup cannot be created
+
+   1. Prerequisites: Use a disposable test folder, close the app, and back up its data file. Make the file
+      invalid as above and make its parent `data` folder unwritable using the operating system's permissions.
+
+   1. Relaunch the app from a terminal.<br>
+      Expected: Startup stops with a message explaining that the unreadable file could not be backed up.
+      The original bytes remain unchanged. Restore the folder's write permission and the valid backup.
 
 ### Clearing all clients with confirmation
 
@@ -1382,3 +1471,33 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `list`<br>
       Expected: The list refreshes and the detail panel returns to `Select a client to see details.`.
+
+1. Distinguishing an active search from the full list
+
+   1. Prerequisites: Start with the five sample clients. Run `find example.com`.
+
+   1. Expected: All five clients match, but the footer shows `5 of 5 clients (filtered; use list)`.
+      Run `list` and confirm that it returns to `5 clients`.
+
+### History controls and unfinished input
+
+1. Menu state and selection
+
+   1. Prerequisites: Start a fresh session with the five sample clients. Undo and Redo are disabled in the
+      Edit menu; History remains available. Run `role 1 seller`, then `view 1`.
+
+   1. Test case: `history`<br>
+      Expected: Alicia remains selected and her profile stays visible. The Edit menu's History action
+      has the same effect. Undo is enabled and Redo is disabled.
+
+1. Shortcuts preserve a draft
+
+   1. Type `add n/Draft` without pressing Enter, then press Cmd+Z on macOS or Ctrl+Z on Windows/Linux.<br>
+      Expected: Alicia's role change is undone, the draft stays unchanged, and Redo becomes available.
+
+   1. Press the same shortcut again, with no undoable action remaining.<br>
+      Expected: The result box reports `There is no action to undo`. The draft is unchanged and is not
+      given the command-error style, even though Undo is disabled in the Edit menu.
+
+   1. Press Cmd+Shift+Z on macOS or Ctrl+Y on Windows/Linux.<br>
+      Expected: Alicia's Seller role returns, the draft stays unchanged, and the menu availability refreshes.
