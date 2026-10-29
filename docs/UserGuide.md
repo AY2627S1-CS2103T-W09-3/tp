@@ -519,8 +519,7 @@ Format: `exit`
 
 ### Saving the data
 
-EstateBookUltraProMax automatically saves data after successful commands.
-You do not need to save manually.
+EstateBookUltraProMax saves your data automatically after any command that changes it, so you do not need to save manually. Commands that only read data, such as `list`, `find` and `view`, never write to the file.
 
 Data is stored in `data/addressbook.json`, relative to the folder from which
 you launch the application (the working directory).

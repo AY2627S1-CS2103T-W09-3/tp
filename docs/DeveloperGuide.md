@@ -293,10 +293,10 @@ values instead use `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX`.
 `ViewCommand#execute` reads `Model#getFilteredPersonList`, checks the upper bound
 and obtains the client's name for `Showing <name>.`. An out-of-range index raises
 `CommandException`. On success, it returns a `CommandResult` carrying the `Index`
-in `getViewIndex()`, without calling any UI class. The current `LogicManager`
-then saves the address book before returning the result, as it does for other
-successful commands. `view` does not modify the book, but this shared save can
-still fail; the selection request is applied only after `LogicManager` returns.
+in `getViewIndex()`, without calling any UI class. `LogicManager` writes the data
+file only when a command changes the stored client data, so `view` returns without
+touching the file. The selection request is applied only after `LogicManager`
+returns.
 
 `HistoryCommand` also leaves the displayed list unchanged. Its `CommandResult`
 requests selection preservation whether history is empty or not, so
@@ -307,7 +307,7 @@ clear the selection when they do not provide a view index.
 ![Sequence from view 1 to selecting and rendering the first displayed client](images/ViewSequenceDiagram.png)
 
 The diagram shows a successful `view 1` with at least one displayed client and
-no pending clear confirmation. Parser internals, the shared save path and the
+no pending clear confirmation. Parser internals, the save check and the
 feedback display are abbreviated to keep the selection flow readable.
 The source is [ViewSequenceDiagram.puml](diagrams/ViewSequenceDiagram.puml).
 
@@ -363,7 +363,7 @@ warnings. `DetailPaneTest` checks optional rows, wrapping and scrolling.
 | Not confirmed | `This will delete the only client. Type clear confirm to proceed.` for one client, or `This will delete all N clients. Type clear confirm to proceed.`, with `CommandResult#isAwaitingConfirmation()` set |
 | Confirmed | Replaces the address book with an empty one and shows `Client book has been cleared!` |
 
-**Remembering the pending state.** `LogicManager` holds one `isClearPending` flag. It is set from `CommandResult#isAwaitingConfirmation()` only after the data has been saved, so a failed save never leaves a clear pending. While the flag is set, the next input is parsed:
+**Remembering the pending state.** `LogicManager` holds one `isClearPending` flag. It is set from `CommandResult#isAwaitingConfirmation()` only after the command has run and any changed data has been saved, so a failed save never leaves a clear pending. While the flag is set, the next input is parsed:
 
 * `clear confirm` runs the confirmed `ClearCommand`.
 * Any other input, including input that cannot be parsed, clears the flag without being executed and shows `Clear cancelled.`.
@@ -398,9 +398,13 @@ persistent and undoable:
 
 1. Capture a before snapshot, execute the command, then capture an after snapshot.
    A parse error or `CommandException` stops execution without recording history.
-2. Save the address book. Successful read-only and no-op commands still use the
-   existing save path, but they do not create history entries.
-3. After saving succeeds, call `recordChange` only if the command is undoable.
+2. Write the data file only if the JSON text of the client book changed, so read-only
+   and no-op commands never write and keep working when the data location cannot be
+   written. `JsonAddressBookStorage#toPersistedJson` builds that text with the same
+   serialiser that writes the file, so a change the model considers equal, such as a
+   tag whose only difference is letter casing, is still saved.
+3. After that write step succeeds or is skipped, call `recordChange` only if the
+   command is undoable.
    `add`, `edit`, `delete`, `role`, `note` and confirmed `clear` are eligible.
    Equal snapshots are ignored without clearing redo history; a recorded change
    clears redo history. The initial `clear` warning and cancelled confirmation

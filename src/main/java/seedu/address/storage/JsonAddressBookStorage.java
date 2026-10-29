@@ -16,6 +16,7 @@ import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.Person;
 
 /**
  * A class to access AddressBook data stored as a JSON file on the hard disk.
@@ -28,6 +29,16 @@ public class JsonAddressBookStorage {
 
     public JsonAddressBookStorage(Path filePath) {
         this.filePath = filePath;
+    }
+
+    /**
+     * Returns the JSON text that {@code person} is written to the data file as, so a caller can tell whether a
+     * command changed a stored value. Two clients that {@code toString} renders the same, such as a client with no
+     * note and a client whose note text is {@code null}, produce different text here.
+     */
+    public static String toPersistedJson(Person person) {
+        requireNonNull(person);
+        return JsonUtil.toJsonTree(new JsonAdaptedPerson(person)).toString();
     }
 
     public Path getAddressBookFilePath() {

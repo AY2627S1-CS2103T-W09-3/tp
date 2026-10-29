@@ -135,8 +135,18 @@ public class MainAppTest {
 
         app.logic.execute("list");
 
+        // a command that changes nothing must leave the unreadable file in place
+        assertEquals(invalidJson, Files.readString(addressBookPath));
         assertEquals(invalidJson, Files.readString(backup));
-        assertEquals(new AddressBook(), new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+
+        app.logic.execute(ADD_CLIENT_COMMAND);
+
+        // the first command that changes data replaces the file, and the backup keeps the original text
+        assertEquals(invalidJson, Files.readString(backup));
+        AddressBook afterAdd = new AddressBook(
+                new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+        assertEquals(1, afterAdd.getPersonList().size());
+        assertEquals("Recovered Client", afterAdd.getPersonList().get(0).getName().fullName);
     }
 
     @Test
@@ -189,9 +199,15 @@ public class MainAppTest {
 
         Path backup = findUnreadableDataBackup();
         assertEquals(0, Files.size(backup));
+
         app.logic.execute("list");
+        assertEquals(0, Files.size(addressBookPath));
         assertEquals(0, Files.size(backup));
-        assertEquals(new AddressBook(), new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
+
+        app.logic.execute(ADD_CLIENT_COMMAND);
+        assertEquals(0, Files.size(backup));
+        assertEquals(1, new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow()
+                .getPersonList().size());
     }
 
     @Test
