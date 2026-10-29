@@ -27,8 +27,19 @@ public class NoteCommandParserTest {
     }
 
     @Test
+    public void parse_escapedBackslashes_preservesLiteralBackslashN() {
+        assertParseSuccess(parser, "1 Saved at C:\\\\new folder\\\\notes",
+                new NoteCommand(INDEX_FIRST_PERSON, new Note("Saved at C:\\new folder\\notes")));
+    }
+
+    @Test
     public void parse_exactLowercaseClear_returnsClearCommand() {
         assertParseSuccess(parser, "1 clear", new NoteCommand(INDEX_FIRST_PERSON));
+    }
+
+    @Test
+    public void parse_clearWithEscapedSurroundingWhitespace_returnsClearCommand() {
+        assertParseSuccess(parser, "1 \\nclear\\n", new NoteCommand(INDEX_FIRST_PERSON));
     }
 
     @Test

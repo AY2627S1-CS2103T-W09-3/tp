@@ -31,16 +31,11 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         }
 
         String rawText = arguments.length == 2 ? arguments[1] : "";
-        String decodedText = rawText.replace("\\n", "\n").trim();
-
-        if (decodedText.equals("clear")) {
+        Note note = ParserUtil.parseNote(rawText);
+        if (note.value.equals("clear")) {
             return new NoteCommand(index);
         }
 
-        if (!Note.isValidNote(decodedText)) {
-            throw new ParseException(Note.MESSAGE_CONSTRAINTS);
-        }
-
-        return new NoteCommand(index, new Note(decodedText));
+        return new NoteCommand(index, note);
     }
 }

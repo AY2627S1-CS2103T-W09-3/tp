@@ -259,7 +259,7 @@ The command token `none` is not an enum value or a stored role. It clears the op
 
 A note is free-text working detail kept on a client: where a negotiation stands, when to call back, what to prepare for a viewing. It holds 1 to 500 characters after surrounding whitespace is trimmed, and it may contain real line breaks.
 
-**Parsing.** `NoteCommandParser` splits the index from the note text, and the text runs to the end of the line, so it may contain spaces. Because a note is free text, the parser must know where the text ends before it can decode anything: each two-character `\n` is replaced with a real line break, and the result is trimmed of surrounding whitespace. Only then is the text handed to `Note`, which validates it, so `Note` never sees an escape sequence. The lowercase word `clear` is reserved after trimming: only the exact decoded text `clear` clears the note, while `CLEAR` and sentences such as `Please clear the outstanding paperwork` are stored as ordinary text. A blank note or one longer than 500 characters raises a `ParseException` carrying `Notes should be 1 to 500 characters.`
+**Parsing.** `NoteCommandParser` splits the index from the note text, and the text runs to the end of the line, so it may contain spaces. The parser delegates ordinary note text to `ParserUtil#parseNote`, which scans it once from left to right: `\n` becomes a real line break, `\\` becomes a literal backslash, and an unrecognised or trailing backslash is preserved. This makes `\\n` an escaped backslash followed by `n`, so users can store a literal `\n` in paths and other text. The decoded result is trimmed of surrounding whitespace and handed to `Note` for validation. The lowercase word `clear` is reserved after trimming surrounding whitespace: only `clear` clears the note, while `CLEAR` and sentences such as `Please clear the outstanding paperwork` are stored as ordinary text. A blank note or one longer than 500 decoded characters raises a `ParseException` carrying `Notes should be 1 to 500 characters.`
 
 **Executing.** `NoteCommand` builds a new `Person` that carries the new note, or no note for the clear form, and copies every other field from the client being edited, then calls `Model#setPerson`. It does not touch the filtered list, so an active search or filter stays in effect. The result message is `Note updated for <name>.` or `Note cleared for <name>.`
 
@@ -788,7 +788,7 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 | **Asking Price**                 | The price a seller is asking for their property, in whole Singapore dollars.                                                                                                       |
 | **Area**                         | One of 32 Singapore planning areas a client wants to buy in. Stored in title case.                                                                                                 |
 | **Housing Type**                 | One of `HDB`, `Condo`, `EC` or `Landed`.                                                                                                                                           |
-| **Note**                         | Up to 500 characters of free text attached to a client. The two characters `\n` store a line break.                                                                                |
+| **Note**                         | Up to 500 characters of free text attached to a client. `\n` stores a line break and `\\` stores a literal backslash.                                                             |
 | **Sample Data**                  | A set of realistic, pre-loaded dummy client records provided to help new agents explore and learn the application's features safely before clearing it to start their actual work. |
 
 --------------------------------------------------------------------------------------------------------------------
@@ -1176,6 +1176,11 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `note 1 First line\nSecond line`<br>
       Expected: Alicia's note becomes two lines, `First line` and `Second line`. The detail panel shows the note
       with a line break.
+
+1. Using `\\` for a literal backslash
+
+   1. Test case: `note 1 Saved at C:\\new folder\\notes`<br>
+      Expected: Alicia's note becomes `Saved at C:\new folder\notes`, with both backslashes preserved and no line breaks.
 
 1. Clearing a note
 

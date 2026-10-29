@@ -19,6 +19,7 @@ import seedu.address.model.person.Budget;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.HousingType;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.Note;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Price;
 import seedu.address.model.person.PriceRange;
@@ -293,6 +294,45 @@ public class ParserUtil {
             throw new ParseException(Email.MESSAGE_CONSTRAINTS);
         }
         return new Email(trimmedEmail);
+    }
+
+    /**
+     * Parses a {@code String note} into a {@code Note}. The escape sequence {@code \n} becomes a line break,
+     * while {@code \\} becomes a literal backslash. Other backslashes are preserved.
+     * Leading and trailing whitespaces will be trimmed after escape sequences are decoded.
+     *
+     * @throws ParseException if the decoded {@code note} is invalid.
+     */
+    public static Note parseNote(String note) throws ParseException {
+        requireNonNull(note);
+        String decodedNote = decodeNoteEscapes(note).trim();
+        if (!Note.isValidNote(decodedNote)) {
+            throw new ParseException(Note.MESSAGE_CONSTRAINTS);
+        }
+        return new Note(decodedNote);
+    }
+
+    private static String decodeNoteEscapes(String note) {
+        StringBuilder decodedNote = new StringBuilder(note.length());
+        for (int i = 0; i < note.length(); i++) {
+            char current = note.charAt(i);
+            if (current != '\\' || i + 1 == note.length()) {
+                decodedNote.append(current);
+                continue;
+            }
+
+            char next = note.charAt(i + 1);
+            if (next == 'n') {
+                decodedNote.append('\n');
+                i++;
+            } else if (next == '\\') {
+                decodedNote.append('\\');
+                i++;
+            } else {
+                decodedNote.append(current);
+            }
+        }
+        return decodedNote.toString();
     }
 
     /**
