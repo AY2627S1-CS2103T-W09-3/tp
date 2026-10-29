@@ -626,19 +626,24 @@ The following activity diagram shows how the active filter is set, and what happ
 * works primarily on a desktop or laptop
 * prefers typing and keyboard-driven workflows over navigating with a mouse
 * is comfortable using a Command Line Interface (CLI)
-* may share a screen with a client or colleague and therefore needs the list to show one line per client
+* needs compact client summaries while retaining access to each client's full details
 
 **Value proposition**: EstateBookUltraProMax is a command-driven client book for property agents who
 manage buyers and sellers at the same time. Each client record holds contact details, a budget, an
 asking price, preferred areas, preferred housing types and a note, and every one of them is set by
-typing a short command. That makes a record faster to find and update than a spreadsheet: the list
-stays one line per client, search and filter narrow it in place, and the requirements line tells the
-agent what the client wants without opening anything else.
+typing a short command. Compact list cards summarize clients, search and filter narrow the displayed
+list, and a separate detail panel shows the selected client's full information without leaving the
+client book.
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
+
+#### Current requirements
+
+The following needs are supported in the current version. Backup and restoration use manual copies
+of the data file, not dedicated application commands.
 
 | Priority | As a …​ | I want to …​ | So that I can…​ |
 | -------- | ------- | ------------ | --------------- |
@@ -654,27 +659,40 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | property agent | record whether a client is a buyer, seller, or both | understand my relationship with the client at a glance |
 | `* * *` | property agent | record a client's address | retain the client's important contact information |
 | `* * *` | property agent | record a buyer's budget range | avoid proposing properties outside the buyer's means |
+| `* * *` | property agent | record a seller's asking price | retain the seller's pricing expectations |
 | `* * *` | property agent | record a buyer's preferred locations | shortlist properties in areas acceptable to the buyer |
 | `* * *` | property agent | record a buyer's preferred property type | exclude unsuitable property categories |
 | `* * *` | property agent | record notes about a client | retain important context that does not fit into the standard fields |
 | `* * *` | property agent | tag contacts using meaningful labels | group clients according to attributes relevant to my work |
 | `* * *` | property agent | exit the application safely | ensure that my latest changes are retained |
 | `* *` | new property agent | view realistic sample clients | understand what information the application can manage |
-| `* *` | new property agent | view concise help within the application | learn the available commands without leaving my workflow |
+| `* *` | new property agent | open or copy the User Guide link from the help window | find instructions for the available commands |
 | `* *` | user ready to begin | clear all sample or experimental data | start with a clean client list |
 | `* *` | property agent | filter contacts by buyer or seller role | focus on the relevant side of my client pipeline |
 | `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
 | `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
 | `* *` | property agent | filter clients by preferred housing type | find clients who want the kind of property I am listing |
 | `* *` | property agent | filter sellers by asking price | find sellers whose property is in the price range I am working on |
-| `* *` | property agent | detect possible duplicate contacts | avoid splitting one client's information across multiple records |
+| `* *` | property agent | reject contacts with a conflicting name, phone number or email | avoid splitting one client's information across multiple records |
+| `* *` | property agent | search using several keywords across contact fields | narrow results using the details I remember |
+| `* *` | property agent | filter clients by tags and combine filter criteria | focus on clients meeting my current needs |
+| `* *` | property agent | see the displayed and total client counts | recognize when I am working with only part of my client book |
+| `* *` | property agent | remove an assigned role or optional requirements | remove information that is no longer applicable |
+| `* *` | property agent | replace, view and clear a client's note | keep free-text context current |
+| `* *` | property agent | confirm or cancel clearing the whole client book | avoid accidentally deleting all my clients |
+| `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
+| `* *` | property agent | redo an undone data-changing action | restore a change I still need |
+| `* *` | property agent | inspect the current session's undo and redo history | understand which changes can be reversed or reapplied |
+| `* *` | keyboard-oriented property agent | use shortcuts to view a client or open help without overwriting my draft | navigate without losing a partially typed command |
+| `* *` | property agent | retain the previous data when saving an update fails | retry a change without leaving an unsaved record in the client book |
+| `* *` | property agent | preserve an unreadable data file before starting with an empty client book | recover the original information rather than overwrite it |
 | `*` | property agent | create a backup of my client records | reduce the risk of losing important information |
 | `*` | property agent | restore my client records from a valid backup | recover my information after data loss or device replacement |
 
 #### Future requirements
 
-These stories are deliberately out of scope for v1.4. They stay listed so the
-backlog below the shipped features is visible.
+These stories are not implemented in the current version. They remain as requirements for future
+iterations, rather than promises about the released commands.
 
 | Priority | As a …​ | I want to …​ | So that I can…​ |
 | -------- | ------- | ------------ | --------------- |
@@ -689,7 +707,6 @@ backlog below the shipped features is visible.
 | `* *` | property agent | record the next follow-up date | contact the client at an appropriate time |
 | `* *` | property agent | view clients whose follow-ups are due or overdue | prioritise clients who require my attention |
 | `* *` | property agent | sort contacts by name, latest update, or next follow-up | review my clients in an order suitable for my current task |
-| `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
 | `* *` | long-time property agent | archive an inactive client | reduce clutter without permanently losing past information |
 | `* *` | returning property agent | restore an archived client | resume working with a past client who has become active again |
 | `* *` | property agent migrating from spreadsheets | import client records from a common tabular format | avoid entering all my existing client information manually |
@@ -700,7 +717,7 @@ backlog below the shipped features is visible.
 | `*` | property agent | preview the records affected by a bulk command | avoid modifying the wrong clients |
 | `*` | property agent | merge confirmed duplicate contacts | maintain one complete record for each client |
 | `*` | property agent changing agencies | export selected client records | retain records that I am permitted to take with me |
-| `*` | property agent | view when and how a client record was last changed | determine whether the information is current |
+| `*` | property agent | view a persistent record of when and how a client was changed, including earlier sessions | determine whether the information is current |
 | `*` | property agent | separate personal leads from agency-assigned leads | keep my different work contexts organised |
 | `*` | property agent | record relationships between clients | recognise couples, co-buyers, family members, and co-owners |
 | `*` | property agent | save a frequently used search | repeat a common client review without rebuilding the search criteria |
@@ -711,13 +728,21 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 **MSS** stands for **Main Success Scenario**.
 
+These use cases cover distinct interactions with meaningful alternatives. Simple actions such as
+listing clients, viewing a profile and opening help are covered by the user stories and User Guide.
+Unless stated otherwise, no clear confirmation is pending when a use case begins.
+
+**Shared save-failure extension:** If a data-changing step cannot be saved, the system reports the
+failure and restores the client data and undo/redo history from before that step. The Agent can
+resolve the file-access problem and retry; the unsuccessful change is not reported as completed.
+
 #### UC01: Register and classify a new client
 
 **MSS**
 
 1. Agent requests to add a client, providing the client's name, phone number, email address, address, and optionally a budget, an asking price, preferred areas, preferred housing types and tags.
 2. EstateBookUltraProMax adds the client and displays the recorded details.
-3. Agent requests to assign the new client a role of buyer, seller, or both.
+3. Agent identifies the new client in the displayed list and requests to assign a role of buyer, seller, or both.
 4. EstateBookUltraProMax assigns the role and displays the client's updated role.
 
    Use case ends.
@@ -734,6 +759,11 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 1.
 
+* 2a. The new client does not match the active search or filter and is absent from the displayed list.
+  * 2a1. Agent requests to list all clients and identifies the new client's displayed index.
+
+  Use case resumes at step 3.
+
 * 3a. The specified client reference is invalid.
   * 3a1. EstateBookUltraProMax displays an error without assigning a role.
 
@@ -744,14 +774,14 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
-#### UC02: Update a client's contact details
+#### UC02: Update a displayed client
 
 **MSS**
 
 1. Agent requests to find a client using one or more keywords, each of which matches part of the client's name, phone number, email address or address.
 2. EstateBookUltraProMax displays a list of matching clients.
 3. Agent identifies a client from the displayed results and requests changes to the client's contact details.
-4. EstateBookUltraProMax updates the specified details and displays the updated client.
+4. EstateBookUltraProMax saves the specified details, reports the update and refreshes the displayed results.
 
    Use case ends.
 
@@ -781,61 +811,113 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
-#### UC03: Change a client's role
+* 4a. The updated client no longer matches the active search or filter.
+  * 4a1. EstateBookUltraProMax removes the client from the displayed results and clears its selection.
+  * 4a2. Agent can list all clients to locate the updated record.
+
+  Use case ends.
+
+**Related interactions:** Changing requirements, replacing or clearing a note, and assigning or
+clearing a role also operate on an index in the currently displayed list and retain its search or
+filter. Their field validation differs from contact editing; clearing an already absent role reports
+that no role is assigned without creating an undo entry. Deletion uses the same displayed-index
+selection, but removes the whole record instead of validating replacement fields. These variations
+do not require separate copies of the lookup and invalid-index scenarios.
+
+#### UC03: Clear the client book with confirmation
 
 **MSS**
 
-1. Agent requests to list all clients.
-2. EstateBookUltraProMax displays the clients and their assigned roles.
-3. Agent identifies a client from the displayed list and requests to change the client's role to buyer, seller, both, or none.
-4. EstateBookUltraProMax updates the client's role and displays the updated client.
+1. Agent requests to clear the client book.
+2. EstateBookUltraProMax warns how many clients will be removed and requests confirmation.
+3. Agent confirms with `clear confirm` as the next command.
+4. EstateBookUltraProMax clears and saves the whole client book, including clients hidden by a search or filter.
 
    Use case ends.
 
 **Extensions**
 
-* 2a. The client list is empty.
+* 1a. The whole client book is already empty.
+  * 1a1. EstateBookUltraProMax reports that it is empty without requesting confirmation.
 
   Use case ends.
 
-* 3a. The specified client reference is invalid.
-  * 3a1. EstateBookUltraProMax displays an error without updating the client's role.
+* 3a. Agent enters any input other than a valid clear confirmation.
+  * 3a1. EstateBookUltraProMax cancels the pending clear without executing that input as another command.
 
-  Use case resumes at step 3.
+  Use case ends. Agent must enter the desired command again to execute it.
 
-* 3b. The role is missing or is not buyer, seller, both, or none.
-  * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or an error indicating the permitted roles if it is invalid, without updating the client's role.
+* 3b. Agent requests confirmation when no clear is pending.
+  * 3b1. EstateBookUltraProMax reports that no clear is pending and retains all clients.
 
-  Use case resumes at step 3.
+  Use case resumes at step 1.
 
-#### UC04: Delete a client
+#### UC04: Undo and redo a saved change
+
+**Precondition:** Agent has successfully changed client data during the current session.
 
 **MSS**
 
-1. Agent requests to list all clients.
-2. EstateBookUltraProMax displays the client list.
-3. Agent requests to delete a specific client from the displayed list.
-4. EstateBookUltraProMax deletes the client, identifies the deleted client, and displays the updated list.
+1. Agent requests to undo the most recent data-changing action.
+2. EstateBookUltraProMax restores and saves the preceding client data and makes the undone action available for redo.
+3. Agent requests to redo that action.
+4. EstateBookUltraProMax reapplies and saves the action, making it available for undo again.
 
    Use case ends.
 
 **Extensions**
 
-* 2a. The client list is empty.
+* 1a. No action is available to undo.
+  * 1a1. EstateBookUltraProMax reports that there is no available action without changing client data.
 
   Use case ends.
 
-* 3a. The specified client reference is missing or invalid.
-  * 3a1. EstateBookUltraProMax displays an error without deleting any client.
+* 3a. No action is available to redo.
+  * 3a1. EstateBookUltraProMax reports that there is no available action without changing client data.
+
+  Use case ends.
+
+* 3b. Agent makes a new data-changing action after the undo.
+  * 3b1. EstateBookUltraProMax saves the new change and discards the previous redo branch.
+
+  Use case ends. The earlier undone action can no longer be redone.
+
+* 3c. Agent inspects history or uses a command that does not change client data.
+  * 3c1. EstateBookUltraProMax retains the available undo/redo actions.
 
   Use case resumes at step 3.
+
+* 3d. Agent exits and restarts the application.
+  * 3d1. EstateBookUltraProMax loads the saved client data with empty session history.
+
+  Use case ends. Changes from the preceding session cannot be undone or redone.
+
+#### UC05: Start with an unreadable data file
+
+**Precondition:** The configured client data file exists but cannot be read as valid client data.
+
+**MSS**
+
+1. Agent launches EstateBookUltraProMax.
+2. EstateBookUltraProMax preserves a backup of the unreadable file.
+3. EstateBookUltraProMax starts with an empty client book and displays a warning identifying the backup location.
+4. Agent can inspect the preserved file or continue entering clients without losing that backup.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. EstateBookUltraProMax cannot preserve the backup.
+  * 2a1. EstateBookUltraProMax reports the startup failure and stops instead of allowing the original data to be overwritten.
+
+  Use case ends. Agent must resolve the file-access problem before retrying startup.
 
 ### Non-Functional Requirements
 
 1. **Usability:** A user with an above average typing speed for English text should be able to accomplish most tasks using the _Command Line Interface (CLI)_ faster than with a mouse-driven GUI.
-2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed.
+2. **Environment:** The system should work on a _mainstream OS_ with Java `25` and a graphical desktop environment.
 3. **Performance:** The system should be able to hold up to <ins>100</ins> active client records without any noticeable sluggishness in performance during typical usage (e.g., searching, filtering).
-4. **Data Reliability:** The application must ensure that all data-changing actions are saved safely so that the latest changes are retained upon exiting.
+4. **Data Reliability:** Successful data-changing actions must be saved before success is reported. A failed save must retain the preceding client data and undo/redo history. An unreadable data file must be backed up before the application permits new client data to replace it.
 5. **Fault Tolerance:** The application must gracefully handle invalid inputs (e.g., invalid client references, missing roles, or conflicting duplicate details) by displaying clear error messages, instead of crashing.
 
 
@@ -844,8 +926,8 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 | Term                             | Definition                                                                                                                                                                         |
 |:---------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **CLI (Command Line Interface)** | A text-based user interface where the agent interacts with the application by typing commands, optimised for speed and keyboard-driven workflows.                                  |
-| **Mainstream OS**                | Standard desktop and laptop operating systems, specifically Windows, Linux, Unix, or macOS.                                                                                        |
-| **Client Role**                  | The classification of a client's relationship with the agent. A client can be classified as a `Buyer`, a `Seller`, or `Both`.                                                      |
+| **Mainstream OS**                | The supported desktop operating systems: Windows, Linux and macOS. |
+| **Client Role**                  | The classification of a client's relationship with the agent: `Buyer`, `Seller`, or `Both`. A client may also have no assigned role. |
 | **Tag**                          | A custom, meaningful label assigned to a client to group them according to specific attributes relevant to the agent's work.                                                       |
 | **Duplicate Contact**            | A client record that shares a name, phone number or email with another record, which the system detects to prevent fragmented information.                                         |
 | **Household Record**             | One record kept for couples or co-buyers who share contact details, tagged `t/couple`, since clients cannot share a phone number or email.                                         |
@@ -862,11 +944,11 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 ## **Appendix: Proposed features**
 
 The features below are not implemented. They are kept here so the design work is
-not lost, and they carry no v1.4 commitment.
+not lost, and are not commitments for the current version.
 
 ### Use cases
 
-#### UC05: Record a client's viewing outcome
+#### UC06: Record a client's viewing outcome
 
 **MSS**
 
@@ -898,7 +980,7 @@ not lost, and they carry no v1.4 commitment.
 
   Use case resumes at step 3.
 
-#### UC06: Update a client's follow-up plan
+#### UC07: Update a client's follow-up plan
 
 **MSS**
 
