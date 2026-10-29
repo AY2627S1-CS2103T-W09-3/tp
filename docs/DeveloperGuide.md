@@ -673,6 +673,9 @@ client book.
 
 ### User stories
 
+Each row reads: **As a** [role], **I want to** [goal], **so that I can** [benefit].
+Current and future needs are separated below; a story's priority does not indicate its implementation status.
+
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
 #### Current requirements
@@ -684,7 +687,8 @@ of the data file, not dedicated application commands.
 | -------- | ------- | ------------ | --------------- |
 | `* * *` | property agent | add a buyer contact with essential contact details | record a new buyer lead before I forget it |
 | `* * *` | property agent | add a seller contact with essential contact details | record a new seller lead before I forget it |
-| `* * *` | property agent | view all recorded contacts | see the clients currently under my care |
+| `* * *` | property agent | view all recorded contacts | review my whole client pipeline after a focused search or filter |
+| `* * *` | property agent | reopen my saved client records in a later session | continue my work without re-entering client information |
 | `* * *` | property agent | view a selected client's full details | quickly understand the client's information and requirements |
 | `* * *` | property agent | edit a client's contact details | keep the client's record accurate when their details change |
 | `* * *` | property agent | delete a wrongly created contact | remove records that should not exist |
@@ -699,7 +703,7 @@ of the data file, not dedicated application commands.
 | `* * *` | property agent | record a buyer's preferred property type | exclude unsuitable property categories |
 | `* * *` | property agent | record notes about a client | retain important context that does not fit into the standard fields |
 | `* * *` | property agent | tag contacts using meaningful labels | group clients according to attributes relevant to my work |
-| `* * *` | property agent | exit the application safely | ensure that my latest changes are retained |
+| `* * *` | property agent | exit the application safely | finish a session without losing successfully saved changes |
 | `* *` | new property agent | view realistic sample clients | understand what information the application can manage |
 | `* *` | new property agent | open or copy the User Guide link from the help window | find instructions for the available commands |
 | `* *` | user ready to begin | clear all sample or experimental data | start with a clean client list |
@@ -708,10 +712,11 @@ of the data file, not dedicated application commands.
 | `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
 | `* *` | property agent | filter clients by preferred housing type | find clients who want the kind of property I am listing |
 | `* *` | property agent | filter sellers by asking price | find sellers whose property is in the price range I am working on |
-| `* *` | property agent | reject contacts with a conflicting name, phone number or email | avoid splitting one client's information across multiple records |
+| `* *` | property agent | be told which name, phone number or email conflicts with an existing contact | correct conflicting details before creating another record |
 | `* *` | property agent | search using several keywords across contact fields | narrow results using the details I remember |
 | `* *` | property agent | filter clients by tags and combine filter criteria | focus on clients meeting my current needs |
 | `* *` | property agent | see the displayed and total client counts | recognize when I am working with only part of my client book |
+| `* *` | property agent | scan compact summaries of clients' roles and requirements | compare clients before opening their full profiles |
 | `* *` | property agent | remove an assigned role or optional requirements | remove information that is no longer applicable |
 | `* *` | property agent | replace, view and clear a client's note | keep free-text context current |
 | `* *` | property agent | confirm or cancel clearing the whole client book | avoid accidentally deleting all my clients |
