@@ -3,6 +3,7 @@ package seedu.address.logic.parser;
 import static java.util.Objects.requireNonNull;
 
 import seedu.address.commons.core.index.Index;
+import seedu.address.logic.Messages;
 import seedu.address.logic.commands.RoleCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.ClientRole;
@@ -22,6 +23,10 @@ public class RoleCommandParser implements Parser<RoleCommand> {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
 
+        if (!ParserUtil.hasValidIndexSyntax(arguments[0])) {
+            throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        }
+
         Index index = parseIndex(arguments[0]);
         if (arguments[1].equalsIgnoreCase("none")) {
             return new RoleCommand(index, null);
@@ -38,7 +43,7 @@ public class RoleCommandParser implements Parser<RoleCommand> {
         try {
             return ParserUtil.parseIndex(indexText);
         } catch (ParseException pe) {
-            throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT, pe);
+            throw new ParseException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX, pe);
         }
     }
 }

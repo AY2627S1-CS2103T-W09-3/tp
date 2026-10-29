@@ -55,7 +55,7 @@ public class EditCommandParser implements Parser<EditCommand> {
         try {
             index = ParserUtil.parseIndex(indexArgument);
         } catch (ParseException pe) {
-            String message = indexArgument.matches("-?[0-9]+")
+            String message = ParserUtil.hasValidIndexSyntax(indexArgument)
                     ? Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX
                     : String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE);
             throw new ParseException(message, pe);

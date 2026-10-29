@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
@@ -76,6 +77,20 @@ public class ParserUtilTest {
 
         // Leading and trailing whitespaces
         assertEquals(INDEX_FIRST_PERSON, ParserUtil.parseIndex("  1  "));
+    }
+
+    @Test
+    public void hasValidIndexSyntax_integerSyntax_returnsTrue() {
+        for (String input : List.of("0", "-0", "1", "-1", "2147483648", "  1  ")) {
+            assertTrue(ParserUtil.hasValidIndexSyntax(input));
+        }
+    }
+
+    @Test
+    public void hasValidIndexSyntax_malformedSyntax_returnsFalse() {
+        for (String input : List.of("", "   ", "abc", "1.5", "+1", "1 2")) {
+            assertFalse(ParserUtil.hasValidIndexSyntax(input));
+        }
     }
 
     @Test

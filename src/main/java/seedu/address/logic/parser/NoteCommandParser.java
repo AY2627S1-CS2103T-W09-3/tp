@@ -23,6 +23,10 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         }
 
         String[] arguments = trimmedArgs.split("\\s+", 2);
+        if (!ParserUtil.hasValidIndexSyntax(arguments[0])) {
+            throw new ParseException(NoteCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        }
+
         Index index;
         try {
             index = ParserUtil.parseIndex(arguments[0]);
