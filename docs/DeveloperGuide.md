@@ -384,14 +384,15 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 
 ### Commands that take no arguments
 
-`list`, `help`, `exit`, `undo`, `redo` and `history` take no arguments, because none of them names a client or a
-field, so the command word already says everything the parser needs.
-`AddressBookParser#parseNoArguments(String, Command, String)` rejects any non-blank input after the command word
-with the format message owned by that command, so `list now` fails with `Invalid command format. Use: list.` and `help 123`
-fails with `Invalid command format. Use: help.`. The message names that command's own form rather than a generic
-error, because the extra text is usually an argument borrowed from another command, such as `undo 1` typed after
-`edit 1`. The check lives in one helper, so a new command of this kind cannot forget it, while each command
-keeps its own message, which stays right when the command is renamed or gains an argument.
+`list`, `help`, `exit`, `undo`, `redo` and `history` take no arguments, because none of them names a client
+or a field, so the command word already says everything the parser needs.
+`AddressBookParser#parseNoArguments(String, Command, String)` rejects any non-blank input after the command
+word with the format message owned by that command, so `list now` fails with
+`Invalid command format. Use: list.` and `help 123` fails with `Invalid command format. Use: help.`.
+The message names that command's own form rather than a generic error, because the extra text is usually an
+argument borrowed from another command, such as `undo 1` typed after `edit 1`. The check lives in one helper,
+so a new command of this kind cannot forget it, while each command keeps its own message, which stays right
+when the command is renamed or gains an argument.
 
 Three commands sit on either side of the rule. `clear` takes one optional argument, `confirm`, in any letter
 case, and rejects everything else in `ClearCommandParser`, for the reasons in
