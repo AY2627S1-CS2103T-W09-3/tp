@@ -431,6 +431,23 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void rejectUnknownPrefixes_relationshipMarkerWithinName_doesNotThrow() throws Exception {
+        for (String marker : List.of("s/o", "S/O", "d/o", "D/O", "a/l", "A/L", "a/p", "A/P")) {
+            ParserUtil.rejectUnknownPrefixes(" n/Client " + marker + " Parent a/1 Road b/400000-600000", "usage",
+                    PREFIX_NAME, PREFIX_ADDRESS, PREFIX_BUDGET, PREFIX_ASKING_PRICE);
+        }
+    }
+
+    @Test
+    public void rejectUnknownPrefixes_uppercaseAddressPrefixOutsideName_throwsParseException() {
+        String expected = String.format(MESSAGE_UNKNOWN_PREFIX, "A/") + "\nusage";
+
+        assertThrows(ParseException.class, expected, () ->
+                ParserUtil.rejectUnknownPrefixes(" n/Client p/91234567 A/P Parent", "usage",
+                        PREFIX_NAME, PREFIX_PHONE, PREFIX_ADDRESS));
+    }
+
+    @Test
     public void rejectUnknownPrefixes_uppercaseUnknownToken_throwsParseException() {
         String expected = String.format(MESSAGE_UNKNOWN_PREFIX, "BB/") + "\nusage";
 

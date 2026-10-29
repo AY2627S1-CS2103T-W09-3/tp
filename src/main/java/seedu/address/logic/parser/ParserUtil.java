@@ -71,6 +71,7 @@ public class ParserUtil {
      * such as {@code r/} in {@code add}, while leaving ordinary text that contains a slash, such as {@code c/o Mary
      * Tan} or {@code w/ lift} in an address, alone. A word that starts one of the free-text abbreviations, {@code
      * s/o} or {@code b/c}, is left alone in any letter case, because {@link ArgumentTokenizer} also keeps it as text.
+     * Within a name, whole relationship markers such as {@code a/l} and {@code A/P} also stay part of the name.
      *
      * @param usage Command usage shown with the error, usually a command's {@code MESSAGE_USAGE}.
      */
@@ -81,16 +82,18 @@ public class ParserUtil {
         for (Prefix prefix : knownPrefixes) {
             known.add(prefix.getPrefix());
         }
-        boolean seenKnownPrefix = false;
+        String currentPrefix = null;
         Matcher matcher = PREFIX_TOKEN_PATTERN.matcher(args);
         while (matcher.find()) {
-            if (isFreeTextAbbreviation(args, matcher.start(), matcher.end())) {
+            if ((CliSyntax.PREFIX_NAME.getPrefix().equals(currentPrefix)
+                    && ArgumentTokenizer.isNameRelationshipMarker(args, matcher.start()))
+                    || isFreeTextAbbreviation(args, matcher.start(), matcher.end())) {
                 continue;
             }
             String token = matcher.group();
             if (known.contains(token)) {
-                seenKnownPrefix = true;
-            } else if (seenKnownPrefix && PREFIX_INITIALS.contains(Character.toLowerCase(token.charAt(0)))) {
+                currentPrefix = token;
+            } else if (currentPrefix != null && PREFIX_INITIALS.contains(Character.toLowerCase(token.charAt(0)))) {
                 throw new ParseException(String.format(MESSAGE_UNKNOWN_PREFIX, token) + "\n" + usage);
             }
         }
