@@ -103,6 +103,8 @@ class JsonAdaptedPerson {
 
     /**
      * Converts a given {@code Person} into this class for Jackson use.
+     * Tags, areas and housing types are written in sorted order, so two clients with the same values produce the
+     * same text however their sets happen to be ordered.
      */
     public JsonAdaptedPerson(Person source) {
         name = source.getName().fullName;
@@ -112,6 +114,8 @@ class JsonAdaptedPerson {
         role = source.getRole() == null ? null : source.getRole().getValue();
         note = source.getNote() == null ? null : source.getNote().value;
         tags.addAll(source.getTags().stream()
+                .map(tag -> tag.tagName)
+                .sorted()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
         budget = source.getBudget() == null ? null : new JsonAdaptedBudget(source.getBudget());
@@ -119,9 +123,11 @@ class JsonAdaptedPerson {
                 : BigDecimal.valueOf(source.getAskingPrice().getValue());
         areas.addAll(source.getAreas().stream()
                 .map(Area::toString)
+                .sorted()
                 .collect(Collectors.toList()));
         housingTypes.addAll(source.getHousingTypes().stream()
                 .map(HousingType::toString)
+                .sorted()
                 .collect(Collectors.toList()));
     }
 

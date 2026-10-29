@@ -279,6 +279,28 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_tagEditThatOnlyReordersTags_doesNotSaveOrRecordHistory() throws Exception {
+        // "an" and "c0" share a hash code, so the order they were added in decides how they are listed.
+        model.addPerson(new PersonBuilder(AMY).withTags("an", "c0").build());
+        CountingAddressBookStorage storage = createCountingStorage();
+
+        logic.execute("edit 1 t/c0 t/an");
+
+        assertEquals(0, storage.getSaveCount());
+        assertFalse(model.canUndo());
+    }
+
+    @Test
+    public void execute_tagEditThatOnlyReordersTagsWithUnwritableStorage_succeeds() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withTags("an", "c0").build());
+        logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_AD_EXCEPTION));
+
+        logic.execute("edit 1 t/c0 t/an");
+
+        assertFalse(model.canUndo());
+    }
+
+    @Test
     public void execute_readOnlyCommandsWithTaggedClients_doNotSave() throws Exception {
         model.addPerson(new PersonBuilder(AMY).withTags("urgent", "friend").build());
         CountingAddressBookStorage storage = createCountingStorage();
