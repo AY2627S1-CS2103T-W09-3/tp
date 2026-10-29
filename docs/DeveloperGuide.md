@@ -1087,13 +1087,22 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `history all`<br>
       Expected: `Error: Invalid command format. Use: history.`
 
-1. Running the same commands without arguments
+1. Running the same commands without extra words
 
    1. Test case: `list`<br>
       Expected: `Listed all clients.`
 
    1. Test case: `help`<br>
       Expected: The help window opens.
+
+   1. Test case: `undo` and `redo`<br>
+      Expected: `Error: There is no action to undo` and `Error: There is no action to redo`, because nothing has
+      been changed yet.
+
+   1. Test case: `history`<br>
+      Expected: The result box shows `There is no history to display.`
+
+   1. `exit` is left out of this group because it closes the app.
 
 ### Rejecting duplicate clients
 
