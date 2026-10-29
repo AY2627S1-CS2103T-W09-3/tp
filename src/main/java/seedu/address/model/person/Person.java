@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
@@ -136,6 +137,13 @@ public class Person {
     }
 
     /**
+     * Returns the tag names exactly as they are displayed, including letter case.
+     */
+    private Set<String> getTagNames() {
+        return tags.stream().map(tag -> tag.tagName).collect(Collectors.toSet());
+    }
+
+    /**
      * Returns true if both persons have the same identity and data fields.
      * This defines a stronger notion of equality between two persons.
      */
@@ -156,7 +164,7 @@ public class Person {
                 && address.equals(otherPerson.address)
                 && Objects.equals(role, otherPerson.role)
                 && Objects.equals(note, otherPerson.note)
-                && tags.equals(otherPerson.tags)
+                && getTagNames().equals(otherPerson.getTagNames())
                 && Objects.equals(budget, otherPerson.budget)
                 && Objects.equals(askingPrice, otherPerson.askingPrice)
                 && areas.equals(otherPerson.areas)
@@ -166,7 +174,8 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, role, note, tags, budget, askingPrice, areas, housingTypes);
+        return Objects.hash(name, phone, email, address, role, note, getTagNames(), budget, askingPrice, areas,
+                housingTypes);
     }
 
     @Override
