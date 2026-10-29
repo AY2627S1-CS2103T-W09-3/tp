@@ -305,7 +305,7 @@ public class MainAppTest {
         defaultApp.start(null);
 
         assertEquals(1, ui.startCount);
-        assertTrue(logHandler.messages.contains("Starting EstateBookUltraProMax V1.4"));
+        assertTrue(logHandler.messages.contains("Starting EstateBookUltraProMax V1.5"));
     }
 
     @Test
