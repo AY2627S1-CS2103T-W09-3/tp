@@ -365,4 +365,15 @@ public class AddCommandParserTest {
         assertParseFailure(parser, validPerson + " r/buyer",
                 String.format(MESSAGE_UNKNOWN_PREFIX, "r/") + "\n" + AddCommand.MESSAGE_USAGE);
     }
+
+    @Test
+    public void parse_freeTextAbbreviationInAnyCase_success() {
+        Person expectedUpper = new PersonBuilder(BOB).withTags().withAddress("12 Main Street S/o Ravi").build();
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/12 Main Street S/o Ravi",
+                new AddCommand(expectedUpper));
+
+        Person expectedLower = new PersonBuilder(BOB).withTags().withAddress("12 Main Street s/o Ravi").build();
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/12 Main Street s/o Ravi",
+                new AddCommand(expectedLower));
+    }
 }

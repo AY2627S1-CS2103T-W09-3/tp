@@ -95,7 +95,14 @@ public class ArgumentTokenizer {
 
         String token = argsString.substring(prefixPosition, wordEnd).toLowerCase(Locale.ROOT);
         boolean tokenEnds = wordEnd == argsString.length() || argsString.charAt(wordEnd) == ' ';
-        return !(tokenEnds && FREE_TEXT_ABBREVIATIONS.contains(token));
+        return !(tokenEnds && isFreeTextAbbreviation(token));
+    }
+
+    /**
+     * Returns true if {@code word} is one of the abbreviations that stay free text, ignoring case.
+     */
+    static boolean isFreeTextAbbreviation(String word) {
+        return FREE_TEXT_ABBREVIATIONS.contains(word.toLowerCase(Locale.ROOT));
     }
 
     /**

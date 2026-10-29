@@ -67,7 +67,8 @@ public class ParserUtil {
      * <p>An unrecognised token is reported only when its first letter begins a prefix anywhere in the product. That
      * catches a mistyped prefix such as {@code bb/} or {@code pa/}, and also a prefix belonging to another command
      * such as {@code r/} in {@code add}, while leaving ordinary text that contains a slash, such as {@code c/o Mary
-     * Tan} or {@code w/ lift} in an address, alone.
+     * Tan} or {@code w/ lift} in an address, alone. A word that starts one of the free-text abbreviations, {@code
+     * s/o} or {@code b/c}, is left alone in any letter case, because {@link ArgumentTokenizer} also keeps it as text.
      *
      * @param usage Command usage shown with the error, usually a command's {@code MESSAGE_USAGE}.
      */
@@ -81,6 +82,9 @@ public class ParserUtil {
         boolean seenKnownPrefix = false;
         Matcher matcher = PREFIX_TOKEN_PATTERN.matcher(args);
         while (matcher.find()) {
+            if (isFreeTextAbbreviation(args, matcher.start(), matcher.end())) {
+                continue;
+            }
             String token = matcher.group();
             if (known.contains(token)) {
                 seenKnownPrefix = true;
@@ -88,6 +92,20 @@ public class ParserUtil {
                 throw new ParseException(String.format(MESSAGE_UNKNOWN_PREFIX, token) + "\n" + usage);
             }
         }
+    }
+
+    /**
+     * Returns true if the token between {@code tokenStart} and {@code tokenEnd} opens a word that is a free-text
+     * abbreviation, such as {@code s/o} or {@code b/c}, in any letter case. The check mirrors the one
+     * {@link ArgumentTokenizer} applies before it treats a numeric prefix as a new argument.
+     */
+    private static boolean isFreeTextAbbreviation(String args, int tokenStart, int tokenEnd) {
+        int wordEnd = tokenEnd;
+        while (wordEnd < args.length() && Character.isLetter(args.charAt(wordEnd))) {
+            wordEnd++;
+        }
+        boolean wordEnds = wordEnd == args.length() || args.charAt(wordEnd) == ' ';
+        return wordEnds && ArgumentTokenizer.isFreeTextAbbreviation(args.substring(tokenStart, wordEnd));
     }
 
     /**

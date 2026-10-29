@@ -420,4 +420,12 @@ public class ParserUtilTest {
                 -> ParserUtil.rejectUnknownPrefixes(" n/Bob a/1 Test Road nr/ MRT", "usage",
                         PREFIX_NAME, PREFIX_ADDRESS));
     }
+
+    @Test
+    public void rejectUnknownPrefixes_freeTextAbbreviationInAnyCase_doesNotThrow() throws Exception {
+        ParserUtil.rejectUnknownPrefixes(" n/Bob a/12 Main Street s/o Ravi", "usage", PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Bob a/12 Main Street S/o Ravi", "usage", PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Bob a/12 Main Street b/c Tan", "usage", PREFIX_NAME, PREFIX_ADDRESS);
+        ParserUtil.rejectUnknownPrefixes(" n/Bob a/12 Main Street B/c Tan", "usage", PREFIX_NAME, PREFIX_ADDRESS);
+    }
 }
