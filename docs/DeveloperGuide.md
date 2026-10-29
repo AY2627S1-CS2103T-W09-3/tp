@@ -29,9 +29,12 @@ Refer to the guide [_Setting up and getting started_](SettingUp.md). When launch
 
 ### Architecture
 
-<img src="images/ArchitectureDiagram.png" width="280" />
+<img src="images/ArchitectureDiagram.png" width="320" alt="High-level application architecture" />
 
 The ***Architecture Diagram*** given above explains the high-level design of the App.
+It is an architectural overview rather than a UML class model: solid arrows show
+associations and dashed arrows show dependencies. The user and document icons
+represent the agent and local files, not implementation classes.
 
 The following provides a quick overview of the main components and their interactions.
 
@@ -43,18 +46,24 @@ The following provides a quick overview of the main components and their interac
 
 The bulk of the app's work is done by the following four components:
 
-* [**`UI`**](#ui-component): The UI of the App.
-* [**`Logic`**](#logic-component): The command executor.
-* [**`Model`**](#model-component): Holds the data of the App in memory.
-* [**`Storage`**](#storage-component): Reads data from, and writes data to, the hard disk.
+* [**`UI`**](#ui-component): Accepts commands and displays client lists, profiles and feedback.
+* [**`Logic`**](#logic-component): Interprets commands and coordinates data changes, saving and session history.
+* [**`Model`**](#model-component): Holds client data, the active list view and undo/redo state in memory.
+* [**`Storage`**](#storage-component): Loads and saves client data and preferences in local JSON files.
 
-[**`Commons`**](#common-classes) represents a collection of classes used by multiple other components.
+[**`Commons`**](#common-classes) provides shared utilities. Its individual dependencies
+are omitted from the overview to avoid clutter; it is not a separate step in command execution.
 
 **How the architecture components interact with each other**
 
 The *Sequence Diagram* below shows how the components interact with each other for the scenario where the user issues the command `delete 1`.
 
 <img src="images/ArchitectureSequenceDiagram.png" width="574" />
+
+### Component boundaries
+
+The following partial class diagram is an implementation roadmap, not another
+architecture-level view. It explains how component boundaries are represented in code.
 
 Each of the four main components (also shown in the diagram above),
 
@@ -63,7 +72,7 @@ Each of the four main components (also shown in the diagram above),
 
 For example, the `Logic` component defines its API in `Logic.java` and implements it in `LogicManager.java`. Other components interact with a component through its interface rather than its concrete class, preventing them from coupling to that component's implementation, as illustrated in the following partial class diagram.
 
-<img src="images/ComponentManagers.png" width="300" />
+<img src="images/ComponentManagers.png" width="335" alt="Component API interfaces and their manager implementations" />
 
 The sections below give more details of each component.
 
@@ -93,6 +102,12 @@ startup and refreshes them after every command attempt, including a failed
 save that rolls back a history transition. The History menu item remains
 available even when both stacks are empty.
 
+The scene-level history key filter runs before the command text field can handle
+its own text undo. It consumes a recognized history shortcut even when the
+corresponding menu item is disabled, so the app reports an unavailable action
+instead of editing the user's draft. `MainWindowTest` covers this routing,
+draft preservation, input styling and menu state.
+
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
 The `UI` component,
@@ -108,9 +123,18 @@ The `UI` component,
 
 Here's a (partial) class diagram of the `Logic` component:
 
+`LogicManager` holds one `AddressBookParser` instance, not a parser package.
+Concrete command parsers are expanded in the parser diagram below; the package
+boundary here only groups classes and is not an association endpoint.
+`XYZCommand` represents concrete commands such as `AddCommand` and `FindCommand`.
+Links to Model and Storage end at their API interfaces, not their packages.
+
 <img src="images/LogicClassDiagram.png" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below illustrates parsing and command execution within `Logic`,
+taking `execute("delete 1")` as an example. Snapshot capture, saving and history
+recording are omitted; those occur in `LogicManager` before it returns to UI and
+are described in [Undo, redo and history](#undo-redo-and-history).
 
 ![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.png)
 
@@ -127,7 +151,7 @@ How the `Logic` component works:
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
-<img src="images/ParserClasses.png" width="600"/>
+<img src="images/ParserClasses.png" width="700" alt="Parser dependencies, using XYZ as a representative command" />
 
 How the parsing works:
 * When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
@@ -161,7 +185,10 @@ tests cover both the ambiguity and the address-first form.
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<img src="images/ModelClassDiagram.png" width="750" />
+The first class diagram focuses on model ownership and the filtered client list;
+client value objects are shown separately below to keep both views readable.
+
+<img src="images/ModelClassDiagram.png" width="500" alt="Model ownership and filtered client list" />
 
 
 The `Model` component,
@@ -172,11 +199,29 @@ The `Model` component,
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
-**Why duplicate emails ignore case.** `Person#isSamePerson` treats two clients as the same if their names match, or their phone numbers or email addresses are equal. It compares emails with `Email#isSameEmail`, which ignores case, because email providers treat `alpha.tester@EXAMPLE.COM` and `alpha.tester@example.com` as one mailbox, so an exact comparison would let the same address into two records. Strictly, only the domain is case-insensitive and the part before `@` may be case-sensitive, but no mainstream provider treats it that way, so the whole address is compared ignoring case. `Email#equals` stays exact, because it defines whether two clients hold identical data, which the undo history and the no-change check in `edit` rely on. The email is stored as it was typed.
+The following class diagram expands `Person`. Multiplicities distinguish required,
+optional and multi-valued fields; `Price` serves both asking prices and budget bounds.
+Methods and history classes are omitted because this view concerns stored client fields.
+These links are navigable associations, not compositions: immutable field values
+can be reused when a client is replaced or captured in a history snapshot. A field
+does not have an exclusive lifetime tied to one `Person` or `Budget`.
+
+<img src="images/PersonClassDiagram.png" width="340" alt="Client fields and their multiplicities" />
+
+**Why duplicate emails ignore case.** `Person#isSamePerson` treats two clients as the
+same if their names match, or their phone numbers or email addresses conflict. It uses
+`Email#isSameEmail` to compare the whole address ignoring case. This is the product's
+duplicate-detection policy, not a guarantee about every mail provider: email local parts
+can be case-sensitive. It prevents case-only variants from creating separate client records.
+`Email#equals` remains case-sensitive for exact stored-data comparisons, and the email is
+stored as typed.
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
-<img src="images/BetterModelClassDiagram.png" width="700" />
+Only the tag-related associations are shown; this is a proposed alternative, not the
+current implementation.
+
+<img src="images/BetterModelClassDiagram.png" width="330" alt="Alternative ownership of shared tags" />
 
 </div>
 
@@ -187,7 +232,7 @@ The `Model` component,
 
 **API** : [`Storage.java`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/storage/Storage.java)
 
-<img src="images/StorageClassDiagram.png" width="550" />
+<img src="images/StorageClassDiagram.png" width="610" alt="Storage interfaces and JSON adapter dependencies" />
 
 The `Storage` component,
 * can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
@@ -195,12 +240,19 @@ The `Storage` component,
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
 `JsonUtil` reads JSON from a byte stream, allowing Jackson to detect a UTF-8 or
-UTF-16 byte-order mark in a manually edited client book. If an existing client
-book still cannot be loaded, `MainApp` first copies it beside the original as
-`addressbook.json.unreadable-<unique number>.bak`, then starts with an empty
-model. It passes the backup path to `UiManager`, which warns the user where the
-original bytes were saved. The backup is created before a command can overwrite
-the data file; if the copy fails, startup does not continue with the empty book.
+UTF-16 byte-order mark in a manually edited client book.
+
+**Recovery belongs to startup.** The JSON reader reports invalid data;
+`MainApp#initModelManager` decides whether it is safe to offer an empty book.
+A missing file loads and saves sample clients. An unreadable file instead goes
+through `backUpUnreadableDataFile`, which copies the original bytes beside it as
+`addressbook.json.unreadable-<unique number>.bak` before creating an empty model.
+`UiManager` shows the backup path after opening the main window. The backup is
+for manual recovery, not an automatic repair.
+
+If the backup fails, startup logs the cause and stops, preventing a later
+command from overwriting the only copy. `MainAppTest` covers recovery and backup
+failure, and `UiManagerTest` covers the warning and normal startup without it.
 
 ### Common classes
 
@@ -235,16 +287,20 @@ Clearing a role with `none` instead shows `Role cleared: CLIENT_NAME has no assi
 If the client is already unassigned, it shows `Role unchanged: CLIENT_NAME already has no assigned role`.
 That case does not change the client or add an undo-history entry.
 
-The examples below are independent and assume that `Alicia Tan` is client 1 in
-the currently displayed list.
+**Implementation.** `RoleCommandParser` requires exactly two arguments and
+validates the index before the role. It translates `none` into a null role rather
+than adding a fourth enum value. `RoleCommand#execute` looks up the displayed
+client and creates a replacement `Person`, copying every other field. It does
+not reset the predicate. After replacement, it looks up the client's new
+displayed index: the result reselects a visible client, or clears the detail
+panel if the role change removes the client from the active filter.
 
-| Command | Expected result |
-|---------|-----------------|
-| `role 1 buyer` | Alicia Tan's role becomes `Buyer`. The result box shows `Role updated: Alicia Tan is now marked as Buyer`. |
-| `role 1 seller` | Alicia Tan's role becomes `Seller`. The result box shows `Role updated: Alicia Tan is now marked as Seller`. |
-| `role 1 both` | Alicia Tan's role becomes `Buyer, Seller`. The result box shows `Role updated: Alicia Tan is now marked as Buyer, Seller`. |
-| `role 1 none` | Alicia Tan has no assigned role or role badge. The result box shows `Role cleared: Alicia Tan has no assigned role`. |
-| `role 1 none` again | Alicia Tan remains unassigned. The result box shows `Role unchanged: Alicia Tan already has no assigned role`. |
+The command supplies its undoable flag and action description; history recording
+and persistence remain the responsibility of `LogicManager`. This keeps the
+typed command and menu-driven history on the same transaction path.
+`RoleCommandParserTest` covers validation, and `RoleCommandTest` covers clearing,
+unchanged roles and filtered indexes. `UndoRedoIntegrationTest` checks that role
+changes survive undo, redo and a storage round trip.
 
 Invalid inputs do not change the client's role:
 
@@ -256,9 +312,13 @@ Invalid inputs do not change the client's role:
 | The index is zero or has invalid syntax | `Error: Invalid command format. Use: role INDEX ROLE.` |
 | The positive index is outside the currently displayed list, or no clients are displayed | `Error: The client index provided is invalid.` |
 
-The following sequence diagram shows how the `role 1 buyer` command is processed successfully:
+The following sequence diagram focuses on executing an already parsed `role 1 buyer`:
 
-![Interactions for the `role 1 buyer` command](images/RoleSequenceDiagram.png)
+<img src="images/RoleSequenceDiagram.png" width="700" alt="Role command updates a client through the Model API" />
+
+The diagram assumes that the updated client remains visible. It focuses on
+the command's model update; parsing, snapshot capture, persistence and UI rendering are
+omitted. The source is [RoleSequenceDiagram.puml](diagrams/RoleSequenceDiagram.puml).
 
 ### Client role storage
 
@@ -276,7 +336,12 @@ The command token `none` is not an enum value or a stored role. It clears the op
 
 **Saving and reading back.** `JsonAdaptedPerson` mirrors the model field as a string. When a client book is saved the role is written with `ClientRole#getValue()`, and because the field carries `@JsonInclude(JsonInclude.Include.NON_NULL)`, a client with no role leaves the `role` key out of the data file entirely. When a client book is read back, a missing key becomes no role and any other value goes through `ClientRole#fromString(String)`; an unrecognised token raises an `IllegalValueException` carrying `Invalid Role: Role must be 'buyer', 'seller', or 'both'.`. A typo in a hand-edited data file is therefore reported rather than silently ignored.
 
-**Why a dedicated field and not a tag.** Tags are free-form, they may be many, and they cannot be checked against a fixed set of values. A role is exactly one of three known values, it is validated as soon as the user supplies it, and it may also be absent, which a set of tags cannot express. `Person` compares roles with `Objects.equals`, so an unassigned role is a legal value rather than a missing one.
+**Why a dedicated field and not a tag.** Tags allow arbitrary alphanumeric labels and
+multiple values; they do not enforce the role vocabulary. A dedicated optional enum restricts
+a client to one role value, with `BOTH` representing the combined buyer/seller relationship.
+An absent role is represented by null independently of unrelated tags. `Person` compares
+roles with `Objects.equals`, so absence is a supported state. Tags could encode roles only
+with additional conventions and validation that the dedicated field already supplies.
 
 **Client books with no role.** A client book written before the role existed has no `role` key, and every record in it loads with no role assigned. The sample clients shipped with the app set roles so that the feature is visible on first run, and the model class diagram above shows `ClientRole` as an optional association of `Person`. The saving and reading path, `JsonAddressBookStorage` to `JsonSerializableAddressBook` to `JsonAdaptedPerson`, is unchanged and is shown in `StorageClassDiagram.puml`.
 
@@ -288,7 +353,11 @@ A note is free-text working detail kept on a client: where a negotiation stands,
 
 **Executing.** `NoteCommand` builds a new `Person` that carries the new note, or no note for the clear form, and copies every other field from the client being edited, then calls `Model#setPerson`. It does not touch the filtered list, so an active search or filter stays in effect. The result message is `Note updated for <name>.` or `Note cleared for <name>.`
 
-![Interactions for the `note 1 Call at 6 PM\non Monday` command](images/NoteSequenceDiagram.png)
+The sequence below isolates the note parser's successful replacement path. It
+omits note-object construction and error paths; executing the resulting command
+uses the same indexed-client update pattern as `role` above.
+
+<img src="images/NoteSequenceDiagram.png" width="740" alt="Parsing a two-line client note" />
 
 **Storing.** `JsonAdaptedPerson` mirrors the note as a string under the `note` key. Because the field carries `@JsonInclude(JsonInclude.Include.NON_NULL)`, a client with no note leaves the key out of the data file entirely. A real line break in the model value is represented by the escaped characters `\n` in the JSON file and is decoded back into a line break when the file is read. A missing key becomes no note, and a value that is blank or longer than 500 characters raises an `IllegalValueException` carrying the same message, so a hand-edited data file is reported rather than silently accepted. A 500-character two-line note therefore survives a restart unchanged.
 
@@ -332,8 +401,9 @@ clear the selection when they do not provide a view index.
 ![Sequence from view 1 to selecting and rendering the first displayed client](images/ViewSequenceDiagram.png)
 
 The diagram shows a successful `view 1` with at least one displayed client and
-no pending clear confirmation. Parser internals, the save check and the
-feedback display are abbreviated to keep the selection flow readable.
+no pending clear confirmation. Logic is treated as a black box so the diagram
+focuses on UI selection and the listener that refreshes the detail panel.
+Rendering details and the feedback display are omitted.
 The source is [ViewSequenceDiagram.puml](diagrams/ViewSequenceDiagram.puml).
 
 **Selection and rendering.** `MainWindow` reads `CommandResult#getViewIndex()`
@@ -355,8 +425,8 @@ After successful command execution, `MainWindow` applies these rules:
 | Command result | Selection handling |
 |---|---|
 | Contains a view index | Select that client in the current filtered list. |
-| No view index, and neither awaiting confirmation nor showing help | Clear selection, even if the list contents did not change. |
-| Awaiting clear confirmation or showing help | Preserve selection unless a list change already cleared it. |
+| No view index, and no confirmation, help or selection-preservation flag | Clear selection, even if the list contents did not change. |
+| Awaiting clear confirmation, showing help, or `shouldPreserveSelection()` is true | Preserve selection unless a list change already cleared it. |
 | Parsing or execution throws an exception | Show the error without explicitly changing selection; a list change may already have cleared it. |
 | Any input other than `clear confirm` while a clear is pending | `LogicManager` swallows any `ParseException`, skips the command and returns `Clear cancelled.` with no view index, so the panel is cleared and no error is shown. |
 
@@ -373,6 +443,39 @@ returns no view index and clears the panel, while preserving client data.
 `MainWindowTest` exercises the command-to-panel path, filtered selection,
 refresh after edits, selection clearing and preservation on errors/help/clear
 warnings. `DetailPaneTest` checks optional rows, wrapping and scrolling.
+
+### Compact client cards and filter status
+
+The list is a scanning view; `DetailPane` is the full record. `PersonCard` and
+`PersonListCard.fxml` keep the identity, contact and tag rows compact, with an
+optional single-line requirements summary. Long names, emails and summaries may
+use ellipses, while the index and role badge keep their preferred widths.
+Absent role badges, note markers and requirements are both invisible and
+unmanaged, so they do not reserve layout space.
+
+**Tag overflow.** `PersonCard` sorts the tags before passing them to `TagRow`,
+which fits whole labels into the available width, reserving room for a `+N`
+overflow label. Its tooltip lists the hidden tags. Fitting runs during layout
+and uses the labels' computed widths
+and the overflow label's current font, so resizing and platform font metrics do
+not require a fixed character limit. This avoids multi-line tags pushing the
+next client out of view; all tags remain available in the detail panel.
+
+**Small windows.** Card height follows its content rather than a fixed list-cell
+height. `MainWindow#updateLayoutDensity` sets the `compact` pseudo-class from the
+usable content height, and `DarkTheme.css` reduces surrounding padding and the
+feedback viewport without reducing text size. Change the FXML and CSS together
+when adjusting density. `PersonCardTest`, `InterfaceStyleTest` and
+`MainWindowTest` cover fitting and logical viewport sizes; actual operating-system
+display scaling still needs the checks in the [Testing guide](Testing.md#manual-display-scaling-checks).
+
+**Filter status.** `StatusBarFooter` binds to the displayed list size, total list
+size and `Model#personListFilteredProperty`. The last property describes whether
+an active predicate differs from the show-all predicate; it is not inferred from
+the counts. Even a search matching every client therefore shows the filtered
+indicator until `list` resets it: a client added later is still subject to the
+active predicate, even when the current counts are equal.
+`MainWindowTest` checks these states, including empty results and data changes.
 
 ### Clear confirmation
 
@@ -466,8 +569,9 @@ comparison. The cost grows with the number of clients, one serialisation per cli
 
 ### Undo, redo and history
 
-`AddressBookSnapshot` is an immutable copy of every client, including clients hidden
-by the current find or filter predicate. A `HistoryEntry` contains the before and
+`AddressBookSnapshot` copies the whole client list, including clients hidden
+by the current find or filter predicate, and safely shares immutable `Person` objects.
+A `HistoryEntry` contains the before and
 after snapshots, command word and user-facing action description. `CommandHistory`
 keeps separate undo and redo stacks, with the next action first and a capacity of 20
 undoable changes. `ModelManager` delegates history operations to
@@ -509,12 +613,24 @@ reverses the stack transfer, leaving the action available to retry. Undo and red
 do not record additional history entries. The same access-denied and general
 storage-error messages apply as for ordinary commands.
 
+`LogicManager#saveAddressBookOrRollback` keeps the save error and rollback in one
+path. If rollback itself reports a `HistoryOperationException`, it becomes an
+`IllegalStateException`: this signals an internal history inconsistency rather
+than an ordinary retryable save failure. `LogicManagerTest` exercises failed
+saves after undo and redo, including failures of the rollback itself.
+
 **Keeping the saved file consistent.** `JsonAddressBookStorage` serialises the
 complete address book into a temporary file beside the destination, then atomically
 replaces the destination. The app never writes partial JSON directly into the saved
 file, and it removes the temporary file after a failed save. If atomic replacement
 is unsupported, saving fails and `LogicManager` rolls back the in-memory state and
 stacks rather than reporting success for an unsaved change.
+
+If removing the temporary file also fails, `JsonAddressBookStorage` attaches that
+cleanup failure as a suppressed exception and rethrows the original save failure.
+This preserves the reason the save failed while retaining cleanup diagnostics.
+`JsonAddressBookStorageTest` checks this for both I/O and runtime failures and
+verifies that the previous file remains intact.
 
 ### Client requirements
 
@@ -637,9 +753,9 @@ client always produces the same message.
 
 **The predicate.** `PersonMatchesFilterPredicate#test` is true only when every part matches. The constructor is private, because six mostly empty arguments are easy to mix up, so callers use the builder and leave unused parts out:
 
-* **Role.** A missing role always matches. `buyer` matches `BUYER` and `BOTH`, `seller` matches `SELLER` and `BOTH`, and `both` matches only `BOTH`. A client with no role never matches a given role.
-* **Tags.** No tags always match. Otherwise, one matching tag is enough, and tag names are compared ignoring case.
-* **Areas and housing types.** These work like tags. No values always match, one matching value is enough, and a client with none never matches a given value.
+* **Role.** An omitted role criterion imposes no restriction. `buyer` matches `BUYER` and `BOTH`, `seller` matches `SELLER` and `BOTH`, and `both` matches only `BOTH`. A client with no role never matches a given role criterion.
+* **Tags.** An omitted tag criterion imposes no restriction. Otherwise, one matching tag is enough, and tag names are compared ignoring case. A client with no tags cannot match a supplied tag criterion.
+* **Areas and housing types.** These work like tags. An omitted criterion imposes no restriction; otherwise, one matching value is enough. A client with no recorded values cannot match a supplied criterion.
 * **Budget.** A client matches when the budget range overlaps the filter's range, with both ends included, so `PriceRange#overlaps` checks `filterMin <= budgetMax && budgetMin <= filterMax`. A single price is a range with the same minimum and maximum, so it matches every budget that includes it. A client without a budget never matches.
 * **Asking price.** A client matches when the asking price is inside the filter's range, with both ends included, as checked by `PriceRange#contains`. A single price therefore matches only that exact price. A client without an asking price never matches.
 
@@ -649,7 +765,14 @@ So different parts combine with AND, and the values within the tags, the areas a
 
 **Executing.** `FilterCommand#execute(Model)` calls `Model#updateFilteredPersonList(predicate)`. This overwrites the predicate on the single `FilteredList`, so a filter does not stack with an earlier filter or `find`, and `find` and `list` replace a filter in the same way. It then counts the displayed clients and the clients in the whole address book, and shows `Showing X of Y clients.`. Y is the whole book, not the filtered list.
 
-**Mutation commands.** `add`, `edit`, `delete`, `role`, `note` and `clear confirm` change `AddressBook` and never call `updateFilteredPersonList`, so the predicate stays set. `ModelManager` wraps `AddressBook#getPersonList()` in the `FilteredList`, which re-tests an added or replaced client against the predicate by itself. A client who no longer matches leaves the list, and no command has to refresh the list. Only `add` can make a client appear, because `edit` and `role` work on a client that is already displayed and so already matches; `delete` removes the client, `note` changes neither the role nor the tags, and `clear confirm` replaces the whole address book through `Model#setAddressBook`, so every client leaves the list and a client added afterwards is tested against the same predicate. Only `list` and a new `find` or `filter` change the predicate.
+**Mutation commands.** `add`, `edit`, `delete`, `role`, `note` and `clear confirm` change
+`AddressBook` without resetting the predicate. `ModelManager` wraps the stored list in a
+`FilteredList`, which automatically re-tests added or replaced clients. A client who no longer
+matches leaves the results. Among these commands, only `add` can introduce a previously hidden
+client: indexed updates target an already displayed client, while `delete` and confirmed `clear`
+remove records. Undo and redo can also restore clients into the results, because snapshots include
+the whole book and are re-evaluated against the predicate still in effect. Only `list` and a new
+`find` or `filter` replace that predicate.
 
 The following activity diagram shows how the active filter is set, and what happens to it after a successful `add`, `edit`, `delete`, `role`, `note` or `clear confirm`. A command that fails, for example because of an invalid index or a duplicate client, changes nothing, so the filter and the displayed list stay as they were:
 
@@ -685,25 +808,34 @@ The following activity diagram shows how the active filter is set, and what happ
 * works primarily on a desktop or laptop
 * prefers typing and keyboard-driven workflows over navigating with a mouse
 * is comfortable using a Command Line Interface (CLI)
-* may share a screen with a client or colleague and therefore needs the list to show one line per client
+* needs compact client summaries while retaining access to each client's full details
 
 **Value proposition**: EstateBookUltraProMax is a command-driven client book for property agents who
 manage buyers and sellers at the same time. Each client record holds contact details, a budget, an
 asking price, preferred areas, preferred housing types and a note, and every one of them is set by
-typing a short command. That makes a record faster to find and update than a spreadsheet: the list
-stays one line per client, search and filter narrow it in place, and the requirements line tells the
-agent what the client wants without opening anything else.
+typing a short command. Compact list cards summarize clients, search and filter narrow the displayed
+list, and a separate detail panel shows the selected client's full information without leaving the
+client book.
 
 
 ### User stories
 
+Each row reads: **As a** [role], **I want to** [goal], **so that I can** [benefit].
+Current and future needs are separated below; a story's priority does not indicate its implementation status.
+
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
+
+#### Current requirements
+
+The following needs are supported in the current version. Backup and restoration use manual copies
+of the data file, not dedicated application commands.
 
 | Priority | As a …​ | I want to …​ | So that I can…​ |
 | -------- | ------- | ------------ | --------------- |
 | `* * *` | property agent | add a buyer contact with essential contact details | record a new buyer lead before I forget it |
 | `* * *` | property agent | add a seller contact with essential contact details | record a new seller lead before I forget it |
-| `* * *` | property agent | view all recorded contacts | see the clients currently under my care |
+| `* * *` | property agent | view all recorded contacts | review my whole client pipeline after a focused search or filter |
+| `* * *` | property agent | reopen my saved client records in a later session | continue my work without re-entering client information |
 | `* * *` | property agent | view a selected client's full details | quickly understand the client's information and requirements |
 | `* * *` | property agent | edit a client's contact details | keep the client's record accurate when their details change |
 | `* * *` | property agent | delete a wrongly created contact | remove records that should not exist |
@@ -713,27 +845,41 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* * *` | property agent | record whether a client is a buyer, seller, or both | understand my relationship with the client at a glance |
 | `* * *` | property agent | record a client's address | retain the client's important contact information |
 | `* * *` | property agent | record a buyer's budget range | avoid proposing properties outside the buyer's means |
+| `* * *` | property agent | record a seller's asking price | retain the seller's pricing expectations |
 | `* * *` | property agent | record a buyer's preferred locations | shortlist properties in areas acceptable to the buyer |
 | `* * *` | property agent | record a buyer's preferred property type | exclude unsuitable property categories |
 | `* * *` | property agent | record notes about a client | retain important context that does not fit into the standard fields |
 | `* * *` | property agent | tag contacts using meaningful labels | group clients according to attributes relevant to my work |
-| `* * *` | property agent | exit the application safely | ensure that my latest changes are retained |
+| `* * *` | property agent | exit the application safely | finish a session without losing successfully saved changes |
 | `* *` | new property agent | view realistic sample clients | understand what information the application can manage |
-| `* *` | new property agent | view concise help within the application | learn the available commands without leaving my workflow |
+| `* *` | new property agent | copy the User Guide URL from the help window | open the guide in my browser and find instructions for the available commands |
 | `* *` | user ready to begin | clear all sample or experimental data | start with a clean client list |
 | `* *` | property agent | filter contacts by buyer or seller role | focus on the relevant side of my client pipeline |
 | `* *` | property agent | filter buyers by budget range | identify buyers who may be suitable for a property |
 | `* *` | property agent | filter buyers by preferred location | identify buyers interested in a particular area |
 | `* *` | property agent | filter clients by preferred housing type | find clients who want the kind of property I am listing |
 | `* *` | property agent | filter sellers by asking price | find sellers whose property is in the price range I am working on |
-| `* *` | property agent | detect possible duplicate contacts | avoid splitting one client's information across multiple records |
+| `* *` | property agent | be told which name, phone number or email conflicts with an existing contact | correct conflicting details before creating another record |
+| `* *` | property agent | search using several keywords across contact fields | narrow results using the details I remember |
+| `* *` | property agent | filter clients by tags and combine filter criteria | focus on clients meeting my current needs |
+| `* *` | property agent | see the displayed and total client counts | recognize when I am working with only part of my client book |
+| `* *` | property agent | scan compact summaries of clients' roles and requirements | compare clients before opening their full profiles |
+| `* *` | property agent | remove an assigned role or optional requirements | remove information that is no longer applicable |
+| `* *` | property agent | replace, view and clear a client's note | keep free-text context current |
+| `* *` | property agent | confirm or cancel clearing the whole client book | avoid accidentally deleting all my clients |
+| `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
+| `* *` | property agent | redo an undone data-changing action | restore a change I still need |
+| `* *` | property agent | inspect the current session's undo and redo history | understand which changes can be reversed or reapplied |
+| `* *` | keyboard-oriented property agent | open help or invoke undo and redo through shortcuts without overwriting my draft | access guidance or reverse changes without losing a partially typed command |
+| `* *` | property agent | retain the previous data when saving an update fails | retry a change without leaving an unsaved record in the client book |
+| `* *` | property agent | preserve an unreadable data file before starting with an empty client book | recover the original information rather than overwrite it |
 | `*` | property agent | create a backup of my client records | reduce the risk of losing important information |
 | `*` | property agent | restore my client records from a valid backup | recover my information after data loss or device replacement |
 
 #### Future requirements
 
-These stories are deliberately out of scope for v1.5. They stay listed so the
-backlog below the shipped features is visible.
+These stories are not implemented in the current version. They remain as requirements for future
+iterations, rather than promises about the released commands.
 
 | Priority | As a …​ | I want to …​ | So that I can…​ |
 | -------- | ------- | ------------ | --------------- |
@@ -748,7 +894,6 @@ backlog below the shipped features is visible.
 | `* *` | property agent | record the next follow-up date | contact the client at an appropriate time |
 | `* *` | property agent | view clients whose follow-ups are due or overdue | prioritise clients who require my attention |
 | `* *` | property agent | sort contacts by name, latest update, or next follow-up | review my clients in an order suitable for my current task |
-| `* *` | property agent | undo my most recent data-changing action | recover quickly from an input mistake |
 | `* *` | long-time property agent | archive an inactive client | reduce clutter without permanently losing past information |
 | `* *` | returning property agent | restore an archived client | resume working with a past client who has become active again |
 | `* *` | property agent migrating from spreadsheets | import client records from a common tabular format | avoid entering all my existing client information manually |
@@ -759,7 +904,7 @@ backlog below the shipped features is visible.
 | `*` | property agent | preview the records affected by a bulk command | avoid modifying the wrong clients |
 | `*` | property agent | merge confirmed duplicate contacts | maintain one complete record for each client |
 | `*` | property agent changing agencies | export selected client records | retain records that I am permitted to take with me |
-| `*` | property agent | view when and how a client record was last changed | determine whether the information is current |
+| `*` | property agent | view a persistent record of when and how a client was changed, including earlier sessions | determine whether the information is current |
 | `*` | property agent | separate personal leads from agency-assigned leads | keep my different work contexts organised |
 | `*` | property agent | record relationships between clients | recognise couples, co-buyers, family members, and co-owners |
 | `*` | property agent | save a frequently used search | repeat a common client review without rebuilding the search criteria |
@@ -770,13 +915,22 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
 **MSS** stands for **Main Success Scenario**.
 
+These use cases cover distinct interactions with meaningful alternatives. Simple actions such as
+listing clients, viewing a profile and opening help are covered by the user stories and User Guide.
+Unless stated otherwise, no clear confirmation is pending when a use case begins.
+
+**Shared extension for UC01 steps 2 and 4, UC02 step 4, UC03 step 4, and UC04 steps 2 and 4:**
+If saving fails, the system reports the failure and retains the client data and undo/redo history
+from before that step. The use case ends without completing that change. After resolving the
+file-access problem, Agent can retry the failed request; earlier successful changes remain saved.
+
 #### UC01: Register and classify a new client
 
 **MSS**
 
 1. Agent requests to add a client, providing the client's name, phone number, email address, address, and optionally a budget, an asking price, preferred areas, preferred housing types and tags.
 2. EstateBookUltraProMax adds the client and displays the recorded details.
-3. Agent requests to assign the new client a role of buyer, seller, or both.
+3. Agent identifies the new client in the displayed list and requests to assign a role of buyer, seller, or both.
 4. EstateBookUltraProMax assigns the role and displays the client's updated role.
 
    Use case ends.
@@ -793,6 +947,12 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 1.
 
+* 2a. The new client does not match the active search or filter and is absent from the displayed list.
+  * 2a1. Agent requests to list all clients.
+  * 2a2. EstateBookUltraProMax displays all clients, including the newly added client.
+
+  Use case resumes at step 3.
+
 * 3a. The specified client reference is invalid.
   * 3a1. EstateBookUltraProMax displays an error without assigning a role.
 
@@ -803,14 +963,18 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
-#### UC02: Update a client's contact details
+* 3c. Agent does not wish to assign a role yet.
+
+  Use case ends. The added client remains saved without an assigned role.
+
+#### UC02: Update a displayed client
 
 **MSS**
 
 1. Agent requests to find a client using one or more keywords, each of which matches part of the client's name, phone number, email address or address.
 2. EstateBookUltraProMax displays a list of matching clients.
 3. Agent identifies a client from the displayed results and requests changes to the client's contact details.
-4. EstateBookUltraProMax updates the specified details and displays the updated client.
+4. EstateBookUltraProMax saves the specified details, reports the update and refreshes the displayed results.
 
    Use case ends.
 
@@ -840,62 +1004,143 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 
   Use case resumes at step 3.
 
-#### UC03: Change a client's role
+* 4a. The updated client no longer matches the active search or filter.
+  * 4a1. EstateBookUltraProMax removes the client from the matching results while retaining the saved update.
+
+  Use case ends.
+
+**Related interactions:** Changing requirements, replacing or clearing a note, and assigning or
+clearing a role also operate on an index in the currently displayed list and retain its search or
+filter. Their field validation differs from contact editing; clearing an already absent role reports
+that no role is assigned without creating an undo entry. Deletion uses the same displayed-index
+selection, but removes the whole record instead of validating replacement fields. These variations
+do not require separate copies of the lookup and invalid-index scenarios.
+
+#### UC03: Clear the client book with confirmation
 
 **MSS**
 
-1. Agent requests to list all clients.
-2. EstateBookUltraProMax displays the clients and their assigned roles.
-3. Agent identifies a client from the displayed list and requests to change the client's role to buyer, seller, both, or none.
-4. EstateBookUltraProMax updates the client's role and displays the updated client.
+1. Agent requests to clear the client book.
+2. EstateBookUltraProMax warns how many clients will be removed and requests confirmation.
+3. Agent submits the clear confirmation as the next command.
+4. EstateBookUltraProMax clears and saves the whole client book, including clients hidden by a search or filter.
 
    Use case ends.
 
 **Extensions**
 
-* 2a. The client list is empty.
+* 1a. The whole client book is already empty.
+  * 1a1. EstateBookUltraProMax reports that it is empty without requesting confirmation.
 
   Use case ends.
 
-* 3a. The specified client reference is invalid.
-  * 3a1. EstateBookUltraProMax displays an error without updating the client's role.
+* 1b. Agent requests confirmation directly instead of first requesting to clear the client book.
+  * 1b1. EstateBookUltraProMax reports that no clear is pending and retains all clients.
 
-  Use case resumes at step 3.
+  Use case resumes at step 1.
 
-* 3b. The role is missing or is not buyer, seller, both, or none.
-  * 3b1. EstateBookUltraProMax displays the command format if the role is missing, or an error indicating the permitted roles if it is invalid, without updating the client's role.
+* 3a. Agent enters any input other than a valid clear confirmation.
+  * 3a1. EstateBookUltraProMax cancels the pending clear without executing that input as another command.
 
-  Use case resumes at step 3.
+  Use case ends. Agent must enter the desired command again to execute it.
 
-#### UC04: Delete a client
+#### UC04: Undo and redo a saved change
+
+**Scope:** Undo/redo actions belong to the current session. Agent can also enter this use case
+at step 3 when an action has already been undone.
 
 **MSS**
 
-1. Agent requests to list all clients.
-2. EstateBookUltraProMax displays the client list.
-3. Agent requests to delete a specific client from the displayed list.
-4. EstateBookUltraProMax deletes the client, identifies the deleted client, and displays the updated list.
+1. Agent requests to undo the most recent data-changing action.
+2. EstateBookUltraProMax restores and saves the preceding client data and makes the undone action available for redo.
+3. Agent requests to redo that action.
+4. EstateBookUltraProMax reapplies and saves the action, making it available for undo again.
 
    Use case ends.
 
 **Extensions**
 
-* 2a. The client list is empty.
+* 1a. No action is available to undo.
+  * 1a1. EstateBookUltraProMax reports that there is no available action without changing client data.
 
   Use case ends.
 
-* 3a. The specified client reference is missing or invalid.
-  * 3a1. EstateBookUltraProMax displays an error without deleting any client.
+* 3a. No action is available to redo.
+  * 3a1. EstateBookUltraProMax reports that there is no available action without changing client data.
+
+  Use case ends.
+
+* 3b. Agent makes a new data-changing action after the undo.
+  * 3b1. EstateBookUltraProMax saves the new change and discards the previous redo branch.
+
+  Use case ends. The earlier undone action can no longer be redone.
+
+* 3c. Agent inspects history or uses a command that does not change client data.
+  * 3c1. EstateBookUltraProMax retains the available undo/redo actions.
 
   Use case resumes at step 3.
+
+* 3d. Agent exits and restarts the application.
+  * 3d1. EstateBookUltraProMax loads the saved client data with empty session history.
+
+  Use case ends. Changes from the preceding session cannot be undone or redone.
+
+#### UC05: Start with an unreadable data file
+
+**Precondition:** The configured client data file exists but cannot be read as valid client data.
+
+**MSS**
+
+1. Agent launches EstateBookUltraProMax.
+2. EstateBookUltraProMax preserves a backup of the unreadable file.
+3. EstateBookUltraProMax starts with an empty client book and displays a warning identifying the backup location.
+
+   Use case ends.
+
+The preserved backup remains available for Agent to inspect or recover separately.
+
+**Extensions**
+
+* 2a. EstateBookUltraProMax cannot preserve the backup.
+  * 2a1. EstateBookUltraProMax reports the startup failure and stops instead of allowing the original data to be overwritten.
+
+  Use case ends. Agent must resolve the file-access problem before retrying startup.
 
 ### Non-Functional Requirements
 
-1. **Usability:** A user with an above average typing speed for English text should be able to accomplish most tasks using the _Command Line Interface (CLI)_ faster than with a mouse-driven GUI.
-2. **Environment:** The system should work on any _mainstream OS_ as long as it has Java `25` installed.
-3. **Performance:** The system should be able to hold up to <ins>100</ins> active client records without any noticeable sluggishness in performance during typical usage (e.g., searching, filtering).
-4. **Data Reliability:** The application must ensure that all data-changing actions are saved safely so that the latest changes are retained upon exiting.
-5. **Fault Tolerance:** The application must gracefully handle invalid inputs (e.g., invalid client references, missing roles, or conflicting duplicate details) by displaying clear error messages, instead of crashing.
+1. **Keyboard usability:** With the main window focused, an agent must be able to add, find, view,
+   update and delete clients, and request help, using the keyboard without a required mouse action.
+   Opening help with F1 or invoking undo/redo through a shortcut must preserve an unfinished
+   command draft. Viewing a client uses the typed `view INDEX` command or a mouse selection;
+   it has no dedicated shortcut.
+2. **Portability:** The same released JAR must launch and support the client-management workflow
+   on Windows 11, macOS and desktop Linux with Java 25, a working graphical environment and a
+   writable data directory. Each release must be smoke-tested on those OS families; a successful
+   test on one OS does not establish compatibility with another OS or CPU architecture.
+3. **Responsiveness:** With 100 valid clients on a desktop with at least 4 GB of RAM and local SSD
+   storage, each warmed-up `list`, `find` and `filter` request should display its result within one
+   second. Measure five successive requests of each kind after one untimed warm-up request, with
+   no background build or test workload. Startup, external browser loading and slow/network storage
+   are excluded. This is a release-testing target, not a measured result or a 100-client input limit.
+4. **Data integrity:** A successful data-changing request must remain intact after a normal restart.
+   A failed save must leave the previous saved file intact and restore the preceding in-memory
+   client data and undo/redo history. The application must not report success for an unsaved change.
+   An unreadable original file must remain recoverable rather than be silently overwritten; UC05
+   specifies the backup and startup-failure interaction.
+5. **Robustness and error feedback:** Invalid commands, missing required arguments, invalid displayed
+   indexes and duplicate-contact conflicts must produce actionable feedback without terminating the
+   application or changing client data or undo/redo history. An operational save failure must report
+   the failure and leave the application available for a retry after the file-access problem is fixed.
+6. **Layout accessibility:** At logical window sizes of 853 × 480 and 820 × 440, the command box,
+   feedback area, client list and detail panel must remain within the main window. A 500-character
+   note must wrap and be readable to its end using vertical scrolling. Actual Windows checks at
+   1920 × 1080 (100% and 125% scaling) and 1280 × 720 (150% scaling) must additionally verify that
+   controls and client details remain reachable. See [Testing](Testing.md#main-window-layout-checks)
+   for the distinction between logical-size tests and OS scaling tests.
+7. **Maintainability:** On a documented development setup, `./gradlew check` must pass before a
+   release, including automated tests and configured style checks. Changes to parsing, client
+   updates or history/persistence behavior must have regression tests for the changed behavior.
+   This is a verification requirement, not a minimum coverage-percentage target.
 
 
 ### Glossary
@@ -903,29 +1148,32 @@ For all use cases below, the **System** is **EstateBookUltraProMax** and the **A
 | Term                             | Definition                                                                                                                                                                         |
 |:---------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **CLI (Command Line Interface)** | A text-based user interface where the agent interacts with the application by typing commands, optimised for speed and keyboard-driven workflows.                                  |
-| **Mainstream OS**                | Standard desktop and laptop operating systems, specifically Windows, Linux, Unix, or macOS.                                                                                        |
-| **Client Role**                  | The classification of a client's relationship with the agent. A client can be classified as a `Buyer`, a `Seller`, or `Both`.                                                      |
+| **Client Role**                  | The classification of a client's relationship with the agent: `Buyer`, `Seller`, or `Both`. A client may also have no assigned role. |
 | **Tag**                          | A custom, meaningful label assigned to a client to group them according to specific attributes relevant to the agent's work.                                                       |
-| **Duplicate Contact**            | A client record that shares a name, phone number or email with another record, which the system detects to prevent fragmented information.                                         |
+| **Duplicate Contact** | A record whose name, phone number or email conflicts with another client's. Name matching ignores case and repeated spaces; email matching ignores case. Any one conflicting field is sufficient. |
 | **Household Record**             | One record kept for couples or co-buyers who share contact details, tagged `t/couple`, since clients cannot share a phone number or email.                                         |
-| **Requirements**                 | The property a client is looking for: a budget range, an asking price, one or more preferred areas and one or more housing types.                                                  |
+| **Client requirements** | The optional property-related fields on a client: budget, asking price, preferred areas and housing types. This domain term is distinct from the software requirements in this appendix. |
 | **Budget**                       | A client's price range, held as a minimum and a maximum whole-dollar amount. The two may be equal.                                                                                 |
 | **Asking Price**                 | The price a seller is asking for their property, in whole Singapore dollars.                                                                                                       |
 | **Area**                         | One of 32 Singapore planning areas a client wants to buy in. Stored in title case.                                                                                                 |
 | **Housing Type**                 | One of `HDB`, `Condo`, `EC` or `Landed`.                                                                                                                                           |
 | **Note**                         | Up to 500 characters of free text attached to a client. `\n` stores a line break and `\\` stores a literal backslash.                                                             |
 | **Sample Data**                  | A set of realistic, pre-loaded dummy client records provided to help new agents explore and learn the application's features safely before clearing it to start their actual work. |
+| **Displayed index** | A one-based position in the currently displayed client list. It is not a permanent client identifier and can change after a search, filter or data update. |
+| **Active predicate** | The rule selecting clients for the displayed list. `find`, `filter` and `list` replace this rule rather than stack rules from earlier commands. |
+| **Snapshot** | An immutable view of the whole client book at a point in time, including hidden clients. It preserves client data, not the active predicate or UI selection. |
+| **History entry** | A saved change's before/after snapshots, command word and action description. Entries move between undo and redo stacks during the current application session; they are not a persistent audit log. |
 
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Appendix: Proposed features**
 
 The features below are not implemented. They are kept here so the design work is
-not lost, and they carry no v1.5 commitment.
+not lost, and are not commitments for the current version.
 
 ### Use cases
 
-#### UC05: Record a client's viewing outcome
+#### UC06: Record a client's viewing outcome
 
 **MSS**
 
@@ -957,7 +1205,7 @@ not lost, and they carry no v1.5 commitment.
 
   Use case resumes at step 3.
 
-#### UC06: Update a client's follow-up plan
+#### UC07: Update a client's follow-up plan
 
 **MSS**
 
@@ -986,18 +1234,28 @@ not lost, and they carry no v1.5 commitment.
 
 --------------------------------------------------------------------------------------------------------------------
 
-## **Appendix: Instructions for manual testing**
+## **Appendix: Instructions for Manual Testing**
 
-Given below are instructions to test the app manually.
+Use the [User Guide](UserGuide.html) for command syntax and the checks below to
+exercise interactions, persistence and UI state. They are starting points for
+exploration, not an exhaustive list of input variations.
 
-Unless stated otherwise, start each subsection in a separate test folder that initially contains only the JAR file.
-This ensures that the five sample clients are loaded and that their indexes are predictable. Back up
-`data/addressbook.json` before any test that edits or removes it.
+Unless stated otherwise, start each level-three section (`###`) in a separate
+writable test folder that initially contains only the JAR. Run the steps within
+that section in order, except where a prerequisite explicitly requests a fresh
+folder. This keeps the five sample clients and their indexes predictable. Enter
+each command separately and press Enter; do not paste two commands together.
+Close the app and back up `data/addressbook.json` before manually changing its
+contents or permissions. Use disposable data for deletion and recovery checks.
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** These instructions only provide a starting point for testers to work on;
-testers are expected to do more *exploratory* testing.
-
-</div>
+| Suggested route | What to observe |
+|---|---|
+| [Launch and shutdown](#launch-and-shutdown) | Initial sample data and saved window preferences. |
+| [Roles](#changing-a-clients-role), [filtered indexes](#using-indexes-from-a-filtered-list) and [requirements](#recording-client-requirements) | Changes target the displayed client and retain unrelated fields. |
+| [Search](#searching-clients-by-name-phone-email-or-address), [filter](#filtering-clients-by-role-tag-and-requirements) and [detail panel](#viewing-a-client-in-the-detail-panel) | Results, indexes and selected details stay consistent. |
+| [Notes](#adding-replacing-and-clearing-a-client-note) and [layout](#checking-the-list-and-detail-panel-layout) | Optional fields, tag overflow and filter status remain visible and readable. |
+| [Undo/redo](#undo-and-redo-across-client-changes), [history controls](#history-controls-and-unfinished-input) and [clear confirmation](#clearing-all-clients-with-confirmation) | Data, history, draft input and selection follow the same command path. |
+| [Role persistence](#saving-and-loading-role-data) and [data recovery](#handling-missing-or-corrupted-data) | Restarted data matches saved changes, and unreadable originals remain recoverable. |
 
 ### Launch and shutdown
 
@@ -1031,14 +1289,6 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `edit 1 p/99998888`<br>
       Expected: Alicia's phone number changes to `99998888`, and her `Seller` badge remains displayed.
 
-   1. Test case: `role 1 BUYER`<br>
-      Expected: Role input is case-insensitive. Alicia's badge changes to `Buyer`. The result box shows
-      `Role updated: Alicia Tan is now marked as Buyer`.
-
-   1. Test case: `role 1 both`<br>
-      Expected: Alicia's badge changes to `Buyer, Seller`. The result box shows
-      `Role updated: Alicia Tan is now marked as Buyer, Seller`.
-
    1. Test case: `role 1 none`<br>
       Expected: Alicia has no role badge. The result box shows
       `Role cleared: Alicia Tan has no assigned role`. Exit and restart the app to confirm the role stays cleared.
@@ -1046,6 +1296,16 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `role 1 none` again<br>
       Expected: Alicia remains unassigned. The result box shows
       `Role unchanged: Alicia Tan already has no assigned role`. No new undo-history entry is added.
+
+1. Clearing a role while a filter is active
+
+   1. Prerequisites: In a fresh test folder, run `filter r/buyer`, then `view 1`.
+
+   1. Test case: `role 1 none`<br>
+      Expected: Alicia leaves the filtered list and the detail panel clears. No other client is selected.
+
+   1. Test case: `undo`<br>
+      Expected: Alicia returns to the buyer results. Run `view 1` to confirm that her Buyer badge is restored.
 
 ### Rejecting invalid role commands
 
@@ -1140,6 +1400,7 @@ testers are expected to do more *exploratory* testing.
       Expected: The result box shows `There is no history to display.`
 
    1. `exit` is left out of this group because it closes the app.
+
 ### Recording names with common punctuation and accented letters
 
 1. Adding and editing names
@@ -1235,7 +1496,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Starting with a missing data file
 
-   1. Prerequisites: Run `list` to create the data file. Exit the app and rename `data/addressbook.json` to
+   1. Prerequisites: Confirm that `data/addressbook.json` exists after startup. Exit the app and rename it to
       `addressbook.backup.json`.
 
    1. Relaunch the app.<br>
@@ -1258,9 +1519,22 @@ testers are expected to do more *exploratory* testing.
       copied to `data/addressbook.json.unreadable-<unique number>.bak`.
 
    1. Run `list`.<br>
-      Expected: The result box shows `Listed all clients.` and the corrupted file is replaced with a valid empty
-      client book. The `.bak` copy still contains the corrupted file's original bytes. Restore the valid backup
-      made before this test after completing it.
+      Expected: The result box shows `Listed all clients.` and the client list stays empty. The original
+      unreadable file and its `.bak` copy are unchanged.
+
+   1. Test case: `add n/Recovery Test p/90000991 e/recovery@example.com a/1 Test Road`<br>
+      Expected: The original data file is replaced with valid JSON containing the new client. The `.bak` copy
+      still contains the unreadable file's original bytes. Close the app and restore the valid backup made
+      before this test after completing it.
+
+3. A backup cannot be created
+
+   1. Prerequisites: Use a disposable test folder, close the app, and back up its data file. Make the file
+      invalid as above and make its parent `data` folder unwritable using the operating system's permissions.
+
+   1. Relaunch the app from a terminal.<br>
+      Expected: Startup stops with a message explaining that the unreadable file could not be backed up.
+      The original bytes remain unchanged. Restore the folder's write permission and the valid backup.
 
 ### Read-only commands with an unwritable data folder
 
@@ -1304,7 +1578,9 @@ testers are expected to do more *exploratory* testing.
 
 1. Confirming in capital letters
 
-   1. Prerequisites: Start with the five sample clients, and run `list` to show them all.
+   1. Prerequisites: Run `undo` to restore the five sample clients deleted by the preceding confirmed
+      clear, then run `list` to show them all. Do not restart between these scenarios, because history
+      is session-only.
 
    1. Test case: `clear`, then `clear CONFIRM`<br>
       Expected: All clients are deleted. The result box shows `Client book has been cleared!`, not
@@ -1667,3 +1943,67 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `list`<br>
       Expected: The list refreshes and the detail panel returns to `Select a client to see details.`.
+
+1. Compact cards and tag overflow
+
+   1. Test case: `edit 1 n/Alicia Tan With A Deliberately Long Name For Layout Checks t/firsttime t/viewing t/followup t/urgent t/financingdocumentspending`<br>
+      Expected: The role and note markers remain visible beside the name. Narrow the window until the name
+      and tags no longer fit. The name uses an ellipsis, and tags remain on one row with a `+N` count.
+      Hover over that count to read the hidden tags, then widen the window and confirm it recalculates.
+
+   1. Test case: `view 1`<br>
+      Expected: The full name and all five tags are available in the detail panel. At a short window height,
+      the detail panel scrolls rather than losing its lower fields. Check actual display scaling using the
+      [Testing guide](Testing.md#manual-display-scaling-checks); resizing alone does not test scaling.
+
+1. Distinguishing an active search from the full list
+
+   1. Prerequisites: Start with the five sample clients. Run `find example.com`.
+
+   1. Expected: All five clients match, but the footer shows `5 of 5 clients (filtered; use list)`.
+      Run `list` and confirm that it returns to `5 clients`.
+
+### Undo and redo across client changes
+
+Start a fresh session with the five sample clients. Run the commands below in
+order; these checks exercise history across multiple commands rather than
+repeat their individual syntax rules.
+
+| Command | Expected result |
+|---|---|
+| `add n/History Probe p/90000992 e/history.probe@example.com a/1 Test Road` | A sixth client is added. |
+| `edit 6 p/90000993` | Only the new client's phone changes. |
+| `delete 6` | The new client disappears; five clients remain. |
+| `undo` | The deleted client returns at index 6 with phone `90000993`. Use `view 6` to inspect it. |
+| `undo` | The phone reverts to `90000992`. The read-only `view` did not add an undo entry. |
+| `redo` | The phone becomes `90000993` again. |
+| `history` | The edit is the next undo action, and the deletion is the next redo action. |
+| `note 6 Called after viewing` | The note is saved, and this new change discards the pending redo action. |
+| `redo` | The result reports `There is no action to redo`; the client and note stay unchanged. |
+
+Exit and restart from the same folder. `view 6` should show the updated phone
+and note, while `history` reports empty undo and redo stacks: client data is
+persistent, but command history lasts only for the session.
+
+### History controls and unfinished input
+
+1. Menu state and selection
+
+   1. Prerequisites: Start a fresh session with the five sample clients. Undo and Redo are disabled in the
+      Edit menu; History remains available. Run `role 1 seller`, then `view 1`.
+
+   1. Test case: `history`<br>
+      Expected: Alicia remains selected and her profile stays visible. The Edit menu's History action
+      has the same effect. Undo is enabled and Redo is disabled.
+
+1. Shortcuts preserve a draft
+
+   1. Type `add n/Draft` without pressing Enter, then press Cmd+Z on macOS or Ctrl+Z on Windows/Linux.<br>
+      Expected: Alicia's role change is undone, the draft stays unchanged, and Redo becomes available.
+
+   1. Press the same shortcut again, with no undoable action remaining.<br>
+      Expected: The result box reports `There is no action to undo`. The draft is unchanged and is not
+      given the command-error style, even though Undo is disabled in the Edit menu.
+
+   1. Press Cmd+Shift+Z on macOS or Ctrl+Y on Windows/Linux.<br>
+      Expected: Alicia's Seller role returns, the draft stays unchanged, and the menu availability refreshes.

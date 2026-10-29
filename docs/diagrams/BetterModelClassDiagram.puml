@@ -1,4 +1,5 @@
 @startuml
+!pragma layout smetana
 !include style.puml
 skinparam arrowThickness 1.1
 skinparam arrowColor MODEL_COLOR
@@ -13,13 +14,4 @@ UniqueTagList -right-> "*" Tag
 UniquePersonList -right-> Person
 
 Person -up-> "*" Tag
-Person *--> "0..1" Note
-Person *--> "0..1" Budget
-Person *--> "0..1" Price
-Person *--> "*" Area
-Person --> "*" HousingType
-Person *--> Name
-Person *--> Phone
-Person *--> Email
-Person *--> Address
 @enduml

@@ -1,119 +1,48 @@
 @startuml
 !include style.puml
 skinparam ArrowFontStyle plain
+skinparam ParticipantFontColor #FFFFFF
 
-box Logic LOGIC_COLOR_T1
-participant ":LogicManager" as LogicManager LOGIC_COLOR
-participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
-participant ":NoteCommandParser" as NoteCommandParser LOGIC_COLOR
-participant "<<class>>\nParserUtil" as ParserUtil LOGIC_COLOR
-participant "c:NoteCommand" as NoteCommand LOGIC_COLOR
-participant "result:CommandResult" as CommandResult LOGIC_COLOR
-end box
+participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":NoteCommandParser" as NoteParser LOGIC_COLOR
+participant "<<class>>\nParserUtil" as Util LOGIC_COLOR
+participant "c:NoteCommand" as Command LOGIC_COLOR
 
-box Model MODEL_COLOR_T1
-participant "<<class>>\nNote" as Note MODEL_COLOR
-participant "n:Note" as NoteInstance MODEL_COLOR
-participant "m:Model" as Model MODEL_COLOR
-participant "editedClient:Person" as Person MODEL_COLOR
-end box
+Parser -> NoteParser : parse("1 Call at 6 PM\\non Monday")
+activate NoteParser
+NoteParser -> Util : parseIndex("1")
+activate Util
+Util --> NoteParser : index
+deactivate Util
 
-[-> LogicManager : execute("note 1 Call at 6 PM\\non Monday")
-activate LogicManager
+NoteParser -> Util : parseNote(rawText)
+activate Util
+note over Util
+Decode escapes once, left to right:
+backslash-n becomes a line break;
+two backslashes become one literal backslash.
+Preserve unknown and trailing backslashes.
+Trim and validate the decoded text (1-500 characters).
+end note
+Util --> NoteParser : note:Note
+deactivate Util
 
-LogicManager -> AddressBookParser : parseCommand("note 1 Call at 6 PM\\non Monday")
-activate AddressBookParser
-
-create NoteCommandParser
-AddressBookParser -> NoteCommandParser
-activate NoteCommandParser
-
-NoteCommandParser --> AddressBookParser
-deactivate NoteCommandParser
-
-AddressBookParser -> NoteCommandParser : parse(" 1 Call at 6 PM\\non Monday")
-activate NoteCommandParser
-
-NoteCommandParser -> ParserUtil : parseIndex("1")
-activate ParserUtil
-
-ParserUtil --> NoteCommandParser : index
-deactivate ParserUtil
-
-note over NoteCommandParser
-The text after the index runs to the end of the line.
-ParserUtil decodes \n as a real line break and \\ as
-a literal backslash, then trims and validates the note.
-Only lowercase clear after surrounding whitespace is trimmed
-clears the note.
+note over NoteParser
+Check the decoded, trimmed value for clear.
+Only exact lowercase clear removes the note.
 end note
 
-NoteCommandParser -> ParserUtil : parseNote("Call at 6 PM\\non Monday")
-activate ParserUtil
+create Command
+NoteParser -> Command : NoteCommand(index, note)
+activate Command
+Command --> NoteParser
+deactivate Command
+NoteParser --> Parser : c
+deactivate NoteParser
 
-ParserUtil -> Note : isValidNote("Call at 6 PM\non Monday")
-activate Note
-
-Note --> ParserUtil : true
-deactivate Note
-
-ParserUtil -> NoteInstance ** : new Note("Call at 6 PM\non Monday")
-activate NoteInstance
-
-NoteInstance --> ParserUtil : n
-deactivate NoteInstance
-
-ParserUtil --> NoteCommandParser : n
-deactivate ParserUtil
-
-create NoteCommand
-NoteCommandParser -> NoteCommand
-activate NoteCommand
-
-NoteCommand --> NoteCommandParser
-deactivate NoteCommand
-
-NoteCommandParser --> AddressBookParser : c
-deactivate NoteCommandParser
-'Hidden arrow to position the destroy marker below the end of the activation bar.
-NoteCommandParser -[hidden]-> AddressBookParser
-destroy NoteCommandParser
-
-AddressBookParser --> LogicManager : c
-deactivate AddressBookParser
-
-LogicManager -> NoteCommand : execute(m)
-activate NoteCommand
-
-NoteCommand -> Model : getFilteredPersonList()
-activate Model
-
-Model --> NoteCommand : lastShownList
-deactivate Model
-
-create Person
-NoteCommand -> Person
-activate Person
-
-Person --> NoteCommand
-deactivate Person
-
-NoteCommand -> Model : setPerson(personToEdit, editedClient)
-activate Model
-
-Model --> NoteCommand
-deactivate Model
-
-create CommandResult
-NoteCommand -> CommandResult
-activate CommandResult
-
-CommandResult --> NoteCommand
-deactivate CommandResult
-
-NoteCommand --> LogicManager : result
-deactivate NoteCommand
-
-[<--LogicManager : result
-deactivate LogicManager
+note over Parser, Command
+Successful replacement-note parsing only.
+Note construction and error paths are omitted.
+Execution follows the indexed-client update pattern.
+end note
 @enduml

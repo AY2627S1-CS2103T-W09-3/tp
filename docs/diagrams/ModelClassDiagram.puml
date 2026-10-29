@@ -1,4 +1,5 @@
 @startuml
+!pragma layout smetana
 !include style.puml
 skinparam arrowThickness 1.1
 skinparam arrowColor MODEL_COLOR
@@ -14,17 +15,6 @@ Class UserPrefs
 
 Class UniquePersonList
 Class Person
-Class Address
-Class Email
-Class Name
-Class Phone
-Class Note
-Class Tag
-Class Budget
-Class Price
-Class Area
-enum ClientRole
-enum HousingType
 
 Class I #FFFFFF
 }
@@ -42,27 +32,10 @@ ModelManager -right-> "1" UserPrefs
 UserPrefs .up.|> ReadOnlyUserPrefs
 
 AddressBook *--> "1" UniquePersonList
-UniquePersonList --> "~* all" Person
-Person *--> Name
-Person *--> Phone
-Person *--> Email
-Person *--> Address
-Person *--> "0..1" Note
-Person *--> "0..1" Budget
-Person *--> "0..1" Price
-Person *--> "*" Area
-Person --> "*" HousingType
-Person *--> "*" Tag
-Person --> "0..1" ClientRole
-Budget *--> "1 min" Price
-Budget *--> "1 max" Price
+UniquePersonList --> "*" Person : all
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I
 
-Name -[hidden]right-> Phone
-Phone -[hidden]right-> Address
-Address -[hidden]right-> Email
-
-ModelManager --> "~* filtered" Person
+ModelManager --> "*" Person : filtered
 @enduml

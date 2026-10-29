@@ -2,12 +2,9 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 skinparam ParticipantFontColor #FFFFFF
-hide footbox
 
 participant ":MainWindow" as Window UI_COLOR
-participant ":LogicManager" as Logic LOGIC_COLOR
-participant "c:ViewCommand" as Command LOGIC_COLOR
-participant ":ModelManager" as Model MODEL_COLOR
+participant ":Logic" as Logic LOGIC_COLOR
 participant ":PersonListPanel" as List UI_COLOR
 participant ":DetailPane" as Detail UI_COLOR
 
@@ -15,50 +12,29 @@ participant ":DetailPane" as Detail UI_COLOR
 activate Window
 Window -> Logic : execute("view 1")
 activate Logic
-ref over Logic, Command
-AddressBookParser / ViewCommandParser parse the input,
-validate index 1 and construct c:ViewCommand.
-end ref
-Logic -> Command : execute(model)
-activate Command
-Command -> Model : getFilteredPersonList()
-activate Model
-Model --> Command : lastShownList
-deactivate Model
-note right of Command
-Validate the index against lastShownList.size().
-Read the first client's name; do not change data.
+note over Logic
+Parse input and validate the displayed index.
+Return feedback and a view index.
+No client data is changed or saved.
 end note
-Command --> Logic : result: CommandResult(feedback, index)
-deactivate Command
-ref over Logic, Model
-Shared save path: saveAddressBook(model.getAddressBook()).
-Continue only if saving succeeds.
-end ref
-Logic --> Window : result
+Logic --> Window : result:CommandResult
 deactivate Logic
-note over Window : Read result.getViewIndex().
 Window -> List : selectPerson(index)
 activate List
-List -> List : Select via ListView selection model
-List -> Window : selectedPersonProperty listener\n(observable, oldPerson, newPerson)
+List -> List : Select the displayed client
+List -> Window : selectedPersonProperty listener(...)
 activate Window
 Window -> Detail : setPerson(newPerson)
 activate Detail
-note right of Detail
-Render profile, hide empty optional rows,
-and reset the panel's scroll position.
-A null selection shows the empty state.
-end note
 Detail --> Window
 deactivate Detail
 Window --> List
 deactivate Window
-List -> List : Scroll ListView to index
+List -> List : Scroll to the selected index
 List --> Window
 deactivate List
 note over Window
-Display result feedback (abbreviated).
+Display result feedback (omitted).
 end note
 [<-- Window : result
 deactivate Window
