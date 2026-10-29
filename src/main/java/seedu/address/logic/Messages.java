@@ -22,6 +22,7 @@ public class Messages {
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format!\n%1$s";
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX = "The client index provided is invalid.";
     public static final String MESSAGE_SHOWING = "Showing %1$d of %2$d clients.";
+    public static final String MESSAGE_UNKNOWN_PREFIX = "Unknown prefix: %1$s";
     public static final String MESSAGE_NO_CLIENTS_FOUND = "No clients found";
     public static final String MESSAGE_DUPLICATE_FIELDS =
                 "Multiple values specified for the following single-valued field(s): ";

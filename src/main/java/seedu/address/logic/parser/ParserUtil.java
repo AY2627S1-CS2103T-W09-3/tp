@@ -1,10 +1,14 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
@@ -27,6 +31,16 @@ public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
 
+    private static final Pattern PREFIX_TOKEN_PATTERN = Pattern.compile("(?<!\\S)[A-Za-z]{1,3}/");
+
+    /**
+     * Every first letter that begins a prefix anywhere in the product, so a prefix belonging to another command,
+     * such as {@code r/} in {@code add}, is reported instead of being absorbed into the previous value.
+     */
+    private static final Set<Character> PREFIX_INITIALS = CliSyntax.ALL_PREFIXES.stream()
+            .map(prefix -> prefix.getPrefix().charAt(0))
+            .collect(Collectors.toUnmodifiableSet());
+
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
      * trimmed.
@@ -38,6 +52,61 @@ public class ParserUtil {
             throw new ParseException(MESSAGE_INVALID_INDEX);
         }
         return Index.fromOneBased(Integer.parseInt(trimmedIndex));
+    }
+
+    /**
+     * Throws a {@code ParseException} if {@code args} contains a token shaped like a prefix that is not one of
+     * {@code knownPrefixes}, so a mistyped prefix is reported instead of being read as part of the previous value.
+     *
+     * <p>Prefixes are case-sensitive, matching {@link ArgumentTokenizer}: a token counts as known only when it equals
+     * a prefix exactly. {@code B/} is therefore reported instead of being accepted as {@code b/} and then ignored by
+     * the tokenizer, which would leave the budget text inside the previous value.
+     *
+     * <p>Only tokens that follow a recognised prefix are reported. A token before the first recognised prefix sits in
+     * the preamble, which the command parsers already reject with their own message.
+     *
+     * <p>An unrecognised token is reported only when its first letter begins a prefix anywhere in the product. That
+     * catches a mistyped prefix such as {@code bb/} or {@code pa/}, and also a prefix belonging to another command
+     * such as {@code r/} in {@code add}, while leaving ordinary text that contains a slash, such as {@code c/o Mary
+     * Tan} or {@code w/ lift} in an address, alone. A word that starts one of the free-text abbreviations, {@code
+     * s/o} or {@code b/c}, is left alone in any letter case, because {@link ArgumentTokenizer} also keeps it as text.
+     *
+     * @param usage Command usage shown with the error, usually a command's {@code MESSAGE_USAGE}.
+     */
+    public static void rejectUnknownPrefixes(String args, String usage, Prefix... knownPrefixes)
+            throws ParseException {
+        requireNonNull(args);
+        Set<String> known = new HashSet<>();
+        for (Prefix prefix : knownPrefixes) {
+            known.add(prefix.getPrefix());
+        }
+        boolean seenKnownPrefix = false;
+        Matcher matcher = PREFIX_TOKEN_PATTERN.matcher(args);
+        while (matcher.find()) {
+            if (isFreeTextAbbreviation(args, matcher.start(), matcher.end())) {
+                continue;
+            }
+            String token = matcher.group();
+            if (known.contains(token)) {
+                seenKnownPrefix = true;
+            } else if (seenKnownPrefix && PREFIX_INITIALS.contains(Character.toLowerCase(token.charAt(0)))) {
+                throw new ParseException(String.format(MESSAGE_UNKNOWN_PREFIX, token) + "\n" + usage);
+            }
+        }
+    }
+
+    /**
+     * Returns true if the token between {@code tokenStart} and {@code tokenEnd} opens a word that is a free-text
+     * abbreviation, such as {@code s/o} or {@code b/c}, in any letter case. The check mirrors the one
+     * {@link ArgumentTokenizer} applies before it treats a numeric prefix as a new argument.
+     */
+    private static boolean isFreeTextAbbreviation(String args, int tokenStart, int tokenEnd) {
+        int wordEnd = tokenEnd;
+        while (wordEnd < args.length() && Character.isLetter(args.charAt(wordEnd))) {
+            wordEnd++;
+        }
+        boolean wordEnds = wordEnd == args.length() || args.charAt(wordEnd) == ' ';
+        return wordEnds && ArgumentTokenizer.isFreeTextAbbreviation(args.substring(tokenStart, wordEnd));
     }
 
     /**

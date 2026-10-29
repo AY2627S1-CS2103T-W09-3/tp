@@ -88,12 +88,14 @@ These rules apply when adding or editing clients.
 | Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. Extra spaces between words are reduced to one, so `n/Alpha  Tester` is stored as `Alpha Tester`. |
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
-| Address | Cannot be blank. |
+| Address | Cannot be blank. Free text, so the abbreviations `s/o` and `b/c` stay part of the address; a short word such as `s/ab` is read as an asking price and rejected. |
 | Budget | Two whole-dollar amounts joined by a hyphen, such as `400000-600000`. Each amount is from 1 to 1,000,000,000, commas are optional, and the first amount cannot exceed the second. |
 | Asking price | One whole-dollar amount from 1 to 1,000,000,000, with optional correctly placed commas. |
 | Area | One of the 32 supported areas. Case is ignored and the standard spelling is stored. |
 | Housing type | `HDB`, `Condo`, `EC` or `Landed`, ignoring case. |
 | Tag | Letters and numbers only; no spaces or symbols. |
+
+Prefixes are case-sensitive and must be lowercase, so `B/400000` is not read as a budget. A slash word that begins like a prefix but is not one, such as `bb/`, is reported as `Unknown prefix: bb/` rather than kept as text, and so is a prefix from another command, such as `r/`. The abbreviations `s/o` and `b/c` are kept as text in any letter case. A few address fragments that begin like a prefix, such as `Tel/Fax` or `nr/`, are reported the same way.
 
 Email rules:
 
