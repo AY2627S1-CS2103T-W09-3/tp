@@ -566,18 +566,17 @@ described under [Rejecting mistyped prefixes](#rejecting-mistyped-prefixes).
 
 ### Rejecting mistyped prefixes
 
-Requirement prefixes are optional, so the tokenizer has to decide whether a slash word starts a new field or
-belongs to the value before it. `a/12 Main Street s/o Ravi` shows both readings: taken as a prefix, `s/` becomes
-the asking price and `o Ravi` fails `parsePrice`, which would reject the whole command. `ArgumentTokenizer` therefore
-treats an occurrence of `b/` or `s/` as a new argument unless the word is one of the free-text abbreviations,
-`s/o` and `b/c`; `c/o` and `w/` were never prefixes, so they always stayed text. A `n/` name has its own marker
-list in that check, `s/o`, `d/o`, `a/l` and `a/p`, described under [Logic component](#logic-component). The list is closed rather than a
-rule about word length because `s/ab` and `s/o` have the same shape, so no length test separates a mistyped price
-from an abbreviation; `s/ab` and `b/xx` are still read as prices. Text prefixes keep the simpler rule, because a
-letter can be a real value there: `n/Al` and `t/s` are valid input, so a word such as `n/a` inside an address
-still reads as a name prefix and is reported as a repeated field. The rule travels with the prefix as
-`Prefix#hasNumericValue` rather than as a special case for the address field, and `s/` with no value still clears
-the field in `edit`.
+Requirement prefixes are optional, so the tokenizer has to decide whether a slash word starts a new field or belongs
+to the value before it. `a/12 Main Street s/o Ravi` shows both readings: taken as a prefix, `s/` becomes the asking
+price and `o Ravi` fails `parsePrice`, which would reject the whole command. `ArgumentTokenizer` therefore treats an
+occurrence of `b/` or `s/` as a new argument unless the word is one of the free-text abbreviations, `s/o` and `b/c`;
+`c/o` and `w/` were never prefixes, so they always stayed text. A `n/` name has its own marker list in that check,
+`s/o`, `d/o`, `a/l` and `a/p`, described under [Logic component](#logic-component). The list is closed rather than a
+rule about word length because `s/ab` and `s/o` have the same shape, so no length test separates a mistyped price from
+an abbreviation; `s/ab` and `b/xx` are still read as prices. Text prefixes keep the simpler rule, because a letter can
+be a real value there: `n/Al` and `t/s` are valid input, so a word such as `n/a` inside an address still reads as a
+name prefix and is reported as a repeated field. The rule travels with the prefix as `Prefix#hasNumericValue` rather
+than as a special case for the address field, and `s/` with no value still clears the field in `edit`.
 
 The other failure is the opposite one: a label that is not a prefix at all. `ArgumentTokenizer` folds such a word
 into the value before it, so before this check existed `add ... a/1 Road B/400000-600000` stored the budget text
