@@ -131,7 +131,10 @@ Links to Model and Storage end at their API interfaces, not their packages.
 
 <img src="images/LogicClassDiagram.png" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below illustrates parsing and command execution within `Logic`,
+taking `execute("delete 1")` as an example. Snapshot capture, saving and history
+recording are omitted; those occur in `LogicManager` before it returns to UI and
+are described in [Undo, redo and history](#undo-redo-and-history).
 
 ![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.png)
 
@@ -180,7 +183,13 @@ does not have an exclusive lifetime tied to one `Person` or `Budget`.
 
 <img src="images/PersonClassDiagram.png" width="340" alt="Client fields and their multiplicities" />
 
-**Why duplicate emails ignore case.** `Person#isSamePerson` treats two clients as the same if their names match, or their phone numbers or email addresses are equal. It compares emails with `Email#isSameEmail`, which ignores case, because email providers treat `alpha.tester@EXAMPLE.COM` and `alpha.tester@example.com` as one mailbox, so an exact comparison would let the same address into two records. Strictly, only the domain is case-insensitive and the part before `@` may be case-sensitive, but no mainstream provider treats it that way, so the whole address is compared ignoring case. `Email#equals` stays exact, because it defines whether two clients hold identical data, which the undo history and the no-change check in `edit` rely on. The email is stored as it was typed.
+**Why duplicate emails ignore case.** `Person#isSamePerson` treats two clients as the
+same if their names match, or their phone numbers or email addresses conflict. It uses
+`Email#isSameEmail` to compare the whole address ignoring case. This is the product's
+duplicate-detection policy, not a guarantee about every mail provider: email local parts
+can be case-sensitive. It prevents case-only variants from creating separate client records.
+`Email#equals` remains case-sensitive for exact stored-data comparisons, and the email is
+stored as typed.
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
@@ -302,7 +311,12 @@ The command token `none` is not an enum value or a stored role. It clears the op
 
 **Saving and reading back.** `JsonAdaptedPerson` mirrors the model field as a string. When a client book is saved the role is written with `ClientRole#getValue()`, and because the field carries `@JsonInclude(JsonInclude.Include.NON_NULL)`, a client with no role leaves the `role` key out of the data file entirely. When a client book is read back, a missing key becomes no role and any other value goes through `ClientRole#fromString(String)`; an unrecognised token raises an `IllegalValueException` carrying `Invalid Role: Role must be 'buyer', 'seller', or 'both'.`. A typo in a hand-edited data file is therefore reported rather than silently ignored.
 
-**Why a dedicated field and not a tag.** Tags are free-form, they may be many, and they cannot be checked against a fixed set of values. A role is exactly one of three known values, it is validated as soon as the user supplies it, and it may also be absent, which a set of tags cannot express. `Person` compares roles with `Objects.equals`, so an unassigned role is a legal value rather than a missing one.
+**Why a dedicated field and not a tag.** Tags allow arbitrary alphanumeric labels and
+multiple values; they do not enforce the role vocabulary. A dedicated optional enum restricts
+a client to one role value, with `BOTH` representing the combined buyer/seller relationship.
+An absent role is represented by null independently of unrelated tags. `Person` compares
+roles with `Objects.equals`, so absence is a supported state. Tags could encode roles only
+with additional conventions and validation that the dedicated field already supplies.
 
 **Client books with no role.** A client book written before the role existed has no `role` key, and every record in it loads with no role assigned. The sample clients shipped with the app set roles so that the feature is visible on first run, and the model class diagram above shows `ClientRole` as an optional association of `Person`. The saving and reading path, `JsonAddressBookStorage` to `JsonSerializableAddressBook` to `JsonAdaptedPerson`, is unchanged and is shown in `StorageClassDiagram.puml`.
 
@@ -473,8 +487,9 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 
 ### Undo, redo and history
 
-`AddressBookSnapshot` is an immutable copy of every client, including clients hidden
-by the current find or filter predicate. A `HistoryEntry` contains the before and
+`AddressBookSnapshot` copies the whole client list, including clients hidden
+by the current find or filter predicate, and safely shares immutable `Person` objects.
+A `HistoryEntry` contains the before and
 after snapshots, command word and user-facing action description. `CommandHistory`
 keeps separate undo and redo stacks, with the next action first and a capacity of 20
 undoable changes. `ModelManager` delegates history operations to
@@ -613,9 +628,9 @@ their own message.
 
 **The predicate.** `PersonMatchesFilterPredicate#test` is true only when every part matches. The constructor is private, because six mostly empty arguments are easy to mix up, so callers use the builder and leave unused parts out:
 
-* **Role.** A missing role always matches. `buyer` matches `BUYER` and `BOTH`, `seller` matches `SELLER` and `BOTH`, and `both` matches only `BOTH`. A client with no role never matches a given role.
-* **Tags.** No tags always match. Otherwise, one matching tag is enough, and tag names are compared ignoring case.
-* **Areas and housing types.** These work like tags. No values always match, one matching value is enough, and a client with none never matches a given value.
+* **Role.** An omitted role criterion imposes no restriction. `buyer` matches `BUYER` and `BOTH`, `seller` matches `SELLER` and `BOTH`, and `both` matches only `BOTH`. A client with no role never matches a given role criterion.
+* **Tags.** An omitted tag criterion imposes no restriction. Otherwise, one matching tag is enough, and tag names are compared ignoring case. A client with no tags cannot match a supplied tag criterion.
+* **Areas and housing types.** These work like tags. An omitted criterion imposes no restriction; otherwise, one matching value is enough. A client with no recorded values cannot match a supplied criterion.
 * **Budget.** A client matches when the budget range overlaps the filter's range, with both ends included, so `PriceRange#overlaps` checks `filterMin <= budgetMax && budgetMin <= filterMax`. A single price is a range with the same minimum and maximum, so it matches every budget that includes it. A client without a budget never matches.
 * **Asking price.** A client matches when the asking price is inside the filter's range, with both ends included, as checked by `PriceRange#contains`. A single price therefore matches only that exact price. A client without an asking price never matches.
 
@@ -625,7 +640,14 @@ So different parts combine with AND, and the values within the tags, the areas a
 
 **Executing.** `FilterCommand#execute(Model)` calls `Model#updateFilteredPersonList(predicate)`. This overwrites the predicate on the single `FilteredList`, so a filter does not stack with an earlier filter or `find`, and `find` and `list` replace a filter in the same way. It then counts the displayed clients and the clients in the whole address book, and shows `Showing X of Y clients.`. Y is the whole book, not the filtered list.
 
-**Mutation commands.** `add`, `edit`, `delete`, `role`, `note` and `clear confirm` change `AddressBook` and never call `updateFilteredPersonList`, so the predicate stays set. `ModelManager` wraps `AddressBook#getPersonList()` in the `FilteredList`, which re-tests an added or replaced client against the predicate by itself. A client who no longer matches leaves the list, and no command has to refresh the list. Only `add` can make a client appear, because `edit` and `role` work on a client that is already displayed and so already matches; `delete` removes the client, `note` changes neither the role nor the tags, and `clear confirm` replaces the whole address book through `Model#setAddressBook`, so every client leaves the list and a client added afterwards is tested against the same predicate. Only `list` and a new `find` or `filter` change the predicate.
+**Mutation commands.** `add`, `edit`, `delete`, `role`, `note` and `clear confirm` change
+`AddressBook` without resetting the predicate. `ModelManager` wraps the stored list in a
+`FilteredList`, which automatically re-tests added or replaced clients. A client who no longer
+matches leaves the results. Among these commands, only `add` can introduce a previously hidden
+client: indexed updates target an already displayed client, while `delete` and confirmed `clear`
+remove records. Undo and redo can also restore clients into the results, because snapshots include
+the whole book and are re-evaluated against the predicate still in effect. Only `list` and a new
+`find` or `filter` replace that predicate.
 
 The following activity diagram shows how the active filter is set, and what happens to it after a successful `add`, `edit`, `delete`, `role`, `note` or `clear confirm`. A command that fails, for example because of an invalid index or a duplicate client, changes nothing, so the filter and the displayed list stay as they were:
 
@@ -1312,7 +1334,9 @@ contents or permissions. Use disposable data for deletion and recovery checks.
 
 1. Confirming in capital letters
 
-   1. Prerequisites: Start with the five sample clients, and run `list` to show them all.
+   1. Prerequisites: Run `undo` to restore the five sample clients deleted by the preceding confirmed
+      clear, then run `list` to show them all. Do not restart between these scenarios, because history
+      is session-only.
 
    1. Test case: `clear`, then `clear CONFIRM`<br>
       Expected: All clients are deleted. The result box shows `Client book has been cleared!`, not
