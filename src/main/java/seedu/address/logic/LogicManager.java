@@ -1,5 +1,7 @@
 package seedu.address.logic;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
@@ -70,46 +72,58 @@ public class LogicManager implements Logic {
             }
         }
 
-        AddressBookSnapshot before = model.captureSnapshot();
+        AddressBookSnapshot beforeCommand = model.captureSnapshot();
         List<String> persistedBefore = persistedState(model);
         CommandResult commandResult = command.execute(model);
-        AddressBookSnapshot after = model.captureSnapshot();
+        AddressBookSnapshot afterCommand = model.captureSnapshot();
 
         // Compare every stored field of every client instead of comparing the model, so an edit that the model
         // considers equal, such as a tag that differs only in letter casing, is still saved.
         if (!persistedState(model).equals(persistedBefore)) {
-            try {
-                storage.saveAddressBook(model.getAddressBook());
-            } catch (AccessDeniedException e) {
-                rollbackFailedSave(command, before);
-                throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-            } catch (IOException ioe) {
-                rollbackFailedSave(command, before);
-                throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
-            }
+            saveAddressBookOrRollback(command, beforeCommand);
         }
 
         if (command.isUndoable()) {
-            model.recordChange(before, after, command.getCommandWord(), command.getActionDescription());
+            model.recordChange(beforeCommand, afterCommand, command.getCommandWord(), command.getActionDescription());
         }
 
         isClearPending = commandResult.isAwaitingConfirmation();
         return commandResult;
     }
 
-    /** Reverts the data and stack transition made before a failed save. */
-    private void rollbackFailedSave(Command command, AddressBookSnapshot before) {
+    /**
+     * Saves the current address book, restoring data and history if saving fails.
+     */
+    private void saveAddressBookOrRollback(Command command, AddressBookSnapshot beforeCommand) throws CommandException {
+        try {
+            storage.saveAddressBook(model.getAddressBook());
+        } catch (AccessDeniedException e) {
+            rollbackFailedSave(command, beforeCommand);
+            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
+        } catch (IOException ioe) {
+            rollbackFailedSave(command, beforeCommand);
+            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+        }
+    }
+
+    /**
+     * Reverts the data and stack transition made before a failed save.
+     */
+    private void rollbackFailedSave(Command command, AddressBookSnapshot beforeCommand) {
         try {
             if (command instanceof UndoCommand undoCommand) {
-                model.rollbackUndo(undoCommand.getUndoneEntry());
+                model.rollbackUndo(requireNonNull(undoCommand.getUndoneEntry(),
+                        "Successful undo must retain its history entry"));
             } else if (command instanceof RedoCommand redoCommand) {
-                model.rollbackRedo(redoCommand.getRedoneEntry());
+                model.rollbackRedo(requireNonNull(redoCommand.getRedoneEntry(),
+                        "Successful redo must retain its history entry"));
             } else {
-                model.restoreSnapshot(before);
+                model.restoreSnapshot(beforeCommand);
             }
         } catch (HistoryOperationException e) {
             throw new IllegalStateException("Could not restore history after a failed save", e);
         }
+        logger.warning("Restored client data and history after a failed save");
     }
 
     /**

@@ -3,7 +3,11 @@ layout: page
 title: User Guide
 ---
 
-EstateBookUltraProMax is a **desktop client book for property agents who manage many buyers and sellers at once, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, EstateBookUltraProMax can help you manage your clients faster than traditional GUI applications. Each client record stores contact details, and can also record whether the client is a buyer, a seller or both, along with any requirements such as budget, preferred areas or housing type.
+EstateBookUltraProMax is a desktop client book for **property agents who manage
+many buyers and sellers at once**. Type short commands to add, find and update
+clients while the graphical interface keeps their contact details and property
+requirements visible. This helps agents retrieve the right record during a call
+or between viewings without searching through a spreadsheet.
 
 * Table of Contents
 {:toc}
@@ -13,31 +17,31 @@ EstateBookUltraProMax is a **desktop client book for property agents who manage 
 ## Quick start
 
 1. Ensure that Java `25` or later is installed on your computer.<br>
-   **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
+   **Mac users:** Follow the [Java 25 installation guide for Mac](https://se-education.org/guides/tutorials/javaInstallationMac.html) to install the prescribed Java Development Kit (JDK).
 
-1. Download the latest `.jar` file from [here](https://github.com/AY2627S1-CS2103T-W09-3/tp/releases).
+1. Download the JAR for the current version from the [releases page](https://github.com/AY2627S1-CS2103T-W09-3/tp/releases).
 
-1. Copy the file to the folder you want to use as the _home folder_ for EstateBookUltraProMax.
+1. Put the JAR in a writable folder where you want to keep this app's data.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar estatebookultrapromax.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds.<br>
+1. Open a terminal in the folder containing the JAR and run `java -jar estatebookultrapromax.jar`. If the terminal opens in another folder, use `cd /path/to/your/folder` to change to the JAR's folder first. If your downloaded JAR has a different filename, use that filename in the `java -jar` command.<br>
+   An app window similar to the one below should appear in a few seconds.<br>
    If no saved data file exists, the app starts with five sample clients:
    two buyers, two sellers, and one who is both.
    Otherwise, it loads your saved clients.<br>
-   ![Ui](images/Ui.png)
+   ![Main window with five sample clients, the command box, and an unselected detail panel](images/Ui.png)
 
-1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
+1. Type a command in the box at the top and press Enter to run it. For example, type **`help`** to open the Help window.<br>
    Some example commands you can try:
 
-   * `list` : Lists all clients.
+   * `list`: Lists all clients.
 
-   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a client named `John Doe` to EstateBookUltraProMax.
+   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`: Adds a client named `John Doe`.
 
-   * `delete 3` : Deletes the 3rd client shown in the current list.
+   * `delete 3`: Deletes the third client shown in the current list.
 
-   * `clear` : Shows a warning and deletes nothing. Enter `clear confirm` next to delete all clients.
+   * `clear`: Shows a warning and deletes nothing. Enter `clear confirm` next to delete all clients.
 
-   * `exit` : Exits the app.
+   * `exit`: Exits the app.
 
 1. Refer to the [Features](#features) section below for details of each command.
 
@@ -45,10 +49,10 @@ EstateBookUltraProMax is a **desktop client book for property agents who manage 
 
 **:information_source: Keep each release in its own folder:**<br>
 
-Keep each release's JAR file in its own writable folder and always run it from
-that folder. The app creates its `data/` directory and `preferences.json` file
-next to the JAR, so using a separate folder for each release keeps different
-versions from sharing data or settings.
+Keep each release's JAR in its own writable folder and launch it from that
+folder. The app saves `data/` and `preferences.json` in the folder from which
+you launch it. Separate folders prevent different releases from sharing data
+or settings.
 
 </div>
 
@@ -85,7 +89,7 @@ These rules apply when adding or editing clients.
 
 | Field | Rules |
 |---|---|
-| Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. Extra spaces between words are reduced to one, so `n/Alpha  Tester` is stored as `Alpha Tester`. |
+| Name | Must start with a letter or number. Supports Unicode letters (including accented letters), combining marks, numbers, spaces, apostrophes (`'` and `’`), hyphens (`-`) and slashes (`/`), e.g. `Anne-Marie Tan`, `José Tan` and `Kumar s/o Ravi`. Extra spaces between words are reduced to one. |
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
 | Address | Cannot be blank. Free text, so the abbreviations `s/o` and `b/c` stay part of the address; a short word such as `s/ab` is read as an asking price and rejected, and so is `s/o,`, because an abbreviation must be a whole word. |
@@ -113,12 +117,16 @@ Prefix rules:
 * Repeat `l/` to supply multiple areas, such as `l/Bedok l/Tampines`.
 * Repeat `h/` to supply multiple housing types, such as `h/HDB h/Condo`.
 * For `edit`, an empty `b/`, `s/`, `l/` or `h/` clears that field. In `add`, an empty prefix is an error.
+* Inside `n/NAME`, the whole relationship markers `s/o`, `d/o`, `a/l` and `a/p` are kept as part of the name, ignoring their capitalization. For example, `n/Kumar s/o Ravi s/950000` records the name `Kumar s/o Ravi` and an asking price of $950,000. Other field prefixes still end the name.
+* If an address starts with `L` or `P` as a whole word (ignoring case), put the address before the name: `edit 1 a/P Ryan Road n/Bob`. Writing `edit 1 n/Bob a/P Ryan Road` instead stores `Bob a/P Ryan Road` as the name and leaves the address unchanged.
+* Other slash text, such as `x/y`, is also valid in names: `n/Bob x/y` stores the name `Bob x/y`. Check field prefixes for typing errors.
 
 ### Duplicate clients
 
 An `add` or `edit` command is rejected if it would match another client's:
 
 * Name, ignoring case and extra spaces. For example, `Alpha  Tester` (with two spaces) matches `Alpha Tester`.
+  Accented letters are stored in a standard Unicode form, so typing the same accent using a separate combining mark does not create a different name.
 * Phone number exactly.
 * Email address, ignoring case. For example, `alpha.tester@EXAMPLE.COM` matches `alpha.tester@example.com`.
 
@@ -135,19 +143,23 @@ and add the tag `t/couple`. Adding this tag does not allow duplicate records.
 
 Shows a message explaining how to access the help page.
 
-![help message](images/helpMessage.png)
-
 Format: `help`
+
+The Help window shows the User Guide link and a button to copy it:
+
+![Help window with the User Guide link and Copy URL button](images/helpMessage.png)
 
 
 ### Adding a client: `add`
 
-Adds a client to the EstateBookUltraProMax.
+Adds a client to EstateBookUltraProMax.
 
 Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`
 
-<div markdown="span" class="alert alert-primary">:bulb: **Tip:**
-A client can have any number of tags, including zero.
+<div markdown="block" class="alert alert-primary">
+
+**:bulb: Tip:** A client can have any number of tags, including zero.
+
 </div>
 
 The result box shows the client as it was saved, including any requirements, so you can
@@ -188,32 +200,33 @@ Format: `view INDEX`
   the panel to the top.
 * With no selection, the panel shows `Select a client to see details.`
 
-Examples using the initial sample clients:
-
-* `list`, then `view 1`, shows Alicia Tan and the message `Showing Alicia Tan.`
-* `find Cheryl`, then `view 1`, shows Cheryl Goh, the first client in those results.
+Using the initial sample clients, enter `list`, then `view 1`. Alicia Tan is
+selected and the result box says `Showing Alicia Tan.`:
 
 ![Alicia Tan selected using list and view 1, with the note indicator on her card and notes and tags in the detail panel](images/ViewClientNote.png)
 
-*The panel after `list` followed by `view 1`. The document icon beside Alicia's name
-marks that she has a note; scroll down within the panel to read the note and tags.*
+*The document icon beside Alicia's name marks that she has a note. Her full
+profile, including the note and tags, appears in the detail panel.*
+
+Next enter `find Cheryl`, then `view 1`. The filtered list has a new index 1,
+which now refers to Cheryl Goh, and the result box says `Showing Cheryl Goh.`:
 
 ![Cheryl Goh selected using find Cheryl and view 1, with requirements in the right panel](images/ViewClient.png)
 
-*The panel after `find Cheryl` followed by `view 1`. Cheryl has no note, so her card
-shows no note indicator.*
+*Cheryl's card has no note indicator. This screenshot also shows that `view 1`
+uses the index in the current search results, not the earlier full list.*
 
 **When does the panel change?**
 
-| Action | Panel behaviour                                                                                    |
-|---|----------------------------------------------------------------------------------------------------|
-| `view INDEX` or clicking a client card | Shows that client.                                                                                 |
+| Action | Panel behaviour |
+|---|---|
+| `view INDEX` or clicking a client card | Shows that client. |
 | Successful `edit`, `role` or `note` | Shows the updated client if they still match the active search/filter; otherwise clears the panel. |
-| Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index.                                 |
+| Successful `find`, `filter`, `list`, `add`, `delete` or confirmed `clear` | Clears the panel. Select a client again using their current index. |
 | Successful `undo` or `redo` | Clears the panel. Select a client again using their current index. |
 | `undo` or `redo` with no available action | Keeps the current selection. |
-| `help`, `history`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed.                               |
-| Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed.               |
+| `help`, `history`, the initial non-empty-book `clear` warning, or invalid command input | Keeps the current selection when the displayed list has not changed. |
+| Cancelling a pending clear | Clears the panel without deleting any clients; the cancelling input is not executed. |
 
 Clearing the panel prevents it from showing an outdated client when a list
 change moves a different client into the same index. It does not delete data.
@@ -230,7 +243,7 @@ and the panel is cleared. Enter `view INDEX` again to open the profile.
 
 ### Editing a client: `edit`
 
-Edits an existing client in EstateBookUltraProMax.
+Updates an existing client's details in EstateBookUltraProMax.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRICE] [l/AREA]…​ [h/TYPE]…​ [t/TAG]…​`
 
@@ -344,8 +357,9 @@ Formats:
 * `note INDEX clear` to clear a note.
 
 * `INDEX` must be a positive integer referring to a client in the displayed list.
-* `TEXT` can contain spaces and must contain between 1 and 500 characters after `\n` is decoded and surrounding whitespace is removed.
+* `TEXT` can contain spaces and must contain between 1 and 500 characters after escape sequences are decoded and surrounding whitespace is removed.
 * Type the two characters `\n` where a line break should appear in the note.
+* Type `\\` where a literal backslash should appear. For example, type `\\n` to store the two characters `\n` without creating a line break.
 * Only the exact lowercase text `clear`, after surrounding whitespace is removed, clears the note.
 * Other capitalization and text containing `clear` are stored as ordinary note text.
 * The currently displayed client filter remains active after setting or clearing a note.
@@ -355,6 +369,7 @@ Examples:
 
 * `note 1 Call again next Monday` adds or replaces the first displayed client's note.
 * `note 2 First line\nSecond line` stores a note containing two lines.
+* `note 2 Saved at C:\\new folder\\notes` stores `Saved at C:\new folder\notes` without changing either `\n` into a line break.
 * `note 3 clear` clears the third displayed client's note.
 * `note 1 Clear` stores `Clear` as ordinary note text.
 * `note 1 CLEAR` stores `CLEAR` as ordinary note text.
@@ -427,7 +442,7 @@ Format: `filter [r/ROLE] [t/TAG]…​ [l/AREA]…​ [h/TYPE]…​ [b/BUDGET] 
 * `find` also replaces an active filter. Use `list` to clear the filter and show all clients.
 * The filter stays active after `add`, `edit`, `delete`, `role`, `note` and `clear confirm`, so the displayed list can still be shorter than the whole book. Indexes in these commands refer to the displayed list.
 * After `add`, `edit` or `role`, the changed client is checked against the active filter again. A client who no longer matches leaves the displayed list. For example, after `filter r/buyer`, `role 1 seller` removes client 1 from the list. In the same way, after `filter t/urgent`, `edit 1 t/weekend` removes client 1, because the client no longer has the `urgent` tag, and after `filter l/Bishan`, `edit 1 l/Orchard` removes client 1, because the client no longer wants Bishan.
-* Only `add` can make a client appear, and only if the new client matches. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them, and after `filter l/Bishan`, adding a client with `l/Bishan` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again.
+* Among `add`, `edit` and `role`, only `add` can introduce a matching client to the filtered list, because `edit` and `role` can target only clients already displayed. For example, after `filter t/urgent`, adding a client tagged `urgent` shows them, and after `filter l/Bishan`, adding a client with `l/Bishan` shows them. A new client has no role, so after `filter r/buyer` they stay hidden; run `list` and give them a role, then filter again. `undo` and `redo` can also change which clients match the active filter.
 * `delete` removes the client from the list, and `note` never changes which clients are shown, because a filter does not look at notes.
 * `clear confirm` deletes every client, including the hidden ones, but the filter stays active. A client added afterwards stays hidden unless they match it, so run `list` to show everyone.
 
@@ -456,7 +471,7 @@ Format: `delete INDEX`
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd client in EstateBookUltraProMax.
-* `find Betsy` followed by `delete 1` deletes the 1st client in the results of the `find` command.
+* With the initial sample clients, `find Benjamin` followed by `delete 1` deletes Benjamin Lim, the first client in the search results.
 
 ### Clearing all entries: `clear`
 
@@ -482,9 +497,12 @@ Format: `clear`, then `clear confirm`
 * When no clear is pending, any other word after `clear` shows `Invalid command format. Use: clear.`
 * A pending confirmation is not saved, so closing the app cancels it.
 
-<div markdown="span" class="alert alert-warning">:exclamation: **Warning:**
+<div markdown="block" class="alert alert-warning">
+
+**:exclamation: Warning:**
 `clear confirm` deletes every client. You can undo it only while it remains in the current session's
 history. Keep a separate backup of important data.
+
 </div>
 
 ### Undoing, redoing and viewing changes: `undo`, `redo`, `history`

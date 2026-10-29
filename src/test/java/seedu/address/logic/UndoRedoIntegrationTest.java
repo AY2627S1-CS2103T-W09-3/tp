@@ -36,38 +36,40 @@ public class UndoRedoIntegrationTest {
         };
 
         for (String[] mutation : mutations) {
-            String commandWord = mutation[0];
-            ModelManager model = new ModelManager();
-            JsonAddressBookStorage dataFile = new JsonAddressBookStorage(
-                    temporaryFolder.resolve(commandWord + ".json"));
-            LogicManager logic = new LogicManager(model, new StorageManager(dataFile,
-                    new JsonUserPrefsStorage(temporaryFolder.resolve(commandWord + "-prefs.json"))));
-            if (!commandWord.equals("add")) {
-                logic.execute(ADD_AMY);
-            }
-            AddressBookSnapshot before = model.captureSnapshot();
-            int priorHistorySize = model.getUndoHistory().size();
-            if (commandWord.equals("clear")) {
-                assertTrue(logic.execute("clear").isAwaitingConfirmation());
-                assertEquals(priorHistorySize, model.getUndoHistory().size());
-            }
-
-            logic.execute(mutation[1]);
-            AddressBookSnapshot after = model.captureSnapshot();
-            assertNotEquals(before, after, commandWord);
-            assertEquals(priorHistorySize + 1, model.getUndoHistory().size(), commandWord);
-            assertEquals(commandWord, model.getUndoHistory().get(0).getCommandWord());
-            assertEquals(after.getPersonList(), dataFile.readAddressBook().orElseThrow().getPersonList());
-
-            logic.execute("undo");
-            assertEquals(before, model.captureSnapshot(), commandWord);
-            assertEquals(before.getPersonList(), dataFile.readAddressBook().orElseThrow().getPersonList());
-            assertEquals(commandWord, model.getRedoHistory().get(0).getCommandWord());
-
-            logic.execute("redo");
-            assertEquals(after, model.captureSnapshot(), commandWord);
-            assertEquals(after.getPersonList(), dataFile.readAddressBook().orElseThrow().getPersonList());
+            assertMutationCanUndoAndRedo(mutation[0], mutation[1]);
         }
+    }
+
+    private void assertMutationCanUndoAndRedo(String commandWord, String commandText) throws Exception {
+        ModelManager model = new ModelManager();
+        JsonAddressBookStorage dataFile = new JsonAddressBookStorage(temporaryFolder.resolve(commandWord + ".json"));
+        LogicManager logic = new LogicManager(model, new StorageManager(dataFile,
+                new JsonUserPrefsStorage(temporaryFolder.resolve(commandWord + "-prefs.json"))));
+        if (!commandWord.equals("add")) {
+            logic.execute(ADD_AMY);
+        }
+        AddressBookSnapshot before = model.captureSnapshot();
+        int priorHistorySize = model.getUndoHistory().size();
+        if (commandWord.equals("clear")) {
+            assertTrue(logic.execute("clear").isAwaitingConfirmation());
+            assertEquals(priorHistorySize, model.getUndoHistory().size());
+        }
+
+        logic.execute(commandText);
+        AddressBookSnapshot after = model.captureSnapshot();
+        assertNotEquals(before, after, commandWord);
+        assertEquals(priorHistorySize + 1, model.getUndoHistory().size(), commandWord);
+        assertEquals(commandWord, model.getUndoHistory().get(0).getCommandWord());
+        assertEquals(after.getPersonList(), dataFile.readAddressBook().orElseThrow().getPersonList());
+
+        logic.execute("undo");
+        assertEquals(before, model.captureSnapshot(), commandWord);
+        assertEquals(before.getPersonList(), dataFile.readAddressBook().orElseThrow().getPersonList());
+        assertEquals(commandWord, model.getRedoHistory().get(0).getCommandWord());
+
+        logic.execute("redo");
+        assertEquals(after, model.captureSnapshot(), commandWord);
+        assertEquals(after.getPersonList(), dataFile.readAddressBook().orElseThrow().getPersonList());
     }
 
     @Test

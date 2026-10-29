@@ -22,13 +22,7 @@ public class RoleCommandParser implements Parser<RoleCommand> {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
 
-        Index index;
-        try {
-            index = ParserUtil.parseIndex(arguments[0]);
-        } catch (ParseException pe) {
-            throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
-        }
-
+        Index index = parseIndex(arguments[0]);
         if (arguments[1].equalsIgnoreCase("none")) {
             return new RoleCommand(index, null);
         }
@@ -38,5 +32,13 @@ public class RoleCommandParser implements Parser<RoleCommand> {
         }
 
         return new RoleCommand(index, ClientRole.fromString(arguments[1]));
+    }
+
+    private Index parseIndex(String indexText) throws ParseException {
+        try {
+            return ParserUtil.parseIndex(indexText);
+        } catch (ParseException pe) {
+            throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT, pe);
+        }
     }
 }

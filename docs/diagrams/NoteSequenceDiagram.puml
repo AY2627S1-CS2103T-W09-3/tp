@@ -42,22 +42,29 @@ deactivate ParserUtil
 
 note over NoteCommandParser
 The text after the index runs to the end of the line.
-Each two-character \n becomes a real line break, and
-surrounding whitespace is trimmed. Only the exact
-lowercase result clear clears the note.
+ParserUtil decodes \n as a real line break and \\ as
+a literal backslash, then trims and validates the note.
+Only lowercase clear after surrounding whitespace is trimmed
+clears the note.
 end note
 
-NoteCommandParser -> Note : isValidNote("Call at 6 PM\non Monday")
+NoteCommandParser -> ParserUtil : parseNote("Call at 6 PM\\non Monday")
+activate ParserUtil
+
+ParserUtil -> Note : isValidNote("Call at 6 PM\non Monday")
 activate Note
 
-Note --> NoteCommandParser : true
+Note --> ParserUtil : true
 deactivate Note
 
-NoteCommandParser -> NoteInstance ** : new Note("Call at 6 PM\non Monday")
+ParserUtil -> NoteInstance ** : new Note("Call at 6 PM\non Monday")
 activate NoteInstance
 
-NoteInstance --> NoteCommandParser : n
+NoteInstance --> ParserUtil : n
 deactivate NoteInstance
+
+ParserUtil --> NoteCommandParser : n
+deactivate ParserUtil
 
 create NoteCommand
 NoteCommandParser -> NoteCommand
