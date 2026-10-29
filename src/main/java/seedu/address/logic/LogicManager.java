@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javafx.beans.value.ObservableValue;
@@ -22,6 +23,7 @@ import seedu.address.model.Model;
 import seedu.address.model.history.AddressBookSnapshot;
 import seedu.address.model.history.HistoryOperationException;
 import seedu.address.model.person.Person;
+import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.Storage;
 
 /**
@@ -71,10 +73,15 @@ public class LogicManager implements Logic {
         }
 
         AddressBookSnapshot beforeCommand = model.captureSnapshot();
+        List<String> persistedBefore = persistedState(model);
         CommandResult commandResult = command.execute(model);
         AddressBookSnapshot afterCommand = model.captureSnapshot();
 
-        saveAddressBookOrRollback(command, beforeCommand);
+        // Compare every stored field of every client instead of comparing the model, so an edit that the model
+        // considers equal, such as a tag that differs only in letter casing, is still saved.
+        if (!persistedState(model).equals(persistedBefore)) {
+            saveAddressBookOrRollback(command, beforeCommand);
+        }
 
         if (command.isUndoable()) {
             model.recordChange(beforeCommand, afterCommand, command.getCommandWord(), command.getActionDescription());
@@ -133,6 +140,16 @@ public class LogicManager implements Logic {
             // Input that cannot be parsed cancels the pending clear like any other input.
         }
         return null;
+    }
+
+    /**
+     * Returns the JSON text of every client, so a command counts as a change whenever the text that would be written
+     * to the data file changes, even if the model considers the before and after states equal.
+     */
+    private static List<String> persistedState(Model model) {
+        return model.getAddressBook().getPersonList().stream()
+                .map(JsonAddressBookStorage::toPersistedJson)
+                .toList();
     }
 
     @Override

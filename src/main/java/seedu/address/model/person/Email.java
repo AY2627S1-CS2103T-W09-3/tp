@@ -44,6 +44,15 @@ public class Email {
         return test.matches(VALIDATION_REGEX);
     }
 
+    /**
+     * Returns true if both emails are the same address, ignoring case.
+     * Email providers treat upper and lower case letters as the same, so "Alex@Example.com" and
+     * "alex@example.com" are the same address even though {@link #equals(Object)} tells them apart.
+     */
+    public boolean isSameEmail(Email otherEmail) {
+        return otherEmail != null && value.equalsIgnoreCase(otherEmail.value);
+    }
+
     @Override
     public String toString() {
         return value;

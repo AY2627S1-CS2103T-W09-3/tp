@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -41,6 +42,18 @@ public class JsonUtil {
         try (InputStream inputStream = Files.newInputStream(jsonFile)) {
             return objectMapper.readValue(inputStream, classOfObjectToDeserialize);
         }
+    }
+
+    /**
+     * Returns the JSON tree of {@code instance}, using the same mapper and field visibility as
+     * {@link #toJsonString(Object)}, so a caller can compare two instances without writing to a file.
+     * Unlike {@link #toJsonString(Object)}, this declares no checked exception.
+     *
+     * @param instance cannot be null.
+     */
+    public static <T> JsonNode toJsonTree(T instance) {
+        requireNonNull(instance);
+        return objectMapper.valueToTree(instance);
     }
 
     /**

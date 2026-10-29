@@ -3,7 +3,7 @@ layout: page
 title: User Guide
 ---
 
-EstateBookUltraProMax is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, EstateBookUltraProMax can help you manage contacts faster than traditional GUI applications.
+EstateBookUltraProMax is a **desktop client book for property agents who manage many buyers and sellers at once, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, EstateBookUltraProMax can help you manage your clients faster than traditional GUI applications. Each client record stores contact details, and can also record whether the client is a buyer, a seller or both, along with any requirements such as budget, preferred areas or housing type.
 
 * Table of Contents
 {:toc}
@@ -72,9 +72,9 @@ versions from sharing data or settings.
 * Prefixed fields in `add` and `edit` can appear in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list` and `exit`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
-  The `undo`, `redo` and `history` commands are exceptions: they reject extra parameters.
+* Commands that take no parameters reject anything after the command word with `Invalid command format. Use: <command>.`
+  This applies to `help`, `list` and `exit`, and to `undo`, `redo` and `history`, so `help 123` and `exit now` are errors
+  rather than being silently accepted.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -85,15 +85,17 @@ These rules apply when adding or editing clients.
 
 | Field | Rules |
 |---|---|
-| Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. |
+| Name | Letters, numbers and spaces only; cannot be blank. Hyphens and apostrophes are not accepted. Extra spaces between words are reduced to one, so `n/Alpha  Tester` is stored as `Alpha Tester`. |
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
-| Address | Cannot be blank. |
+| Address | Cannot be blank. Free text, so the abbreviations `s/o` and `b/c` stay part of the address; a short word such as `s/ab` is read as an asking price and rejected. |
 | Budget | Two whole-dollar amounts joined by a hyphen, such as `400000-600000`. Each amount is from 1 to 1,000,000,000, commas are optional, and the first amount cannot exceed the second. |
 | Asking price | One whole-dollar amount from 1 to 1,000,000,000, with optional correctly placed commas. |
 | Area | One of the 32 supported areas. Case is ignored and the standard spelling is stored. |
 | Housing type | `HDB`, `Condo`, `EC` or `Landed`, ignoring case. |
 | Tag | Letters and numbers only; no spaces or symbols. |
+
+Prefixes are case-sensitive and must be lowercase, so `B/400000` is not read as a budget. A slash word that begins like a prefix but is not one, such as `bb/`, is reported as `Unknown prefix: bb/` rather than kept as text, and so is a prefix from another command, such as `r/`. The abbreviations `s/o` and `b/c` are kept as text in any letter case. A few address fragments that begin like a prefix, such as `Tel/Fax` or `nr/`, are reported the same way.
 
 Email rules:
 
@@ -105,6 +107,7 @@ Prefix rules:
 
 * Each of `n/`, `p/`, `e/` and `a/` can appear only once per command.
 * Repeat `t/` to supply multiple tags, such as `t/urgent t/firsttime`.
+* Tags that differ only in letter case are treated as the same tag, so `t/urgent t/URGENT` stores one tag.
 * For `edit`, use an empty `t/` to remove all tags.
 * Each of `b/` and `s/` can appear only once per command.
 * Repeat `l/` to supply multiple areas, such as `l/Bedok l/Tampines`.
@@ -115,9 +118,9 @@ Prefix rules:
 
 An `add` or `edit` command is rejected if it would match another client's:
 
-* Name, ignoring case.
+* Name, ignoring case and extra spaces. For example, `Alpha  Tester` (with two spaces) matches `Alpha Tester`.
 * Phone number exactly.
-* Email address exactly, including letter case.
+* Email address, ignoring case. For example, `alpha.tester@EXAMPLE.COM` matches `alpha.tester@example.com`.
 
 The existing records remain unchanged when the command is rejected.
 
@@ -516,8 +519,7 @@ Format: `exit`
 
 ### Saving the data
 
-EstateBookUltraProMax automatically saves data after successful commands.
-You do not need to save manually.
+EstateBookUltraProMax saves your data automatically after any command that changes it, so you do not need to save manually. Commands that only read data, such as `list`, `find` and `view`, never write to the file.
 
 Data is stored in `data/addressbook.json`, relative to the folder from which
 you launch the application (the working directory).

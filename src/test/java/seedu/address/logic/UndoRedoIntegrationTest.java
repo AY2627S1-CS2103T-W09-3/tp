@@ -105,4 +105,29 @@ public class UndoRedoIntegrationTest {
         assertEquals(model.getAddressBook().getPersonList(),
                 dataFile.readAddressBook().orElseThrow().getPersonList());
     }
+
+    @Test
+    public void execute_editTagCase_canUndoAndRedoPersistedCase() throws Exception {
+        ModelManager model = new ModelManager();
+        JsonAddressBookStorage dataFile = new JsonAddressBookStorage(temporaryFolder.resolve("tag-case.json"));
+        LogicManager logic = new LogicManager(model, new StorageManager(dataFile,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("tag-case-prefs.json"))));
+        logic.execute(ADD_AMY + " t/urgent");
+
+        logic.execute("edit 1 t/URGENT");
+        assertEquals(2, model.getUndoHistory().size());
+        assertEquals("URGENT", model.getAddressBook().getPersonList().get(0).getTags().iterator().next().tagName);
+        assertEquals("URGENT", dataFile.readAddressBook().orElseThrow().getPersonList().get(0)
+                .getTags().iterator().next().tagName);
+
+        logic.execute("undo");
+        assertEquals("urgent", model.getAddressBook().getPersonList().get(0).getTags().iterator().next().tagName);
+        assertEquals("urgent", dataFile.readAddressBook().orElseThrow().getPersonList().get(0)
+                .getTags().iterator().next().tagName);
+
+        logic.execute("redo");
+        assertEquals("URGENT", model.getAddressBook().getPersonList().get(0).getTags().iterator().next().tagName);
+        assertEquals("URGENT", dataFile.readAddressBook().orElseThrow().getPersonList().get(0)
+                .getTags().iterator().next().tagName);
+    }
 }

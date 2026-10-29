@@ -2,6 +2,7 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
 public class JsonAddressBookStorageTest {
@@ -274,5 +276,23 @@ public class JsonAddressBookStorageTest {
     @Test
     public void saveAddressBook_nullFilePath_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> saveAddressBook(new AddressBook(), null));
+    }
+
+    @Test
+    public void toPersistedJson_clientsThatRenderTheSame_differWhenStoredValuesDiffer() {
+        Person withoutNote = new PersonBuilder().withName("Amy Bee").build();
+        Person withNoteText = new PersonBuilder().withName("Amy Bee").withNote("null").build();
+
+        assertNotEquals(JsonAddressBookStorage.toPersistedJson(withoutNote),
+                JsonAddressBookStorage.toPersistedJson(withNoteText));
+    }
+
+    @Test
+    public void toPersistedJson_sameStoredValues_returnsSameText() {
+        Person first = new PersonBuilder().withName("Amy Bee").build();
+        Person second = new PersonBuilder().withName("Amy Bee").build();
+
+        assertEquals(JsonAddressBookStorage.toPersistedJson(first),
+                JsonAddressBookStorage.toPersistedJson(second));
     }
 }

@@ -147,11 +147,15 @@ The `Model` component,
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
+**Why duplicate emails ignore case.** `Person#isSamePerson` treats two clients as the same if their names match, or their phone numbers or email addresses are equal. It compares emails with `Email#isSameEmail`, which ignores case, because email providers treat `alpha.tester@EXAMPLE.COM` and `alpha.tester@example.com` as one mailbox, so an exact comparison would let the same address into two records. Strictly, only the domain is case-insensitive and the part before `@` may be case-sensitive, but no mainstream provider treats it that way, so the whole address is compared ignoring case. `Email#equals` stays exact, because it defines whether two clients hold identical data, which the undo history and the no-change check in `edit` rely on. The email is stored as it was typed.
+
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
 <img src="images/BetterModelClassDiagram.png" width="700" />
 
 </div>
+
+**Why duplicate names ignore extra spaces.** `Person#isSamePerson` treats two clients as the same if their names match, or their phone numbers or email addresses are equal. `Name#isSameName` compares names ignoring case, leading and trailing spaces, and extra spaces between words, using `Name#collapseSpaces`. `Alpha  Tester` is therefore the same client as `Alpha Tester`, because an accidental extra space would otherwise create a second record for the same person. `ParserUtil#parseName` also collapses the spaces, so the name is stored as `Alpha Tester` and `find Alpha Tester` still finds it. The comparison still collapses spaces itself, so a name loaded from a data file that has extra spaces is compared in the same way.
 
 
 ### Storage component
@@ -289,10 +293,10 @@ values instead use `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX`.
 `ViewCommand#execute` reads `Model#getFilteredPersonList`, checks the upper bound
 and obtains the client's name for `Showing <name>.`. An out-of-range index raises
 `CommandException`. On success, it returns a `CommandResult` carrying the `Index`
-in `getViewIndex()`, without calling any UI class. The current `LogicManager`
-then saves the address book before returning the result, as it does for other
-successful commands. `view` does not modify the book, but this shared save can
-still fail; the selection request is applied only after `LogicManager` returns.
+in `getViewIndex()`, without calling any UI class. `LogicManager` writes the data
+file only when a command changes the stored client data, so `view` returns without
+touching the file. The selection request is applied only after `LogicManager`
+returns.
 
 `HistoryCommand` also leaves the displayed list unchanged. Its `CommandResult`
 requests selection preservation whether history is empty or not, so
@@ -303,7 +307,7 @@ clear the selection when they do not provide a view index.
 ![Sequence from view 1 to selecting and rendering the first displayed client](images/ViewSequenceDiagram.png)
 
 The diagram shows a successful `view 1` with at least one displayed client and
-no pending clear confirmation. Parser internals, the shared save path and the
+no pending clear confirmation. Parser internals, the save check and the
 feedback display are abbreviated to keep the selection flow readable.
 The source is [ViewSequenceDiagram.puml](diagrams/ViewSequenceDiagram.puml).
 
@@ -359,7 +363,7 @@ warnings. `DetailPaneTest` checks optional rows, wrapping and scrolling.
 | Not confirmed | `This will delete the only client. Type clear confirm to proceed.` for one client, or `This will delete all N clients. Type clear confirm to proceed.`, with `CommandResult#isAwaitingConfirmation()` set |
 | Confirmed | Replaces the address book with an empty one and shows `Client book has been cleared!` |
 
-**Remembering the pending state.** `LogicManager` holds one `isClearPending` flag. It is set from `CommandResult#isAwaitingConfirmation()` only after the data has been saved, so a failed save never leaves a clear pending. While the flag is set, the next input is parsed:
+**Remembering the pending state.** `LogicManager` holds one `isClearPending` flag. It is set from `CommandResult#isAwaitingConfirmation()` only after the command has run and any changed data has been saved, so a failed save never leaves a clear pending. While the flag is set, the next input is parsed:
 
 * `clear confirm` runs the confirmed `ClearCommand`.
 * Any other input, including input that cannot be parsed, clears the flag without being executed and shows `Clear cancelled.`.
@@ -394,9 +398,13 @@ persistent and undoable:
 
 1. Capture a before snapshot, execute the command, then capture an after snapshot.
    A parse error or `CommandException` stops execution without recording history.
-2. Save the address book. Successful read-only and no-op commands still use the
-   existing save path, but they do not create history entries.
-3. After saving succeeds, call `recordChange` only if the command is undoable.
+2. Write the data file only if the JSON text of the client book changed, so read-only
+   and no-op commands never write and keep working when the data location cannot be
+   written. `JsonAddressBookStorage#toPersistedJson` builds that text with the same
+   serialiser that writes the file, so a change the model considers equal, such as a
+   tag whose only difference is letter casing, is still saved.
+3. After that write step succeeds or is skipped, call `recordChange` only if the
+   command is undoable.
    `add`, `edit`, `delete`, `role`, `note` and confirmed `clear` are eligible.
    Equal snapshots are ignored without clearing redo history; a recorded change
    clears redo history. The initial `clear` warning and cancelled confirmation
@@ -463,6 +471,38 @@ no value as invalid input. `edit` treats it as a request to clear the field:
 `parseBudgetForEdit` and `parseAskingPriceForEdit` return null, and
 `parseAreasForEdit` turns a single empty `l/` into an empty set, so the client
 loses every area.
+
+Free text can contain a slash word that starts with a real prefix. In
+`a/12 Main Street s/o Ravi` the address holds `s/`, which is the asking price
+prefix, so reading it as a prefix hands `o Ravi` to `parsePrice` and rejects the
+whole command. `ArgumentTokenizer` therefore counts an occurrence of `b/` or `s/`
+as a new argument unless it is one of a closed list of abbreviations, `s/o` and
+`b/c`; `c/o` and `w/` were never prefixes, so they always stayed text. The list is
+closed rather than a rule about word length because `s/ab` and `s/o` have the same
+shape, so no length test separates a mistyped price from an abbreviation; `s/ab`
+and `b/xx` are therefore still reported as prices. The rule travels with the prefix
+as `Prefix#hasNumericValue` rather than as a special case for the address field,
+and `s/` with no value still clears the field in `edit`. Text prefixes keep the
+simpler rule, because a letter can be a real value there: `n/Al` and `t/s` are
+valid input, so a word such as `n/a` inside an address still reads as a name
+prefix and is reported as a repeated field.
+
+The guard runs before the tokenizer. `ParserUtil#rejectUnknownPrefixes` scans the
+arguments for any word that begins with one to three letters and a slash, and reports
+the first such word that follows a recognised prefix and is not one itself, because
+`ArgumentTokenizer` would otherwise fold it into the previous value:
+`a/1 Road B/400000-600000` stores the budget text inside the address. Matching is
+case-sensitive, like the tokenizer, so a known prefix typed in the wrong case is
+reported instead of being accepted here and then ignored there. A word is reported
+only when its first letter begins a prefix anywhere in `CliSyntax`, which catches a
+mistyped prefix such as `bb/` and a prefix belonging to another command, such as
+`r/` in `add`, while `c/o` and `w/` in an address stay text. The guard skips the
+same two abbreviations the tokenizer treats as text, `s/o` and `b/c`, in any letter
+case, so `S/o Ravi` inside an address is still stored. The cost is that
+address text beginning like a prefix, such as `Tel/Fax` or `nr/`, is reported as
+unknown, and the User Guide states that limit. A word before the first recognised
+prefix is not reported, because the command parsers reject a non-empty preamble with
+their own message.
 
 ### Filter command
 
@@ -917,6 +957,10 @@ testers are expected to do more *exploratory* testing.
       Expected: No client is added. The result box shows
       `Error: A client with this name already exists in the client book.`
 
+   1. Test case: `add n/Alicia  Tan p/81111111 e/alicia.test@example.com a/1 Test Road` (two spaces between `Alicia` and `Tan`)<br>
+      Expected: No client is added, because extra spaces do not make the name different. The result box shows
+      `Error: A client with this name already exists in the client book.`
+
    1. Test case: `add n/Test Buyer p/81234567 e/test.buyer@example.com a/2 Test Road`<br>
       Expected: No client is added. The result box shows
       `Error: This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
@@ -925,9 +969,17 @@ testers are expected to do more *exploratory* testing.
       Expected: No client is added. The result box shows
       `Error: This email address already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
 
+   1. Test case: `add n/Email Case Test p/82222223 e/ALICIA.TAN@EXAMPLE.COM a/5 Test Road`<br>
+      Expected: No client is added, because email addresses are compared ignoring case. The result box shows
+      `Error: This email address already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+
    1. Test case: `edit 2 p/81234567`<br>
       Expected: Benjamin's details are unchanged. The result box shows
       `Error: This phone number already belongs to another client: Alicia Tan. For co-buyers, use one household record tagged t/couple.`
+
+   1. Test case: `add n/Test  Spacing p/89990001 e/test.spacing@example.com a/4 Test Road` (two spaces between `Test` and `Spacing`)<br>
+      Expected: The client is added with the name `Test Spacing`, with a single space. Run `list` and `delete` on this
+      client afterwards to leave the sample data as it was.
 
 ### Using indexes from a filtered list
 

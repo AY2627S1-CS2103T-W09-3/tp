@@ -88,6 +88,38 @@ public class EmailTest {
     }
 
     @Test
+    public void isSameEmail() {
+        Email email = new Email("alpha.tester@example.com");
+
+        // same value -> returns true
+        assertTrue(email.isSameEmail(new Email("alpha.tester@example.com")));
+
+        // same object -> returns true
+        assertTrue(email.isSameEmail(email));
+
+        // domain differs in case -> returns true
+        assertTrue(email.isSameEmail(new Email("alpha.tester@EXAMPLE.COM")));
+
+        // local part differs in case -> returns true
+        assertTrue(email.isSameEmail(new Email("Alpha.Tester@example.com")));
+
+        // both parts differ in case, and the other email is the one in upper case -> returns true
+        assertTrue(new Email("ALPHA.TESTER@EXAMPLE.COM").isSameEmail(email));
+
+        // null -> returns false
+        assertFalse(email.isSameEmail(null));
+
+        // different local part -> returns false
+        assertFalse(email.isSameEmail(new Email("alpha.tester2@example.com")));
+
+        // different domain -> returns false
+        assertFalse(email.isSameEmail(new Email("alpha.tester@example.org")));
+
+        // equals still tells emails that differ in case apart
+        assertFalse(email.equals(new Email("alpha.tester@EXAMPLE.COM")));
+    }
+
+    @Test
     public void messageConstraints_hasExpectedWording() {
         assertEquals("Emails should be of the format local-part@domain, where the local part uses letters, "
                 + "digits, and the special characters +_.- (not at the start or end, and never two in a row). "
