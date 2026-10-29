@@ -137,6 +137,32 @@ public class ClientNameIntegrationTest {
     }
 
     @Test
+    public void execute_addressStartingWithRelationshipMarker_parsesAccordingToFieldOrder() throws Exception {
+        addClient("Original Client", 1);
+
+        logic.execute("edit 1 n/Bob a/P Ryan Road");
+
+        Person ambiguous = model.getFilteredPersonList().getFirst();
+        assertEquals(new Name("Bob a/P Ryan Road"), ambiguous.getName());
+        assertEquals("3 Test Road", ambiguous.getAddress().value);
+
+        logic.execute("edit 1 a/P Ryan Road n/Bob");
+
+        Person corrected = model.getFilteredPersonList().getFirst();
+        assertEquals(new Name("Bob"), corrected.getName());
+        assertEquals("P Ryan Road", corrected.getAddress().value);
+        assertEquals(model.getAddressBook(), addressBookStorage.readAddressBook().orElseThrow());
+    }
+
+    @Test
+    public void execute_slashTextWithinName_addsAndReloadsClient() throws Exception {
+        addClient("Bob x/y", 1);
+
+        assertEquals(new Name("Bob x/y"), model.getFilteredPersonList().getFirst().getName());
+        assertEquals(model.getAddressBook(), addressBookStorage.readAddressBook().orElseThrow());
+    }
+
+    @Test
     public void execute_unknownOrUppercasePrefix_rejectsWithoutChangingData() throws Exception {
         addClient("Original Client", 1);
         AddressBookSnapshot before = model.captureSnapshot();

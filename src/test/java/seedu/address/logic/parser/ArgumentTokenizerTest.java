@@ -191,6 +191,28 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
+    public void tokenize_addressStartingWithMarkerAfterName_preservesName() {
+        for (String initial : List.of("l", "L", "p", "P")) {
+            ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" n/Bob a/" + initial + " Ryan Road",
+                    PREFIX_NAME, PREFIX_ADDRESS);
+
+            assertArgumentPresent(arguments, PREFIX_NAME, "Bob a/" + initial + " Ryan Road");
+            assertArgumentAbsent(arguments, PREFIX_ADDRESS);
+        }
+    }
+
+    @Test
+    public void tokenize_addressStartingWithMarkerBeforeName_preservesAddress() {
+        for (String initial : List.of("l", "L", "p", "P")) {
+            ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" a/" + initial + " Ryan Road n/Bob",
+                    PREFIX_NAME, PREFIX_ADDRESS);
+
+            assertArgumentPresent(arguments, PREFIX_NAME, "Bob");
+            assertArgumentPresent(arguments, PREFIX_ADDRESS, initial + " Ryan Road");
+        }
+    }
+
+    @Test
     public void tokenize_prefixValueBeginsLikeMarker_remainsFieldPrefix() {
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" n/Kumar s/office a/Lorong 1",
                 PREFIX_NAME, PREFIX_ASKING_PRICE, PREFIX_ADDRESS);

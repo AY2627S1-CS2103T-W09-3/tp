@@ -151,6 +151,13 @@ also preserves the existing rule that collapses extra spaces, and
 Search also normalises fields and keywords to NFC, so either spelling of an
 accent finds the saved client without removing the accent itself.
 
+The marker rule makes `n/Bob a/P Ryan Road` ambiguous: the tokenizer keeps
+`a/P Ryan Road` in the name. To record an address starting with the whole word
+`L` or `P` (ignoring case), place it before the name, for example
+`a/P Ryan Road n/Bob`. The User Guide documents this ordering and the fact that
+other slash text, such as `x/y`, can be stored in names. Tokenizer and integration
+tests cover both the ambiguity and the address-first form.
+
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W09-3/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
