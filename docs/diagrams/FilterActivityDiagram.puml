@@ -9,7 +9,8 @@ start
 'diamond we place it as the true branch instead.
 
 if () then ([input is valid])
-    :Build predicate from the role and the tags;
+    :Build predicate from the given criteria
+    (role, tags, areas, housing types, budget, asking price);
     :Replace the active predicate
     (any earlier filter or find is discarded);
     :Show "Showing X of Y clients.";

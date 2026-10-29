@@ -25,6 +25,7 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonMatchesFilterPredicate;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.testutil.PersonBuilder;
 
@@ -92,8 +93,7 @@ public class RoleCommandTest {
 
     @Test
     public void execute_clientStillMatchesRoleFilter_returnsVisibleIndex() throws Exception {
-        model.updateFilteredPersonList(person -> person.getRole() == ClientRole.BUYER
-                || person.getRole() == ClientRole.BOTH);
+        model.updateFilteredPersonList(new PersonMatchesFilterPredicate.Builder().withRole(ClientRole.BUYER).build());
 
         CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.BOTH).execute(model);
 
@@ -104,8 +104,7 @@ public class RoleCommandTest {
 
     @Test
     public void execute_clientLeavesRoleFilter_doesNotSelectClientMovingIntoOldIndex() throws Exception {
-        model.updateFilteredPersonList(person -> person.getRole() == ClientRole.BUYER
-                || person.getRole() == ClientRole.BOTH);
+        model.updateFilteredPersonList(new PersonMatchesFilterPredicate.Builder().withRole(ClientRole.BUYER).build());
 
         CommandResult result = new RoleCommand(INDEX_FIRST_PERSON, ClientRole.SELLER).execute(model);
 

@@ -40,11 +40,20 @@ public class Name {
 
 
     /**
-     * Returns true if both names are the same, ignoring case.
-     * Spaces are not collapsed, so "Bob  Lee" and "Bob Lee" are different names.
+     * Returns {@code name} without leading or trailing spaces, and with each run of spaces inside it replaced by
+     * one space.
+     */
+    public static String collapseSpaces(String name) {
+        requireNonNull(name);
+        return name.trim().replaceAll(" {2,}", " ");
+    }
+
+    /**
+     * Returns true if both names are the same, ignoring case and extra spaces.
+     * Extra spaces are ignored, so "Bob  Lee" and "Bob Lee" are the same name.
      */
     public boolean isSameName(Name otherName) {
-        return otherName != null && fullName.equalsIgnoreCase(otherName.fullName);
+        return otherName != null && collapseSpaces(fullName).equalsIgnoreCase(collapseSpaces(otherName.fullName));
     }
 
     @Override

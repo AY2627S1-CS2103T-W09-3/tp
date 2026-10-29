@@ -68,6 +68,12 @@ public class PersonTest {
                 .withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
+        // email differs in domain case, all other attributes different -> returns true
+        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).withPhone(VALID_PHONE_BOB)
+                .withEmail(ALICE.getEmail().value.toUpperCase()).withAddress(VALID_ADDRESS_BOB)
+                .withTags(VALID_TAG_HUSBAND).build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
         // different name, phone and email, same address and tags -> returns false
         editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).withPhone(VALID_PHONE_BOB)
                 .withEmail(VALID_EMAIL_BOB).build();
@@ -78,15 +84,20 @@ public class PersonTest {
                 .withPhone(VALID_PHONE_AMY).withEmail(VALID_EMAIL_AMY).build();
         assertTrue(BOB.isSamePerson(editedBob));
 
-        // name has trailing spaces, phone and email different -> returns false
+        // name has trailing spaces, phone and email different -> returns true
         editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB + " ")
                 .withPhone(VALID_PHONE_AMY).withEmail(VALID_EMAIL_AMY).build();
-        assertFalse(BOB.isSamePerson(editedBob));
+        assertTrue(BOB.isSamePerson(editedBob));
 
-        // name has extra internal space, phone and email different -> returns false
+        // name has extra internal space, phone and email different -> returns true
         editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.replace(" ", "  "))
                 .withPhone(VALID_PHONE_AMY).withEmail(VALID_EMAIL_AMY).build();
-        assertFalse(BOB.isSamePerson(editedBob));
+        assertTrue(BOB.isSamePerson(editedBob));
+
+        // name has extra internal space and differs in case, phone and email different -> returns true
+        editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.toLowerCase().replace(" ", "   "))
+                .withPhone(VALID_PHONE_AMY).withEmail(VALID_EMAIL_AMY).build();
+        assertTrue(BOB.isSamePerson(editedBob));
     }
 
     @Test

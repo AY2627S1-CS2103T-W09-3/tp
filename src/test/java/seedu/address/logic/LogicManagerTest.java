@@ -91,6 +91,31 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_addNameWithExtraSpaces_isRejectedAsDuplicate() throws Exception {
+        logic.execute("add n/Alpha Tester p/90010001 e/alpha.tester@example.com a/1 Test Road");
+
+        assertCommandException("add n/Alpha  Tester p/90010301 e/alpha.spaces@example.com a/21 Test Road",
+                Messages.MESSAGE_DUPLICATE_NAME);
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_addEmailInDifferentCase_isRejectedAsDuplicate() throws Exception {
+        logic.execute("add n/Alpha Tester p/90010001 e/alpha.tester@example.com a/1 Test Road");
+
+        assertCommandException("add n/Email Case Test p/90010302 e/alpha.tester@EXAMPLE.COM a/22 Test Road",
+                String.format(Messages.MESSAGE_DUPLICATE_EMAIL, "Alpha Tester"));
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void execute_addNameWithExtraSpaces_isStoredWithSingleSpaces() throws Exception {
+        logic.execute("add n/Alpha   Tester p/90010001 e/alpha.tester@example.com a/1 Test Road");
+
+        assertEquals("Alpha Tester", model.getAddressBook().getPersonList().get(0).getName().fullName);
+    }
+
+    @Test
     public void execute_invalidCommandFormat_throwsParseException() {
         String invalidCommand = "uicfhmowqewca";
         assertParseException(invalidCommand, MESSAGE_UNKNOWN_COMMAND);

@@ -81,10 +81,32 @@ public class NameTest {
         // different name -> returns false
         assertFalse(name.isSameName(new Name("Other Valid Name")));
 
-        // trailing space -> returns false
-        assertFalse(name.isSameName(new Name("Valid Name ")));
+        // trailing space -> returns true
+        assertTrue(name.isSameName(new Name("Valid Name ")));
 
-        // extra internal space -> returns false
-        assertFalse(name.isSameName(new Name("Valid  Name")));
+        // extra internal space -> returns true
+        assertTrue(name.isSameName(new Name("Valid  Name")));
+
+        // several extra internal spaces, differing in case -> returns true
+        assertTrue(name.isSameName(new Name("vALID     nAME")));
+
+        // extra spaces on either name -> returns true
+        assertTrue(new Name("Valid   Name ").isSameName(new Name("Valid  Name")));
+
+        // words joined without a space -> returns false
+        assertFalse(name.isSameName(new Name("ValidName")));
+
+        // extra space inside a different name -> returns false
+        assertFalse(name.isSameName(new Name("Other  Valid  Name")));
+    }
+
+    @Test
+    public void collapseSpaces() {
+        assertEquals("Valid Name", Name.collapseSpaces("Valid Name"));
+        assertEquals("Valid Name", Name.collapseSpaces("Valid  Name"));
+        assertEquals("Valid Name Here", Name.collapseSpaces("Valid     Name   Here"));
+        assertEquals("Valid Name", Name.collapseSpaces("  Valid Name  "));
+        assertEquals("", Name.collapseSpaces("   "));
+        assertThrows(NullPointerException.class, () -> Name.collapseSpaces(null));
     }
 }
