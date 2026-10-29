@@ -307,6 +307,15 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_shortWordAfterNumericPrefix_failure() {
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/12 Main Street s/ab",
+                Price.MESSAGE_CONSTRAINTS);
+
+        assertParseFailure(parser, NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + " a/7 Sunset Way b/xx",
+                Price.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_areaWithRepeatedInternalWhitespace_success() {
         String validPerson = NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB;
         Person expectedPerson = new PersonBuilder(BOB).withTags()

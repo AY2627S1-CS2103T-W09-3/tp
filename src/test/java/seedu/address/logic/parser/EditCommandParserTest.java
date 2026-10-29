@@ -201,6 +201,12 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_shortWordAfterAddress_failure() {
+        assertParseFailure(parser, "1 a/9 Grove Road s/ab", Price.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 a/9 Grove Road b/xx", Price.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_multipleRepeatedFields_failure() {
         // More extensive testing of duplicate parameter detections is done in
         // AddCommandParserTest#parse_repeatedNonTagValue_failure()

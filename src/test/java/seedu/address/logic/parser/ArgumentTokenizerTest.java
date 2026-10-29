@@ -152,6 +152,25 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
+    public void tokenize_numericPrefixFollowedByShortWord_isAnArgument() {
+        Prefix address = new Prefix("a/");
+        Prefix price = new Prefix("s/", true);
+        Prefix budget = new Prefix("b/", true);
+
+        ArgumentMultimap withAskingTypo = ArgumentTokenizer.tokenize(" a/12 Main Street s/ab", address, price);
+        assertArgumentPresent(withAskingTypo, address, "12 Main Street");
+        assertArgumentPresent(withAskingTypo, price, "ab");
+
+        ArgumentMultimap withBudgetTypo = ArgumentTokenizer.tokenize(" a/7 Sunset Way b/xx", address, budget);
+        assertArgumentPresent(withBudgetTypo, address, "7 Sunset Way");
+        assertArgumentPresent(withBudgetTypo, budget, "xx");
+
+        ArgumentMultimap withUpperCase = ArgumentTokenizer.tokenize(" a/12 Main Street S/O Ravi", address, price);
+        assertArgumentPresent(withUpperCase, address, "12 Main Street S/O Ravi");
+        assertArgumentAbsent(withUpperCase, price);
+    }
+
+    @Test
     public void tokenize_numericPrefixFollowedByNumber_isAnArgument() {
         Prefix address = new Prefix("a/");
         Prefix price = new Prefix("s/", true);
