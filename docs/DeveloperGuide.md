@@ -254,6 +254,12 @@ If the backup fails, startup logs the cause and stops, preventing a later
 command from overwriting the only copy. `MainAppTest` covers recovery and backup
 failure, and `UiManagerTest` covers the warning and normal startup without it.
 
+Preferences use a separate recovery path. `JsonUtil#readJsonFile` rejects a root JSON
+`null`, and `JsonUserPrefsStorage` rejects a preferences object whose `guiSettings` is
+null. Both report `DataLoadingException`, allowing `MainApp#initPrefs` to log the
+problem, use default settings and attempt to save valid preferences. This fallback
+does not replace or rewrite the client data file. Valid saved settings remain unchanged.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
