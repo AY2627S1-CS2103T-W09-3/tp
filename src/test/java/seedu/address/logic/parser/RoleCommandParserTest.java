@@ -4,8 +4,11 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailur
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
+import seedu.address.logic.Messages;
 import seedu.address.logic.commands.RoleCommand;
 import seedu.address.model.person.ClientRole;
 
@@ -29,18 +32,18 @@ public class RoleCommandParserTest {
     }
 
     @Test
-    public void parse_invalidFormat_failure() {
-        String[] invalidInputs = {
-            // Missing required fields.
-            "", "buyer", "1", "1   ",
-            // Index boundaries: zero and negative values, then a value beyond the integer range.
-            "0 buyer", "0 none", "-1 buyer", "-1 none", "2147483648 buyer", "2147483648 none",
-            // Malformed index and surplus argument partitions.
-            "1.5 buyer", "abc buyer", "1 buyer extra"
-        };
-
-        for (String input : invalidInputs) {
+    public void parse_missingOrMalformedIndex_throwsFormatError() {
+        for (String input : List.of("", "buyer", "1", "1   ", "1.5 buyer", "abc buyer", "+1 buyer",
+                "1 buyer extra")) {
             assertParseFailure(parser, input, RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        }
+    }
+
+    @Test
+    public void parse_nonPositiveOrOverflowIndex_throwsInvalidIndexError() {
+        for (String input : List.of("0 buyer", "-1 buyer", "-0 buyer", "2147483648 buyer",
+                "999999999999999999999 buyer", "0 none", "-1 none", "2147483648 none")) {
+            assertParseFailure(parser, input, Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         }
     }
 

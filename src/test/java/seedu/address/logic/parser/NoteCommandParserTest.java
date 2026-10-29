@@ -4,6 +4,8 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailur
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.Messages;
@@ -72,15 +74,16 @@ public class NoteCommandParserTest {
     }
 
     @Test
-    public void parse_missingIndex_failure() {
-        assertParseFailure(parser, "", NoteCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+    public void parse_missingOrMalformedIndex_throwsFormatError() {
+        for (String input : List.of("", "   ", "abc note", "1.5 note", "+1 note", "note")) {
+            assertParseFailure(parser, input, NoteCommand.MESSAGE_INVALID_COMMAND_FORMAT);
+        }
     }
 
     @Test
-    public void parse_invalidIndex_failure() {
-        String[] invalidInputs = {"0 note", "-1 note", "1.5 note", "abc note", "2147483648 note"};
-
-        for (String input : invalidInputs) {
+    public void parse_nonPositiveOrOverflowIndex_throwsInvalidIndexError() {
+        for (String input : List.of("0 note", "-1 note", "-0 note", "2147483648 note",
+                "999999999999999999999 note")) {
             assertParseFailure(parser, input, Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         }
     }
