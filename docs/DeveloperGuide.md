@@ -388,9 +388,9 @@ When nothing is pending, `clear confirm` is rejected with `No clear is pending. 
 field, so the command word already says everything the parser needs.
 `AddressBookParser#parseNoArguments(String, Command, String)` rejects any input after the command word with the
 format message owned by that command, so `list now` reports `Invalid command format. Use: list.` and `help 123`
-reports `Invalid command format. Use: help.`. The message names the correct form rather than a generic error,
-because the extra text is usually an argument borrowed from another command, such as `undo 1` typed after
-`edit 1`, and the correction is the command word alone. The check lives in one helper so a new command of this
+reports `Invalid command format. Use: help.`. The message names that command's own form rather than a generic
+error, because the extra text is usually an argument borrowed from another command, such as `undo 1` typed after
+`edit 1`. The check lives in one helper so a new command of this
 kind cannot forget it, while each command keeps its own message, so the text stays right when a command is
 renamed or gains an argument.
 
@@ -425,8 +425,7 @@ not the same question as whether the model is equal. Three cases separate the tw
 **What the skip gives the user.** Read-only and no-op commands never touch the file, so `list`, `find`, `view`,
 `help`, the initial `clear` warning and rejected input all work when the data folder is not writable, and the
 permission message appears only when a command really writes. A failed write rolls the model back to its state
-before the command, shows the access-denied or general storage message, and no history entry has been recorded at
-that point.
+before the command, shows the access-denied or general storage message, and records no history entry.
 
 **Cost.** A command that completes serialises the client book twice, once before it executes and once after, which
 is the same order of work as one file write. A command that writes serialises a third time inside
