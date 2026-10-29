@@ -32,6 +32,7 @@ public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
 
+    private static final Pattern INDEX_SYNTAX_PATTERN = Pattern.compile("-?[0-9]+");
     private static final Pattern PREFIX_TOKEN_PATTERN = Pattern.compile("(?<!\\S)[A-Za-z]{1,3}/");
 
     /**
@@ -53,6 +54,16 @@ public class ParserUtil {
             throw new ParseException(MESSAGE_INVALID_INDEX);
         }
         return Index.fromOneBased(Integer.parseInt(trimmedIndex));
+    }
+
+    /**
+     * Returns whether {@code index} has integer syntax: an optional leading minus followed by digits.
+     * This checks syntax only; zero, negative, and overflowing values still have valid syntax and are
+     * rejected by {@link #parseIndex(String)} instead.
+     */
+    public static boolean hasValidIndexSyntax(String index) {
+        requireNonNull(index);
+        return INDEX_SYNTAX_PATTERN.matcher(index.trim()).matches();
     }
 
     /**

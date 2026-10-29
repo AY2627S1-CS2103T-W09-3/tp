@@ -23,7 +23,7 @@ public class RoleCommandParser implements Parser<RoleCommand> {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
 
-        if (!arguments[0].matches("-?[0-9]+")) {
+        if (!ParserUtil.hasValidIndexSyntax(arguments[0])) {
             throw new ParseException(RoleCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
 

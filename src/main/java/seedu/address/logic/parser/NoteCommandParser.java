@@ -23,7 +23,7 @@ public class NoteCommandParser implements Parser<NoteCommand> {
         }
 
         String[] arguments = trimmedArgs.split("\\s+", 2);
-        if (!arguments[0].matches("-?[0-9]+")) {
+        if (!ParserUtil.hasValidIndexSyntax(arguments[0])) {
             throw new ParseException(NoteCommand.MESSAGE_INVALID_COMMAND_FORMAT);
         }
 

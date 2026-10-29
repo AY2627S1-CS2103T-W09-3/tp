@@ -22,7 +22,7 @@ public class ViewCommandParser implements Parser<ViewCommand> {
         requireNonNull(args);
         String trimmedArgs = args.trim();
 
-        if (!trimmedArgs.matches("-?[0-9]+")) {
+        if (!ParserUtil.hasValidIndexSyntax(trimmedArgs)) {
             throw new ParseException(ViewCommand.MESSAGE_INVALID_FORMAT);
         }
 

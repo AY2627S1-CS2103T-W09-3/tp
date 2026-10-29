@@ -21,7 +21,7 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
         requireNonNull(args);
         String trimmedArgs = args.trim();
 
-        if (!trimmedArgs.matches("-?[0-9]+")) {
+        if (!ParserUtil.hasValidIndexSyntax(trimmedArgs)) {
             throw new ParseException(DeleteCommand.MESSAGE_INVALID_FORMAT);
         }
 
