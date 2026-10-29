@@ -48,13 +48,13 @@ public class RoleCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         actionDescription = "";
         requireNonNull(model);
-        List<Person> displayedClients = model.getFilteredPersonList();
+        List<Person> lastShownList = model.getFilteredPersonList();
 
-        if (index.getZeroBased() >= displayedClients.size()) {
+        if (index.getZeroBased() >= lastShownList.size()) {
             throw new CommandException(MESSAGE_INVALID_CLIENT_INDEX);
         }
 
-        Person clientToEdit = displayedClients.get(index.getZeroBased());
+        Person clientToEdit = lastShownList.get(index.getZeroBased());
         if (role == null && clientToEdit.getRole() == null) {
             return new CommandResult(String.format(MESSAGE_ROLE_ALREADY_UNASSIGNED, clientToEdit.getName()), index);
         }

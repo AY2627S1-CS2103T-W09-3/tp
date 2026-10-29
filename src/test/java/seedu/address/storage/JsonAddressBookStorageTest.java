@@ -3,8 +3,8 @@ package seedu.address.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.HOON;
@@ -192,7 +192,7 @@ public class JsonAddressBookStorageTest {
             }
         };
 
-        IOException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+        IOException thrown = assertThrows(
                 IOException.class, () -> failingStorage.saveAddressBook(updated));
         assertSame(replacementFailure, thrown);
         assertEquals(1, thrown.getSuppressed().length);
@@ -225,7 +225,7 @@ public class JsonAddressBookStorageTest {
             }
         };
 
-        IllegalStateException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+        IllegalStateException thrown = assertThrows(
                 IllegalStateException.class, () -> failingStorage.saveAddressBook(updated));
         assertSame(replacementFailure, thrown);
         assertEquals(1, thrown.getSuppressed().length);
