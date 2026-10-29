@@ -92,10 +92,10 @@ These rules apply when adding or editing clients.
 | Name | Must start with a letter or number. Supports Unicode letters (including accented letters), combining marks, numbers, spaces, apostrophes (`'` and `’`), hyphens (`-`) and slashes (`/`), e.g. `Anne-Marie Tan`, `José Tan` and `Kumar s/o Ravi`. Extra spaces between words are reduced to one. |
 | Phone | At least 3 digits; no spaces, letters or symbols. |
 | Email | Use `local-part@domain`. See the email rules below. |
-| Address | Cannot be blank. Free text, so the abbreviations `s/o` and `b/c` stay part of the address; a short word such as `s/ab` is read as an asking price and rejected. |
+| Address | Cannot be blank. Free text, so the abbreviations `s/o` and `b/c` stay part of the address; a short word such as `s/ab` is read as an asking price and rejected, and so is `s/o,`, because an abbreviation must be a whole word. |
 | Budget | Two whole-dollar amounts joined by a hyphen, such as `400000-600000`. Each amount is from 1 to 1,000,000,000, commas are optional, and the first amount cannot exceed the second. |
 | Asking price | One whole-dollar amount from 1 to 1,000,000,000, with optional correctly placed commas. |
-| Area | One of the 32 supported areas. Case is ignored and the standard spelling is stored. |
+| Area | One of the 32 supported areas. Case is ignored and the standard spelling is stored, and extra spaces between words are reduced to one, so `l/Toa  Payoh` is stored as `Toa Payoh`. |
 | Housing type | `HDB`, `Condo`, `EC` or `Landed`, ignoring case. |
 | Tag | Letters and numbers only; no spaces or symbols. |
 
@@ -161,6 +161,11 @@ Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [b/MIN-MAX] [s/PRICE] [l/AR
 **:bulb: Tip:** A client can have any number of tags, including zero.
 
 </div>
+
+The result box shows the client as it was saved, including any requirements, so you can
+check the budget, asking price, areas and housing types before typing the next command.
+Adding the third example below reports
+`Requirements: Budget $400,000 to $600,000, Bedok, HDB`.
 
 Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
@@ -249,6 +254,8 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [b/MIN-MAX] [s/PRIC
 * To remove all of a client's tags, enter `t/` without a tag after it.
 * An `edit` replaces a whole value: `edit 1 l/Punggol` leaves `Punggol` as the only area, so list every area again to keep it.
 * An empty `b/`, `s/`, `l/` or `h/` clears that field: `edit 1 b/` removes the budget and `edit 1 l/` removes every area.
+* The result box shows the stored client after the edit, so a cleared field disappears from that message. For
+  example, `edit 3 s/` reports no asking price.
 * After a successful edit, the current search or filter stays active. The edited client leaves the list if it no longer matches. Enter `list` to show all clients.
 
 Examples:
