@@ -427,11 +427,11 @@ before the first one. Every other command takes arguments, so nothing else calls
 
 ### Writing the data file
 
-`LogicManager` decides whether a command changed anything by comparing the JSON text of the whole client book
-before and after the command. `LogicManager#persistedState(Model)` maps every client through
+`LogicManager` decides whether a command changed anything by comparing the persisted JSON of every client before
+and after the command. `LogicManager#persistedState(Model)` maps every client through
 `JsonAddressBookStorage#toPersistedJson`, which serialises `new JsonAdaptedPerson(person)` with
 `JsonUtil#toJsonTree`, so the comparison uses the same mapper, annotations and field visibility as the code that
-writes the file. The file is written only when the two texts differ, and the write itself still goes through
+writes the file. The file is written only when the two lists differ, and the write itself still goes through
 `Storage#saveAddressBook`. `JsonUtil#toJsonString` would serve the same purpose but declares a checked
 `JsonProcessingException`, which leaves a catch branch that no test can reach; `toJsonTree` uses the same mapper
 without it.
