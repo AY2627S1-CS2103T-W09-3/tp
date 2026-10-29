@@ -12,7 +12,6 @@ import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
@@ -41,7 +40,7 @@ public class ModelManagerTest {
                 .withRole(ClientRole.SELLER).build();
         List<Predicate<Person>> predicates = List.of(
                 new PersonMatchesSearchTermsPredicate(List.of("Alice")),
-                new PersonMatchesFilterPredicate(Optional.of(ClientRole.BUYER), Set.of()));
+                new PersonMatchesFilterPredicate.Builder().withRole(ClientRole.BUYER).build());
         for (Predicate<Person> predicate : predicates) {
             ModelManager model = new ModelManager();
             model.addPerson(buyer);

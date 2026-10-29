@@ -14,6 +14,8 @@ public class HelpCommand extends Command {
 
     public static final String SHOWING_HELP_MESSAGE = "Opened help window";
 
+    public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: help.";
+
     @Override
     public CommandResult execute(Model model) {
         return new CommandResult(SHOWING_HELP_MESSAGE, true, false);
