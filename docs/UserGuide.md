@@ -97,7 +97,7 @@ These rules apply when adding or editing clients.
 | Asking price | One whole-dollar amount from 1 to 1,000,000,000, with optional correctly placed commas. |
 | Area | One of the 32 supported areas. Case is ignored and the standard spelling is stored, and extra spaces between words are reduced to one, so `l/Toa  Payoh` is stored as `Toa Payoh`. |
 | Housing type | `HDB`, `Condo`, `EC` or `Landed`, ignoring case. |
-| Tag | Letters and numbers only; no spaces or symbols. |
+| Tag | Only English letters (`A–Z`, `a–z`) and digits (`0–9`) are allowed; no spaces or symbols. |
 
 Prefixes are case-sensitive and must be lowercase, so `B/400000` is not read as a budget. A slash word that begins like a prefix but is not one, such as `bb/`, is reported as `Unknown prefix: bb/` rather than kept as text, and so is a prefix from another command, such as `r/`. The abbreviations `s/o` and `b/c` are kept as text in any letter case. A few address fragments that begin like a prefix, such as `Tel/Fax` or `nr/`, are reported the same way.
 
