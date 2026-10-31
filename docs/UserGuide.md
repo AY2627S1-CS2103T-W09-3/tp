@@ -64,6 +64,9 @@ or settings.
 
 **:information_source: Notes about the command format:**<br>
 
+* An unknown command shows `Error: Unknown command. Type help for the User Guide link.`
+  Enter `help` to access the guide link.
+
 * Words in `UPPER_CASE` are the parameters to be supplied by the user.<br>
   For example, in `add n/NAME`, replace `NAME` with a value such as `John Doe`.
 
