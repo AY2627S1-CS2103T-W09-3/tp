@@ -45,6 +45,14 @@ public class JsonSerializableAddressBookTest {
     }
 
     @Test
+    public void toModelType_nullPerson_throwsIllegalValueException() throws Exception {
+        JsonSerializableAddressBook dataFromJson = JsonUtil.fromJsonString(
+                "{\"persons\":[null]}", JsonSerializableAddressBook.class);
+        assertThrows(IllegalValueException.class, JsonSerializableAddressBook.MESSAGE_NULL_PERSON,
+                dataFromJson::toModelType);
+    }
+
+    @Test
     public void toModelType_duplicatePersons_throwsIllegalValueException() throws Exception {
         JsonSerializableAddressBook dataFromFile = JsonUtil.readJsonFile(DUPLICATE_PERSON_FILE,
                 JsonSerializableAddressBook.class).get();

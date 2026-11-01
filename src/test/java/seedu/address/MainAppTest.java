@@ -193,6 +193,20 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_nullPerson_backsUpFileAndStartsEmpty() throws Exception {
+        String invalidJson = "{\"persons\":[null]}";
+        Files.writeString(addressBookPath, invalidJson);
+
+        app.init();
+
+        assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+        assertEquals(invalidJson, Files.readString(addressBookPath));
+        assertEquals(invalidJson, Files.readString(findUnreadableDataBackup()));
+        assertTrue(logHandler.messages.stream()
+                .anyMatch(message -> message.contains("Will be starting with an empty client book.")));
+    }
+
+    @Test
     public void init_bookWithCaseOnlyDuplicateEmails_keepsOriginalInBackupAfterNextCommand() throws Exception {
         String originalJson = Files.readString(CASE_ONLY_EMAILS_FILE);
         Files.writeString(addressBookPath, originalJson);
