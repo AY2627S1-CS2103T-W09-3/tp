@@ -36,6 +36,12 @@ public class EditCommandParser implements Parser<EditCommand> {
     public static final String MESSAGE_EMPTY_TAG_WITH_OTHER_TAGS =
             "An empty t/ must be used alone to clear all tags. "
             + "To set tags, provide a value after every t/.";
+    public static final String MESSAGE_EMPTY_AREA_WITH_OTHER_AREAS =
+            "An empty l/ must be used alone to clear all areas. "
+            + "To set areas, provide a value after every l/.";
+    public static final String MESSAGE_EMPTY_HOUSING_TYPE_WITH_OTHER_TYPES =
+            "An empty h/ must be used alone to clear all housing types. "
+            + "To set housing types, provide a value after every h/.";
 
     /**
      * Parses the given {@code String} of arguments in the context of the EditCommand
@@ -126,6 +132,9 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (areas.isEmpty()) {
             return Optional.empty();
         }
+        if (areas.size() > 1 && areas.contains("")) {
+            throw new ParseException(MESSAGE_EMPTY_AREA_WITH_OTHER_AREAS);
+        }
         Collection<String> areaSet = areas.size() == 1 && areas.contains("") ? Collections.emptySet() : areas;
         return Optional.of(ParserUtil.parseAreas(areaSet));
     }
@@ -141,6 +150,9 @@ public class EditCommandParser implements Parser<EditCommand> {
 
         if (housingTypes.isEmpty()) {
             return Optional.empty();
+        }
+        if (housingTypes.size() > 1 && housingTypes.contains("")) {
+            throw new ParseException(MESSAGE_EMPTY_HOUSING_TYPE_WITH_OTHER_TYPES);
         }
         Collection<String> housingTypeSet = housingTypes.size() == 1 && housingTypes.contains("")
                 ? Collections.emptySet()

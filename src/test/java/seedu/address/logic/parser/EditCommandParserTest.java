@@ -365,10 +365,24 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1" + INVALID_PRICE_DESC, Price.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1" + INVALID_AREA_DESC, Area.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1" + INVALID_HOUSING_TYPE_DESC, HousingType.MESSAGE_CONSTRAINTS);
+    }
 
-        // an empty prefix may clear a field, but it cannot be combined with a value
-        assertParseFailure(parser, "1 l/ l/Orchard", Area.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 h/ h/HDB", HousingType.MESSAGE_CONSTRAINTS);
+    @Test
+    public void parse_emptyAreaWithOtherAreas_failure() {
+        String expectedMessage = EditCommandParser.MESSAGE_EMPTY_AREA_WITH_OTHER_AREAS;
+        assertParseFailure(parser, "1 l/ l/Bedok", expectedMessage);
+        assertParseFailure(parser, "1 l/Bedok l/", expectedMessage);
+        assertParseFailure(parser, "1 l/Bedok l/ l/Tampines", expectedMessage);
+        assertParseFailure(parser, "1 l/ l/", expectedMessage);
+    }
+
+    @Test
+    public void parse_emptyHousingTypeWithOtherTypes_failure() {
+        String expectedMessage = EditCommandParser.MESSAGE_EMPTY_HOUSING_TYPE_WITH_OTHER_TYPES;
+        assertParseFailure(parser, "1 h/ h/HDB", expectedMessage);
+        assertParseFailure(parser, "1 h/HDB h/", expectedMessage);
+        assertParseFailure(parser, "1 h/HDB h/ h/Condo", expectedMessage);
+        assertParseFailure(parser, "1 h/ h/", expectedMessage);
     }
 
     @Test
