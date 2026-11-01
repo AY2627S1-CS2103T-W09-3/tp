@@ -27,6 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.FilterCommand;
 import seedu.address.logic.commands.HistoryCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.RoleCommand;
@@ -561,6 +562,19 @@ public class LogicManagerTest {
 
         logic.execute("list");
         assertEquals(3, model.getFilteredPersonList().size());
+    }
+
+    @Test
+    public void execute_unknownFilterPrefix_preservesActiveFilter() throws Exception {
+        Person[] clients = addFilterTestClients();
+        logic.execute("filter r/buyer");
+
+        String expectedMessage = String.format(Messages.MESSAGE_UNKNOWN_PREFIX, "n/") + "\n"
+                + FilterCommand.MESSAGE_USAGE;
+        assertThrows(ParseException.class, expectedMessage, () -> logic.execute("filter r/seller n/Alice"));
+
+        assertEquals(List.of(clients[0], clients[2]), model.getFilteredPersonList());
+        assertEquals(List.of(clients), model.getAddressBook().getPersonList());
     }
 
     @Test

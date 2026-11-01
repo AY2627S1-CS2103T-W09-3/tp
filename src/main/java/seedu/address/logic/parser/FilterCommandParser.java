@@ -31,11 +31,13 @@ public class FilterCommandParser implements Parser<FilterCommand> {
      * argument filters nothing out. The budget and the asking price are each a price range written as
      * {@code MIN-MAX}, or a single price.
      *
-     * @throws ParseException if the arguments have text before the prefixes, an invalid role, tag, area, housing
-     *     type, budget or asking price, or more than one role, budget or asking price.
+     * @throws ParseException if the arguments have text before the prefixes, an unknown prefix, an invalid role,
+     *     tag, area, housing type, budget or asking price, or more than one role, budget or asking price.
      */
     public FilterCommand parse(String args) throws ParseException {
         requireNonNull(args);
+        ParserUtil.rejectUnknownPrefixes(args, FilterCommand.MESSAGE_USAGE, PREFIX_ROLE, PREFIX_TAG, PREFIX_AREA,
+                PREFIX_HOUSING_TYPE, PREFIX_BUDGET, PREFIX_ASKING_PRICE);
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_ROLE, PREFIX_TAG, PREFIX_AREA,
                 PREFIX_HOUSING_TYPE, PREFIX_BUDGET, PREFIX_ASKING_PRICE);
 

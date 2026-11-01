@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_PREFIX;
 import static seedu.address.logic.Messages.getErrorMessageForDuplicatePrefixes;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ASKING_PRICE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_BUDGET;
@@ -237,9 +238,23 @@ public class FilterCommandParserTest {
     }
 
     @Test
-    public void parse_textBeforePrefixesOrUnknownPrefix_throwsParseException() {
+    public void parse_textBeforeRecognizedPrefix_throwsParseException() {
         for (String input : List.of(" buyer", " 1 r/buyer", " n/John", " n/John r/buyer", " p/91234567")) {
             assertParseFailure(parser, input, INVALID_FORMAT_MESSAGE);
         }
+    }
+
+    @Test
+    public void parse_unknownPrefixAfterRecognizedPrefix_throwsParseException() {
+        assertUnknownPrefix(" r/buyer n/Alice", "n/");
+        assertUnknownPrefix(" t/urgent p/123", "p/");
+        assertUnknownPrefix(" l/Bedok rr/buyer", "rr/");
+        assertUnknownPrefix(" h/HDB R/buyer", "R/");
+        assertUnknownPrefix(" r/buyer n/Alice t/urgent", "n/");
+    }
+
+    private void assertUnknownPrefix(String input, String prefix) {
+        String expectedMessage = String.format(MESSAGE_UNKNOWN_PREFIX, prefix) + "\n" + FilterCommand.MESSAGE_USAGE;
+        assertParseFailure(parser, input, expectedMessage);
     }
 }
