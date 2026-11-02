@@ -30,6 +30,7 @@ import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.PREAMBLE_NON_EMPTY;
 import static seedu.address.logic.commands.CommandTestUtil.PREAMBLE_WHITESPACE;
+import static seedu.address.logic.commands.CommandTestUtil.SINGLE_AMOUNT_BUDGET_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_FRIEND;
 import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_HUSBAND;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
@@ -355,6 +356,7 @@ public class AddCommandParserTest {
 
         assertParseFailure(parser, validPerson + INVALID_BUDGET_MONEY_DESC, Price.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, validPerson + INVALID_BUDGET_DESC, Budget.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, validPerson + SINGLE_AMOUNT_BUDGET_DESC, Budget.MESSAGE_INVALID_FORMAT);
         assertParseFailure(parser, validPerson + INVALID_PRICE_DESC, Price.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, validPerson + INVALID_AREA_DESC, Area.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, validPerson + INVALID_HOUSING_TYPE_DESC, HousingType.MESSAGE_CONSTRAINTS);

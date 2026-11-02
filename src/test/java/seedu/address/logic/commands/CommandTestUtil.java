@@ -74,6 +74,7 @@ public class CommandTestUtil {
     public static final String INVALID_TAG_DESC = " " + PREFIX_TAG + "hubby*"; // '*' not allowed in tags
     public static final String INVALID_BUDGET_DESC = " " + PREFIX_BUDGET + "2000-1000"; // min exceeds max
     public static final String INVALID_BUDGET_MONEY_DESC = " " + PREFIX_BUDGET + "not-a-price";
+    public static final String SINGLE_AMOUNT_BUDGET_DESC = " " + PREFIX_BUDGET + "850000"; // a budget needs a range
     public static final String INVALID_PRICE_DESC = " " + PREFIX_ASKING_PRICE + "0"; // price must be at least 1
     public static final String INVALID_AREA_DESC = " " + PREFIX_AREA + "Atlantis";
     public static final String INVALID_HOUSING_TYPE_DESC = " " + PREFIX_HOUSING_TYPE + "Apartment";

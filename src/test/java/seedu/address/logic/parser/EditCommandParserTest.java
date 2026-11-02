@@ -23,6 +23,7 @@ import static seedu.address.logic.commands.CommandTestUtil.INVALID_TAG_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.SINGLE_AMOUNT_BUDGET_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_FRIEND;
 import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_HUSBAND;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_AMY;
@@ -362,6 +363,7 @@ public class EditCommandParserTest {
     public void parse_invalidRequirement_failure() {
         assertParseFailure(parser, "1" + INVALID_BUDGET_MONEY_DESC, Price.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1" + INVALID_BUDGET_DESC, Budget.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1" + SINGLE_AMOUNT_BUDGET_DESC, Budget.MESSAGE_INVALID_FORMAT);
         assertParseFailure(parser, "1" + INVALID_PRICE_DESC, Price.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1" + INVALID_AREA_DESC, Area.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1" + INVALID_HOUSING_TYPE_DESC, HousingType.MESSAGE_CONSTRAINTS);
