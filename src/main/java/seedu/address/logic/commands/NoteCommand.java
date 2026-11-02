@@ -31,6 +31,7 @@ public class NoteCommand extends Command {
             String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, MESSAGE_USAGE);
     public static final String MESSAGE_NOTE_UPDATED = "Note updated for %1$s.";
     public static final String MESSAGE_NOTE_CLEARED = "Note cleared for %1$s.";
+    public static final String MESSAGE_NOTE_ALREADY_ABSENT = "Note unchanged: %1$s has no note.";
 
     private String actionDescription = "";
 
@@ -64,6 +65,10 @@ public class NoteCommand extends Command {
         }
 
         Person personToEdit = lastShownList.get(index.getZeroBased());
+        if (note == null && personToEdit.getNote() == null) {
+            return new CommandResult(String.format(MESSAGE_NOTE_ALREADY_ABSENT, personToEdit.getName()), index);
+        }
+
         Person editedPerson = new Person(
                 personToEdit.getName(), personToEdit.getPhone(), personToEdit.getEmail(),
                 personToEdit.getAddress(), personToEdit.getRole(), note, personToEdit.getTags(),
