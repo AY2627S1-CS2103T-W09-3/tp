@@ -9,6 +9,7 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
+import seedu.address.model.person.ClientRole;
 import seedu.address.model.person.Person;
 
 /**
@@ -24,6 +25,7 @@ public class DeleteCommand extends Command {
             + "Example: " + COMMAND_WORD + " 1";
 
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted client: %1$s (%2$s)";
+    public static final String MESSAGE_DELETE_PERSON_NO_ROLE_SUCCESS = "Deleted client: %1$s";
     public static final String MESSAGE_INVALID_FORMAT = "Invalid command format. Use: delete INDEX.";
 
     private String actionDescription = "";
@@ -45,16 +47,16 @@ public class DeleteCommand extends Command {
         }
 
         Person personToDelete = lastShownList.get(targetIndex.getZeroBased());
-
-        String role = personToDelete.getRole() == null
-                ? "No role"
-                : personToDelete.getRole().toString();
+        ClientRole role = personToDelete.getRole();
 
         model.deletePerson(personToDelete);
         actionDescription = "Deleted client " + personToDelete.getName();
 
-        return new CommandResult(String.format(
-                MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName(), role));
+        // Leave the parenthetical out when there is no role, the same way the client card shows no badge.
+        String message = role == null
+                ? String.format(MESSAGE_DELETE_PERSON_NO_ROLE_SUCCESS, personToDelete.getName())
+                : String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName(), role);
+        return new CommandResult(message);
     }
 
     @Override
