@@ -64,6 +64,9 @@ or settings.
 
 **:information_source: Notes about the command format:**<br>
 
+* Command words are case-sensitive and must be lowercase. For example, use `list`, not `List` or `LIST`.
+  Parameter values ignore case only where their feature descriptions explicitly say so.
+
 * An unknown command shows `Error: Unknown command. Type help for the User Guide link.`
   Enter `help` to access the guide link.
 
