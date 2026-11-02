@@ -23,6 +23,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -57,6 +60,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
@@ -123,6 +127,43 @@ public class MainWindowTest {
         } finally {
             runOnFxThread(() -> window.getRoot().close());
         }
+    }
+
+    @Test
+    public void execute_addAndRejectedCommand_logNoClientDetails() throws Exception {
+        runOnFxThread(() -> {
+            MainWindow window = openWindow(new ModelManager());
+            List<String> logged = new ArrayList<>();
+            Logger logger = LogsCenter.getLogger(MainWindow.class);
+            Handler capture = new Handler() {
+                @Override
+                public void publish(LogRecord record) {
+                    logged.add(record.getMessage());
+                }
+
+                @Override
+                public void flush() {
+                }
+
+                @Override
+                public void close() {
+                }
+            };
+            logger.addHandler(capture);
+            try {
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                enterCommand(window, commandBox, "add n/Leak Tester p/91234567 e/leak@example.com a/1 Leak Road");
+                enterCommand(window, commandBox, "add n/Leak Tester p/91234567");
+                assertFalse(logged.isEmpty(), "The window logged nothing, so this test would prove nothing");
+                String all = String.join(" | ", logged);
+                for (String detail : List.of("Leak Tester", "91234567", "leak@example.com", "1 Leak Road")) {
+                    assertFalse(all.contains(detail), "The window logged client data (" + detail + "): " + all);
+                }
+            } finally {
+                logger.removeHandler(capture);
+                window.getRoot().close();
+            }
+        });
     }
 
     @Test

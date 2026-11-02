@@ -278,7 +278,7 @@ public class MainWindow extends UiPart<Stage> {
                 commandResult.getViewIndex().ifPresentOrElse(personListPanel::selectPerson,
                         personListPanel::clearSelection);
             }
-            logger.info("Result: " + commandResult.getFeedbackToUser());
+            logger.info("Command completed.");
             if (commandResult.isAwaitingConfirmation()) {
                 resultDisplay.setPendingFeedbackToUser(commandResult.getFeedbackToUser());
             } else {
@@ -295,7 +295,7 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException e) {
-            logger.info("An error occurred while executing command: " + commandText);
+            logger.info("An error occurred while executing a command: " + e.getClass().getSimpleName());
             resultDisplay.setErrorFeedbackToUser(e.getMessage());
             throw e;
         } finally {
