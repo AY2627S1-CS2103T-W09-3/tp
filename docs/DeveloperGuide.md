@@ -366,7 +366,7 @@ A note is free-text working detail kept on a client: where a negotiation stands,
 
 **Parsing.** `NoteCommandParser` splits the index from the note text, and the text runs to the end of the line, so it may contain spaces. The parser delegates ordinary note text to `ParserUtil#parseNote`, which scans it once from left to right: `\n` becomes a real line break, `\\` becomes a literal backslash, and an unrecognised or trailing backslash is preserved. This makes `\\n` an escaped backslash followed by `n`, so users can store a literal `\n` in paths and other text. The decoded result is trimmed of surrounding whitespace and handed to `Note` for validation. The lowercase word `clear` is reserved after trimming surrounding whitespace: only `clear` clears the note, while `CLEAR` and sentences such as `Please clear the outstanding paperwork` are stored as ordinary text. A blank note or one longer than 500 decoded characters raises a `ParseException` carrying `Notes should be 1 to 500 characters.`
 
-**Executing.** `NoteCommand` builds a new `Person` that carries the new note, or no note for the clear form, and copies every other field from the client being edited, then calls `Model#setPerson`. It does not touch the filtered list, so an active search or filter stays in effect. The result message is `Note updated for <name>.` or `Note cleared for <name>.`
+**Executing.** `NoteCommand` builds a new `Person` that carries the new note, or no note for the clear form, and copies every other field from the client being edited, then calls `Model#setPerson`. It does not touch the filtered list, so an active search or filter stays in effect. The result message is `Note updated for <name>.` or `Note cleared for <name>.` Clearing the note of a client who has no note returns `Note unchanged: <name> has no note.` with the same index instead, as `RoleCommand` does for an unassigned role. It does not call `Model#setPerson`, so nothing is saved and no history entry is added.
 
 The sequence below isolates the note parser's successful replacement path. It
 omits note-object construction and error paths; executing the resulting command
@@ -1726,6 +1726,10 @@ contents or permissions. Use disposable data for deletion and recovery checks.
    1. Test case: `note 1 clear`<br>
       Expected: Alicia's note is removed. The result box shows `Note cleared for Alicia Tan.` and the note row is
       hidden in the detail panel.
+
+   1. Test case: `note 1 clear` again<br>
+      Expected: No change. The result box shows `Note unchanged: Alicia Tan has no note.`. No new undo-history
+      entry is added.
 
 1. The exact lowercase `clear` is reserved
 

@@ -77,6 +77,21 @@ public class NoteCommandTest {
     }
 
     @Test
+    public void execute_clearWithoutNote_reportsNothingChanged() {
+        Person original = new PersonBuilder().build();
+        Model actualModel = modelContaining(original);
+        Model expectedModel = modelContaining(original);
+
+        NoteCommand command = new NoteCommand(INDEX_FIRST_PERSON);
+        String expectedMessage = String.format(NoteCommand.MESSAGE_NOTE_ALREADY_ABSENT, original.getName());
+
+        assertCommandSuccess(command, actualModel,
+                new CommandResult(expectedMessage, INDEX_FIRST_PERSON), expectedModel);
+        assertNull(actualModel.getFilteredPersonList().get(0).getNote());
+        assertEquals("", command.getActionDescription());
+    }
+
+    @Test
     public void execute_filteredList_updatesDisplayedClientAndKeepsFilter() {
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
         Person original = model.getFilteredPersonList().get(0);

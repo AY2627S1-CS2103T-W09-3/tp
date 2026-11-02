@@ -296,6 +296,21 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_noteClearWhenNoNote_doesNotSaveAndPreservesRedoHistory() throws Exception {
+        model.addPerson(AMY);
+        CountingAddressBookStorage storage = createCountingStorage();
+        logic.execute("note 1 Call again");
+        logic.execute("undo");
+        int savesBefore = storage.getSaveCount();
+
+        CommandResult result = logic.execute("note 1 clear");
+
+        assertEquals("Note unchanged: Amy Bee has no note.", result.getFeedbackToUser());
+        assertEquals(savesBefore, storage.getSaveCount());
+        assertTrue(model.canRedo());
+    }
+
+    @Test
     public void execute_tagEditThatChangesOnlyCase_stillSaves() throws Exception {
         // Person equality compares tag names, so urgent and Urgent differ; the file must record the new casing.
         model.addPerson(new PersonBuilder(AMY).withTags("urgent").build());
