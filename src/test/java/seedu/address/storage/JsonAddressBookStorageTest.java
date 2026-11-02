@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -106,6 +107,32 @@ public class JsonAddressBookStorageTest {
         JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
 
         assertThrows(DataLoadingException.class, storage::readAddressBook);
+    }
+
+    @Test
+    public void readAddressBook_trailingContent_throwsDataLoadingException() throws Exception {
+        Path filePath = testFolder.resolve("trailingContentAddressBook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        storage.saveAddressBook(getTypicalAddressBook());
+        String validJson = Files.readString(filePath);
+
+        for (String trailingContent : List.of("{}", "[]", "null", "true", "123", "\"extra\"", "invalid text")) {
+            Files.writeString(filePath, validJson + "\n" + trailingContent);
+
+            assertThrows(DataLoadingException.class, storage::readAddressBook,
+                    "Trailing content should be rejected: " + trailingContent);
+        }
+    }
+
+    @Test
+    public void readAddressBook_trailingWhitespace_preservesClients() throws Exception {
+        Path filePath = testFolder.resolve("trailingWhitespaceAddressBook.json");
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+        AddressBook expected = getTypicalAddressBook();
+        storage.saveAddressBook(expected);
+        Files.writeString(filePath, Files.readString(filePath) + " \t\r\n");
+
+        assertEquals(expected, storage.readAddressBook().orElseThrow());
     }
 
     @Test

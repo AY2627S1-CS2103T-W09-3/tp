@@ -193,6 +193,32 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_concatenatedClientBooks_backsUpEntireFileBeforeNextSave() throws Exception {
+        new JsonAddressBookStorage(addressBookPath).saveAddressBook(TypicalPersons.getTypicalAddressBook());
+        String invalidJson = "{\"persons\":[]}\n" + Files.readString(addressBookPath);
+        Files.writeString(addressBookPath, invalidJson);
+
+        app.init();
+
+        assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+        Path backup = findUnreadableDataBackup();
+        assertEquals(invalidJson, Files.readString(addressBookPath));
+        assertEquals(invalidJson, Files.readString(backup));
+        assertTrue(logHandler.messages.stream()
+                .anyMatch(message -> message.contains("Will be starting with an empty client book.")));
+
+        app.logic.execute("list");
+        assertEquals(invalidJson, Files.readString(addressBookPath));
+
+        app.logic.execute(ADD_CLIENT_COMMAND);
+
+        ReadOnlyAddressBook savedClients = new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow();
+        assertEquals(1, savedClients.getPersonList().size());
+        assertEquals("Recovered Client", savedClients.getPersonList().getFirst().getName().fullName);
+        assertEquals(invalidJson, Files.readString(backup));
+    }
+
+    @Test
     public void init_nullPerson_backsUpFileAndStartsEmpty() throws Exception {
         String invalidJson = "{\"persons\":[null]}";
         Files.writeString(addressBookPath, invalidJson);
