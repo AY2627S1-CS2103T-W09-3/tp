@@ -3,6 +3,7 @@ package seedu.address.logic.parser;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,6 +39,34 @@ public class AddressBookParser {
     private static final Logger logger = LogsCenter.getLogger(AddressBookParser.class);
 
     /**
+     * The command words this parser accepts, so callers can tell a command from text that is not one.
+     */
+    private static final Set<String> COMMAND_WORDS = Set.of(
+            AddCommand.COMMAND_WORD,
+            ClearCommand.COMMAND_WORD,
+            DeleteCommand.COMMAND_WORD,
+            EditCommand.COMMAND_WORD,
+            ExitCommand.COMMAND_WORD,
+            FilterCommand.COMMAND_WORD,
+            FindCommand.COMMAND_WORD,
+            HelpCommand.COMMAND_WORD,
+            HistoryCommand.COMMAND_WORD,
+            ListCommand.COMMAND_WORD,
+            NoteCommand.COMMAND_WORD,
+            RedoCommand.COMMAND_WORD,
+            RoleCommand.COMMAND_WORD,
+            UndoCommand.COMMAND_WORD,
+            ViewCommand.COMMAND_WORD);
+
+    /**
+     * Returns true if {@code word} is one of the command words this parser accepts.
+     * Keep this list in step with the switch in {@link #parseCommand}.
+     */
+    public static boolean isCommandWord(String word) {
+        return COMMAND_WORDS.contains(word);
+    }
+
+    /**
      * Parses user input into command for execution.
      *
      * @param userInput full user input string
@@ -56,7 +85,7 @@ public class AddressBookParser {
         // Note to developers: Change LOG_LEVEL in LogsCenter to enable lower level (i.e., FINE, FINER and lower)
         // log messages such as the one below.
         // Lower level log messages are used sparingly to minimize noise in the code.
-        logger.fine("Command word: " + commandWord + "; Arguments: " + arguments);
+        logger.fine("Command word: " + commandWord);
 
         return switch (commandWord) {
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
@@ -81,7 +110,7 @@ public class AddressBookParser {
             case HistoryCommand.COMMAND_WORD -> parseNoArguments(arguments, new HistoryCommand(),
                     HistoryCommand.MESSAGE_INVALID_FORMAT);
             default -> {
-                logger.finer("This user input caused a ParseException: " + userInput);
+                logger.finer("The user input does not start with a known command word.");
                 throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
             }
         };
