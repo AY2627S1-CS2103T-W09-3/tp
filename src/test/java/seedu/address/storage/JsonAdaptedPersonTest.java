@@ -164,6 +164,28 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_roleNone_returnsPersonWithNoRole() throws Exception {
+        for (String none : List.of("none", "NONE", "None")) {
+            JsonAdaptedPerson person =
+                    new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, none,
+                            VALID_NOTE,
+                            VALID_TAGS, null, null, null, null);
+            assertNull(person.toModelType().getRole(), none);
+        }
+    }
+
+    @Test
+    public void toModelType_blankRole_returnsPersonWithNoRole() throws Exception {
+        for (String blank : List.of("", "   ")) {
+            JsonAdaptedPerson person =
+                    new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, blank,
+                            VALID_NOTE,
+                            VALID_TAGS, null, null, null, null);
+            assertNull(person.toModelType().getRole(), "[" + blank + "]");
+        }
+    }
+
+    @Test
     public void toModelType_invalidRole_throwsIllegalValueException() {
         JsonAdaptedPerson person =
                 new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, INVALID_ROLE,
