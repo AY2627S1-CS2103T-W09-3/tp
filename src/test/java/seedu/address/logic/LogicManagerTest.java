@@ -367,7 +367,7 @@ public class LogicManagerTest {
     @Test
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, failingSaveFilePath()));
     }
 
     @Test
@@ -440,7 +440,7 @@ public class LogicManagerTest {
         logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_AD_EXCEPTION));
 
         assertCommandException("redo", String.format(
-                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, failingSaveFilePath()));
 
         assertEquals(afterUndo, model.captureSnapshot());
         assertEquals(redo, model.getRedoHistory());
@@ -824,13 +824,18 @@ public class LogicManagerTest {
     }
 
     /**
+     * Returns the address book file path reported by {@link #createStorageThatFailsToSave}.
+     */
+    private Path failingSaveFilePath() {
+        return temporaryFolder.resolve("ExceptionAddressBook.json");
+    }
+
+    /**
      * Returns a {@code StorageManager} whose address book storage throws {@code e} when saving.
      */
     private StorageManager createStorageThatFailsToSave(IOException e) {
-        Path prefPath = temporaryFolder.resolve("ExceptionUserPrefs.json");
-
         // Inject a JsonAddressBookStorage that throws the IOException e when saving
-        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(prefPath) {
+        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(failingSaveFilePath()) {
             @Override
             public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
                 throw e;
