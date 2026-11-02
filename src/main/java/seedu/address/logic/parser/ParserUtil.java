@@ -173,11 +173,15 @@ public class ParserUtil {
      * Parses a {@code String budget} in the form {@code MIN-MAX} into a {@code Budget}.
      * Leading and trailing whitespaces, including those around the hyphen, will be trimmed.
      *
-     * @throws ParseException if either price is invalid or the minimum exceeds the maximum.
+     * @throws ParseException if a single valid price is given without a hyphen, either price is invalid or the
+     *     minimum exceeds the maximum.
      */
     public static Budget parseBudget(String budget) throws ParseException {
         requireNonNull(budget);
         String[] range = budget.trim().split("-", -1);
+        if (range.length == 1 && Price.isValidPrice(range[0])) {
+            throw new ParseException(Budget.MESSAGE_INVALID_FORMAT);
+        }
         if (range.length != 2) {
             throw new ParseException(Price.MESSAGE_CONSTRAINTS);
         }
