@@ -664,7 +664,11 @@ and delegate to `ParserUtil`:
 
 `parseBudget` splits on the hyphen into two halves and parses each with
 `parsePrice`, then builds a `Budget`, whose constructor rejects a minimum above the
-maximum. `parsePrice` checks the string against
+maximum. A budget with no hyphen whose text is a valid price, such as `b/850000`, is
+reported with `Budget.MESSAGE_INVALID_FORMAT`, because the amount is fine and the
+missing hyphen is the problem; `filter` accepts that shape through `parsePriceRange`,
+but `add` and `edit` do not. Text that is not a valid price keeps the price message.
+`parsePrice` checks the string against
 `[1-9]\d{0,2}(,\d{3})+|[1-9]\d*`, parses the digits with the commas stripped, and
 rejects anything outside 1 to 1,000,000,000. `Price` stores an `int` and exposes
 `getDisplayValue`, which formats it as `$1,000,000`.
@@ -1880,6 +1884,10 @@ contents or permissions. Use disposable data for deletion and recovery checks.
 
    1. Test case: `edit 1 b/600000-400000`<br>
       Expected: No change. The result box shows `Error: The budget minimum must not exceed the maximum.`.
+
+   1. Test case: `edit 1 b/850000`<br>
+      Expected: No change. The result box shows
+      `Error: Budget must be two whole-dollar amounts joined by a hyphen, such as 400000-600000.`.
 
    1. Test case: `edit 1 s/0`<br>
       Expected: No change. The result box shows
