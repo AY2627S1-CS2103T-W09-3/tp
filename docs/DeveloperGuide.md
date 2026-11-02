@@ -339,7 +339,7 @@ omitted. The source is [RoleSequenceDiagram.puml](diagrams/RoleSequenceDiagram.p
 
 A client's role is a dedicated `ClientRole` field on `Person`, not a tag. `ClientRole` is an enum with exactly three declared values, and each value carries two strings: the token the user types and the data file stores, and the text the interface shows.
 
-The command token `none` is not an enum value or a stored role. It clears the optional field, so the `role` key is omitted when the client book is saved. Undo and redo treat this as an ordinary role change.
+The command token `none` is not an enum value, and the app never writes it to the data file. It clears the optional field, so the `role` key is omitted when the client book is saved. Undo and redo treat this as an ordinary role change.
 
 | Stored token | Shown to the user |
 |--------------|-------------------|
@@ -349,7 +349,7 @@ The command token `none` is not an enum value or a stored role. It clears the op
 
 `ClientRole#getValue()` returns the stored token, `ClientRole#getDisplayValue()` returns the text shown, and `ClientRole#toString()` returns the display value, so a role cannot be shown one way in the result message and another way on the client's badge.
 
-**Saving and reading back.** `JsonAdaptedPerson` mirrors the model field as a string. When a client book is saved the role is written with `ClientRole#getValue()`, and because the field carries `@JsonInclude(JsonInclude.Include.NON_NULL)`, a client with no role leaves the `role` key out of the data file entirely. When a client book is read back, a missing key becomes no role and any other value goes through `ClientRole#fromString(String)`; an unrecognised token raises an `IllegalValueException` carrying `Invalid Role: Role must be 'buyer', 'seller', or 'both'.`. A typo in a hand-edited data file is therefore reported rather than silently ignored.
+**Saving and reading back.** `JsonAdaptedPerson` mirrors the model field as a string. When a client book is saved the role is written with `ClientRole#getValue()`, and because the field carries `@JsonInclude(JsonInclude.Include.NON_NULL)`, a client with no role leaves the `role` key out of the data file entirely. When a client book is read back, a missing key, a blank value or `none` (ignoring case) becomes no role, so a hand-edited file can write `"role": "none"` where the app would leave the key out. Any other value goes through `ClientRole#fromString(String)`; an unrecognised token raises an `IllegalValueException` carrying `Invalid Role: Role must be 'buyer', 'seller', or 'both'.`. A typo in a hand-edited data file is therefore reported rather than silently ignored.
 
 **Why a dedicated field and not a tag.** Tags allow arbitrary alphanumeric labels and
 multiple values; they do not enforce the role vocabulary. A dedicated optional enum restricts

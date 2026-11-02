@@ -2,6 +2,7 @@ package seedu.address;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -272,6 +273,21 @@ public class MainAppTest {
                 new JsonAddressBookStorage(addressBookPath).readAddressBook().orElseThrow());
         assertEquals(1, afterAdd.getPersonList().size());
         assertEquals("Recovered Client", afterAdd.getPersonList().get(0).getName().fullName);
+    }
+
+    @Test
+    public void init_savedRoleNone_loadsClientWithNoRole() throws Exception {
+        Files.writeString(addressBookPath, "{\"persons\":[{\"name\":\"Alice Tan\",\"phone\":\"91234567\","
+                + "\"email\":\"alice@example.com\",\"address\":\"1 Test Road\",\"role\":\"none\"}]}");
+
+        app.init();
+
+        assertEquals(1, app.model.getAddressBook().getPersonList().size());
+        assertNull(app.model.getAddressBook().getPersonList().get(0).getRole());
+        try (var files = Files.list(temporaryFolder)) {
+            assertTrue(files.noneMatch(path -> path.getFileName().toString().startsWith(
+                    "addressbook.json.unreadable-")));
+        }
     }
 
     @Test

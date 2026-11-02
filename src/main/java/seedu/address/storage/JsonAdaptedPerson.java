@@ -33,6 +33,8 @@ class JsonAdaptedPerson {
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
     public static final String MESSAGE_NULL_TAG = "Person's tags field contains a null tag.";
 
+    private static final String NO_ROLE_VALUE = "none";
+
     private final String name;
     private final String phone;
     private final String email;
@@ -179,9 +181,9 @@ class JsonAdaptedPerson {
         final Address modelAddress = new Address(address);
 
         // Client books saved before roles were introduced do not have this field,
-        // and a client is allowed to have no role.
+        // and a client is allowed to have no role. A hand-edited file may write that as a blank value or "none".
         final ClientRole modelRole;
-        if (role == null) {
+        if (role == null || role.isBlank() || role.equalsIgnoreCase(NO_ROLE_VALUE)) {
             modelRole = null;
         } else if (!ClientRole.isValidRole(role)) {
             throw new IllegalValueException(ClientRole.MESSAGE_CONSTRAINTS);
