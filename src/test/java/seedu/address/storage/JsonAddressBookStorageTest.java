@@ -81,6 +81,34 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBook_nullPerson_throwDataLoadingException() throws Exception {
+        assertInvalidJsonStructureThrowsDataLoadingException("{\"persons\":[null]}");
+    }
+
+    @Test
+    public void readAddressBook_nullTag_throwDataLoadingException() throws Exception {
+        assertInvalidJsonStructureThrowsDataLoadingException("""
+                {
+                  "persons": [{
+                    "name": "Alice",
+                    "phone": "123",
+                    "email": "alice@example.com",
+                    "address": "1 Test Road",
+                    "tags": [null]
+                  }]
+                }
+                """);
+    }
+
+    private void assertInvalidJsonStructureThrowsDataLoadingException(String json) throws Exception {
+        Path filePath = testFolder.resolve("invalidStructureAddressBook.json");
+        Files.writeString(filePath, json);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(filePath);
+
+        assertThrows(DataLoadingException.class, storage::readAddressBook);
+    }
+
+    @Test
     public void readAndSaveAddressBook_legacyFile_preservesPerson() throws Exception {
         ReadOnlyAddressBook legacyAddressBook = readAddressBook("legacyAddressBook.json").get();
         AddressBook expectedAddressBook = new AddressBook();

@@ -245,6 +245,21 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_nullTag_throwsIllegalValueException() throws Exception {
+        String json = """
+                {
+                  "name": "%s",
+                  "phone": "%s",
+                  "email": "%s",
+                  "address": "%s",
+                  "tags": [null]
+                }
+                """.formatted(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS);
+        JsonAdaptedPerson person = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+        assertThrows(IllegalValueException.class, JsonAdaptedPerson.MESSAGE_NULL_TAG, person::toModelType);
+    }
+
+    @Test
     public void jsonRoundTrip_allRequirementsAndFiveHundredCharacterMultilineNote_preservesAllFields()
             throws Exception {
         String note = "a".repeat(249) + "\n" + "b".repeat(250);
