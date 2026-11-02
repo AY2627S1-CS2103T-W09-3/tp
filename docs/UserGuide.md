@@ -371,6 +371,7 @@ Formats:
 * Type the two characters `\n` where a line break should appear in the note.
 * Type `\\` where a literal backslash should appear. For example, type `\\n` to store the two characters `\n` without creating a line break.
 * Only the exact lowercase text `clear`, after surrounding whitespace is removed, clears the note.
+* If the client has no note, `note INDEX clear` changes nothing and shows `Note unchanged: CLIENT_NAME has no note.`
 * Other capitalization and text containing `clear` are stored as ordinary note text.
 * The currently displayed client filter remains active after setting or clearing a note.
 * Read the note in the [detail panel](#viewing-a-clients-details-view). The note row is hidden when the note is cleared.
