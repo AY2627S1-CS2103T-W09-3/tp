@@ -33,6 +33,10 @@ import seedu.address.model.tag.Tag;
  */
 public class EditCommandParser implements Parser<EditCommand> {
 
+    public static final String MESSAGE_EMPTY_TAG_WITH_OTHER_TAGS =
+            "An empty t/ must be used alone to clear all tags. "
+            + "To set tags, provide a value after every t/.";
+
     /**
      * Parses the given {@code String} of arguments in the context of the EditCommand
      * and returns an EditCommand object for execution.
@@ -154,6 +158,9 @@ public class EditCommandParser implements Parser<EditCommand> {
 
         if (tags.isEmpty()) {
             return Optional.empty();
+        }
+        if (tags.size() > 1 && tags.contains("")) {
+            throw new ParseException(MESSAGE_EMPTY_TAG_WITH_OTHER_TAGS);
         }
         Collection<String> tagSet = tags.size() == 1 && tags.contains("") ? Collections.emptySet() : tags;
         return Optional.of(ParserUtil.parseTags(tagSet));

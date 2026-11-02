@@ -32,7 +32,9 @@ import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.RoleCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.parser.EditCommandParser;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
@@ -119,6 +121,19 @@ public class LogicManagerTest {
     public void execute_invalidCommandFormat_throwsParseException() {
         String invalidCommand = "uicfhmowqewca";
         assertParseException(invalidCommand, MESSAGE_UNKNOWN_COMMAND);
+    }
+
+    @Test
+    public void execute_emptyTagWithOtherTags_preservesDataAndHistory() throws Exception {
+        logic.execute("add n/Tag Probe p/94000215 e/tag.probe@example.com a/1 Test Road t/original");
+        AddressBook originalData = new AddressBook(model.getAddressBook());
+        List<HistoryEntry> originalHistory = model.getUndoHistory();
+
+        assertParseException("edit 1 t/ t/a", EditCommandParser.MESSAGE_EMPTY_TAG_WITH_OTHER_TAGS);
+        assertParseException("edit 1 t/a t/", EditCommandParser.MESSAGE_EMPTY_TAG_WITH_OTHER_TAGS);
+
+        assertEquals(originalData, model.getAddressBook());
+        assertEquals(originalHistory, model.getUndoHistory());
     }
 
     @Test
