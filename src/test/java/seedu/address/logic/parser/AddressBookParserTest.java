@@ -212,4 +212,11 @@ public class AddressBookParserTest {
     public void parseCommand_unknownCommand_throwsParseException() {
         assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
     }
+
+    @Test
+    public void parseCommand_capitalizedCommand_throwsParseExceptionWithHelpHint() {
+        String expectedMessage = "Unknown command. Type help for the User Guide link.";
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("List"));
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("LIST"));
+    }
 }

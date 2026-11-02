@@ -67,6 +67,9 @@ or settings.
 * Command words are case-sensitive and must be lowercase. For example, use `list`, not `List` or `LIST`.
   Parameter values ignore case only where their feature descriptions explicitly say so.
 
+* An unknown command shows `Error: Unknown command. Type help for the User Guide link.`
+  Enter `help` to access the guide link.
+
 * Words in `UPPER_CASE` are the parameters to be supplied by the user.<br>
   For example, in `add n/NAME`, replace `NAME` with a value such as `John Doe`.
 
