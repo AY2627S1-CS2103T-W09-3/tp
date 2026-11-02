@@ -10,6 +10,8 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 public class Budget {
 
     public static final String MESSAGE_CONSTRAINTS = "The budget minimum must not exceed the maximum.";
+    public static final String MESSAGE_INVALID_FORMAT =
+            "Budget must be two whole-dollar amounts joined by a hyphen, such as 400000-600000.";
 
     private final Price min;
     private final Price max;

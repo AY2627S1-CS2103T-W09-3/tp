@@ -321,7 +321,7 @@ Inputs that are rejected:
 | Command contains | Result box shows |
 |---|---|
 | `b/600000-400000` | `Error: The budget minimum must not exceed the maximum.` |
-| `b/400000` | `Error: Prices must be whole numbers from 1 to 1,000,000,000, with optional correctly placed commas.` |
+| `b/400000` | `Error: Budget must be two whole-dollar amounts joined by a hyphen, such as 400000-600000.` |
 | `s/0` | `Error: Prices must be whole numbers from 1 to 1,000,000,000, with optional correctly placed commas.` |
 | `l/Bishan East` | `Error: Area must be one of the supported areas.` |
 | `h/Shophouse` | `Error: Housing type must be HDB, Condo, EC, or Landed.` |

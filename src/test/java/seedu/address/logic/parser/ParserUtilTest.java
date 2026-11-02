@@ -282,8 +282,16 @@ public class ParserUtilTest {
 
     @Test
     public void parseBudget_invalidMoney_throwsParseException() {
-        assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBudget("1000"));
         assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBudget("1000-2000-3000"));
+        assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBudget("abc"));
+        assertThrows(ParseException.class, Price.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBudget(""));
+    }
+
+    @Test
+    public void parseBudget_singleAmount_throwsFormatError() {
+        for (String amount : List.of("1000", "850,000", "  850000  ")) {
+            assertThrows(ParseException.class, Budget.MESSAGE_INVALID_FORMAT, () -> ParserUtil.parseBudget(amount));
+        }
     }
 
     @Test
