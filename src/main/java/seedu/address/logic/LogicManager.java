@@ -99,7 +99,9 @@ public class LogicManager implements Logic {
             storage.saveAddressBook(model.getAddressBook());
         } catch (AccessDeniedException e) {
             rollbackFailedSave(command, beforeCommand);
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
+            // Name the data file the user can see, not the staging file the write failed on.
+            throw new CommandException(
+                    String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, storage.getAddressBookFilePath()), e);
         } catch (IOException ioe) {
             rollbackFailedSave(command, beforeCommand);
             throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
