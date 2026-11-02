@@ -217,6 +217,20 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_emptyRequirementWithOtherValues_preservesDataAndHistory() throws Exception {
+        logic.execute("add n/Requirement Probe p/94000217 e/requirements@example.com a/1 Test Road "
+                + "l/Bedok h/HDB");
+        AddressBook originalData = new AddressBook(model.getAddressBook());
+        List<HistoryEntry> originalHistory = model.getUndoHistory();
+
+        assertParseException("edit 1 l/ l/Orchard", EditCommandParser.MESSAGE_EMPTY_AREA_WITH_OTHER_AREAS);
+        assertParseException("edit 1 h/ h/Condo", EditCommandParser.MESSAGE_EMPTY_HOUSING_TYPE_WITH_OTHER_TYPES);
+
+        assertEquals(originalData, model.getAddressBook());
+        assertEquals(originalHistory, model.getUndoHistory());
+    }
+
+    @Test
     public void execute_readOnlyCommandsWithUnwritableStorage_succeed() throws Exception {
         model.addPerson(AMY);
         logic = new LogicManager(model, createStorageThatFailsToSave(DUMMY_AD_EXCEPTION));

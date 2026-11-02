@@ -126,6 +126,7 @@ Prefix rules:
 * Repeat `l/` to supply multiple areas, such as `l/Bedok l/Tampines`.
 * Repeat `h/` to supply multiple housing types, such as `h/HDB h/Condo`.
 * For `edit`, an empty `b/`, `s/`, `l/` or `h/` clears that field. In `add`, an empty prefix is an error.
+  An empty `l/` or `h/` must be used alone for that field; do not combine it with another `l/` or `h/`.
 * Inside `n/NAME`, the whole relationship markers `s/o`, `d/o`, `a/l` and `a/p` are kept as part of the name, ignoring their capitalization. For example, `n/Kumar s/o Ravi s/950000` records the name `Kumar s/o Ravi` and an asking price of $950,000. Other field prefixes still end the name.
 * If an address starts with `L` or `P` as a whole word (ignoring case), put the address before the name: `edit 1 a/P Ryan Road n/Bob`. Writing `edit 1 n/Bob a/P Ryan Road` instead stores `Bob a/P Ryan Road` as the name and leaves the address unchanged.
 * Other slash text, such as `x/y`, is also valid in names: `n/Bob x/y` stores the name `Bob x/y`. Check field prefixes for typing errors.
