@@ -34,10 +34,10 @@ public class DeleteCommandTest {
         Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
 
-        String role = personToDelete.getRole() == null
-                ? "No role"
-                : personToDelete.getRole().getDisplayValue();
-        String expectedMessage = "Deleted client: " + personToDelete.getName() + " (" + role + ")";
+        ClientRole role = personToDelete.getRole();
+        String expectedMessage = role == null
+                ? "Deleted client: " + personToDelete.getName()
+                : "Deleted client: " + personToDelete.getName() + " (" + role.getDisplayValue() + ")";
 
         ModelManager expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.deletePerson(personToDelete);
@@ -60,10 +60,10 @@ public class DeleteCommandTest {
         Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
 
-        String role = personToDelete.getRole() == null
-                ? "No role"
-                : personToDelete.getRole().getDisplayValue();
-        String expectedMessage = "Deleted client: " + personToDelete.getName() + " (" + role + ")";
+        ClientRole role = personToDelete.getRole();
+        String expectedMessage = role == null
+                ? "Deleted client: " + personToDelete.getName()
+                : "Deleted client: " + personToDelete.getName() + " (" + role.getDisplayValue() + ")";
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.deletePerson(personToDelete);
@@ -90,7 +90,7 @@ public class DeleteCommandTest {
         assertDeleteFeedback(ClientRole.BUYER, "Deleted client: Alice Tan (Buyer)");
         assertDeleteFeedback(ClientRole.SELLER, "Deleted client: Alice Tan (Seller)");
         assertDeleteFeedback(ClientRole.BOTH, "Deleted client: Alice Tan (Buyer, Seller)");
-        assertDeleteFeedback(null, "Deleted client: Alice Tan (No role)");
+        assertDeleteFeedback(null, "Deleted client: Alice Tan");
     }
 
     @Test
