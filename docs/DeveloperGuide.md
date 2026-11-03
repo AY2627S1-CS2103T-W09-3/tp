@@ -1629,7 +1629,7 @@ contents or permissions. Use disposable data for deletion and recovery checks.
    1. Prerequisites: Ensure no clear is pending. Run `list` first if needed.
 
    1. Test case: `clear confirm`<br>
-      Expected: No client is deleted. The result box shows `No clear is pending. Type clear first.`.
+      Expected: No client is deleted. The result box shows `Error: No clear is pending. Type clear first.`.
 
 1. Clearing an already empty client book
 
@@ -1827,7 +1827,7 @@ contents or permissions. Use disposable data for deletion and recovery checks.
       maximum.`.
 
    1. Test case: `filter b/500000 b/600000`<br>
-      Expected: The displayed list does not change. The result box shows `Multiple values specified for the following single-valued field(s): b/`.
+      Expected: The displayed list does not change. The result box shows `Error: Multiple values specified for the following single-valued field(s): b/`.
 
 1. Restoring the full list
 
@@ -2013,7 +2013,7 @@ repeat their individual syntax rules.
 | `redo` | The phone becomes `90000993` again. |
 | `history` | The edit is the next undo action, and the deletion is the next redo action. |
 | `note 6 Called after viewing` | The note is saved, and this new change discards the pending redo action. |
-| `redo` | The result reports `There is no action to redo`; the client and note stay unchanged. |
+| `redo` | The result reports `Error: There is no action to redo`; the client and note stay unchanged. |
 
 Exit and restart from the same folder. `view 6` should show the updated phone
 and note, while `history` reports empty undo and redo stacks: client data is
@@ -2036,7 +2036,7 @@ persistent, but command history lasts only for the session.
       Expected: Alicia's role change is undone, the draft stays unchanged, and Redo becomes available.
 
    1. Press the same shortcut again, with no undoable action remaining.<br>
-      Expected: The result box reports `There is no action to undo`. The draft is unchanged and is not
+      Expected: The result box reports `Error: There is no action to undo`. The draft is unchanged and is not
       given the command-error style, even though Undo is disabled in the Edit menu.
 
    1. Press Cmd+Shift+Z on macOS or Ctrl+Y on Windows/Linux.<br>
