@@ -167,6 +167,25 @@ public class MainWindowTest {
     }
 
     @Test
+    public void resultDisplay_wrapsLongFeedbackInsteadOfScrollingSideways() throws Exception {
+        runOnFxThread(() -> {
+            MainWindow window = openWindow(new ModelManager());
+            try {
+                TextArea feedback = (TextArea) window.getRoot().getScene().lookup("#resultDisplay");
+                assertTrue(feedback.isWrapText(),
+                        "A confirmation wider than the pane must wrap, not run off the edge");
+                TextField commandBox = (TextField) window.getRoot().getScene().lookup("#commandTextField");
+                enterCommand(window, commandBox,
+                        "add n/Wrap Probe p/90003333 e/wrap@example.com a/1 Wrap Road");
+                assertTrue(feedback.getText().startsWith("New client added: Wrap Probe"),
+                        "The whole confirmation should be readable: " + feedback.getText());
+            } finally {
+                window.getRoot().close();
+            }
+        });
+    }
+
+    @Test
     public void historyMenuAndShortcuts_executeThroughCommandBox() throws Exception {
         runOnFxThread(() -> {
             RecordingLogic logic = new RecordingLogic();
