@@ -35,6 +35,9 @@ public class LogicManager implements Logic {
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
             "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
 
+    /** Logged in place of input that does not start with a command word the parser accepts. */
+    public static final String UNRECOGNISED_INPUT_LOG_WORD = "unrecognised input";
+
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
     private final Model model;
@@ -55,14 +58,14 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
-        logger.info("----------------[USER COMMAND][" + commandText + "]");
+        logger.info("----------------[USER COMMAND][" + loggedCommandWord(commandText) + "]");
 
         Command command;
         if (isClearPending) {
             isClearPending = false;
             command = parseClearConfirmation(commandText);
             if (command == null) {
-                logger.info("Pending clear cancelled by: " + commandText);
+                logger.info("Pending clear cancelled by " + loggedCommandWord(commandText));
                 return new CommandResult(ClearCommand.MESSAGE_CANCELLED);
             }
         } else {
@@ -89,6 +92,20 @@ public class LogicManager implements Logic {
 
         isClearPending = commandResult.isAwaitingConfirmation();
         return commandResult;
+    }
+
+    /**
+     * Returns the command word of {@code commandText} for logging, or a placeholder when the text does not start with
+     * a command word the parser accepts, so that client data never reaches the log file.
+     */
+    private static String loggedCommandWord(String commandText) {
+        String trimmed = commandText.trim();
+        int end = 0;
+        while (end < trimmed.length() && !Character.isWhitespace(trimmed.charAt(end))) {
+            end++;
+        }
+        String word = trimmed.substring(0, end);
+        return AddressBookParser.isCommandWord(word) ? word : UNRECOGNISED_INPUT_LOG_WORD;
     }
 
     /**

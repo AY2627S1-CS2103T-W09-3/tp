@@ -17,13 +17,18 @@ import static seedu.address.testutil.TypicalPersons.BOB;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
@@ -805,6 +810,60 @@ public class LogicManagerTest {
             String expectedMessage, Model expectedModel) {
         assertThrows(expectedException, expectedMessage, () -> logic.execute(inputCommand));
         assertEquals(expectedModel, model);
+    }
+
+    @Test
+    public void execute_commandWithClientData_logsCommandWordOnly() throws Exception {
+        List<String> logged = new ArrayList<>();
+        Logger logger = LogsCenter.getLogger(LogicManager.class);
+        Handler capture = captureInto(logged);
+        logger.addHandler(capture);
+        try {
+            logic.execute("add n/Alice Tan p/91234567 e/alice@example.com a/1 Test Road");
+        } finally {
+            logger.removeHandler(capture);
+        }
+
+        assertTrue(logged.stream().anyMatch(message -> message.contains("[USER COMMAND][add]")));
+        assertFalse(logged.stream().anyMatch(message -> message.contains("Alice")
+                || message.contains("91234567") || message.contains("Test Road")));
+    }
+
+    @Test
+    public void execute_unrecognisedInput_logsPlaceholderInsteadOfTheInput() {
+        List<String> logged = new ArrayList<>();
+        Logger logger = LogsCenter.getLogger(LogicManager.class);
+        Handler capture = captureInto(logged);
+        logger.addHandler(capture);
+        try {
+            assertThrows(ParseException.class, () -> logic.execute("Alice Tan"));
+        } finally {
+            logger.removeHandler(capture);
+        }
+
+        assertTrue(logged.stream().anyMatch(message ->
+                message.contains("[" + LogicManager.UNRECOGNISED_INPUT_LOG_WORD + "]")));
+        assertFalse(logged.stream().anyMatch(message -> message.contains("Alice")));
+    }
+
+    /**
+     * Returns a log handler that collects the messages of the records it receives into {@code sink}.
+     */
+    private static Handler captureInto(List<String> sink) {
+        return new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                sink.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
     }
 
     /**
