@@ -619,6 +619,10 @@ Restart the app from that working directory.
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+3. **Typing `note INDEX` with no text** answers `Notes should be 1 to 500 characters.` rather than saying that the note text is missing. Type at least one character, or run `note INDEX clear` to remove an existing note.
+4. **The confirmation after `add` and `edit` lists tags in the order you typed them**, while the client card sorts them alphabetically. A client with no tags ends that message with a bare `Tags: `. Trust the card for the order you will see next time.
+5. **Repeating a change that is already in place** reports success even though nothing changed and no undo entry is created. This covers `role INDEX ROLE` with the role the client already has, `note INDEX TEXT` with the same text, and `edit INDEX l/` for a client who has no areas.
+6. **Editing the data file by hand:** an empty optional value such as `"note": ""` or `"areas": [""]` makes the whole file unreadable, so the app backs it up and starts from an empty client book. Close the app first, and leave unused fields out instead of emptying them.
 
 --------------------------------------------------------------------------------------------------------------------
 
